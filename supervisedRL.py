@@ -1,5 +1,4 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 import os
 os.chdir('../DPM/')
@@ -11,10 +10,10 @@ np.random.seed(12)
 def sigmoid(x):
 	# print 'x : ' + str(np.round(x[0][0],0))
 	try:
-		return 1/(1+math.exp(-x))
+		x[x<-100]=-100
+		return 1/(1+np.exp(-x))
 	except:
-		if x <= -100: return 1.
-		else: raise OverflowError('math range error; x='+str(np.round(x[0][0],1)))
+		raise OverflowError('math range error: x='+str(np.round(x[0][0],1)))
 
 def evenLabels(images, labels):
 	nDigits, bins = np.histogram(labels, bins=nClasses, range=(0,nClasses-1))
@@ -27,44 +26,74 @@ def evenLabels(images, labels):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-classes =  [0,1] # [4,9] #
+def update(step, dE, prevdE, dW, W):
+	#compute weight update and adaptation
+	s = np.sign(prevdE * dE)
+
+	step[s==+1] *= npos
+	step[s==-1] *= nneg
+	step = np.clip(step, dmin, dmax)
+	dW[s==+1] = step[s==+1] * np.sign(dE[s==+1])
+	dW[s==0] = step[s==0] * np.sign(dE[s==0])
+	dE[s==-1] = 0.
+
+	W -= dW
+	prevdE = dE
+	return step, dE, prevdE, dW, W
+
+classes =  [0,1] # [4,9]
 nClasses = len(classes)
-dataset = 'train' # 'train' #
+dataset = 'train'
 path = '../DPM/data-sets/MNIST'
 images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
 ##? Normalize each image to the sum of its pixel values (due to feedforward inhibition in model)
 # A=900
 # images = (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 images/=255. #normalize images to range [0,1]
-#even out label class distribution
-images, labels = evenLabels(images, labels)
+images, labels = evenLabels(images, labels) #even out label class distribution
+
+# n=400
+# images[n:2*n,:] = images[1000:1000+n,:]
+# images = images[:2*n]
+# labels[n:2*n] = labels[1000:1000+n]
+# labels = labels[:2*n]
 
 nImages = np.size(images,0)
-nDimActions, nDimStates = 0, np.size(images,1)
+nDimActions = 0 ##
+nDimStates = np.size(images,1)
 nInpNeurons = nDimStates + nDimActions + 1 # +1 for bias node
-nHidNeurons = 0
-nEpi = 20
-nImages = np.size(images,0)
+nHidNeurons = 20
+nEpi = 50
 npos, nneg = 1.2, 0.5
-dmin, dmax, dinit = 0.000001, 50.0, 0.1
-d = np.ones(nInpNeurons)*dinit
-dW = np.zeros(nInpNeurons)
-W = np.random.rand(1, nInpNeurons)-0.5 #weight matrix
+dmin, dmax, dinit = 0.000001, 1.0, 0.1
 Q = 0. #output neuron; Q-value
-E = np.zeros(nInpNeurons) #error gradient
-prevE = np.zeros(nInpNeurons) #gradient at previous step
+hidNeurons = np.zeros(nHidNeurons)[np.newaxis,:] #activation of hidden neurons
+#Output weights (hidden -> output)
+W_out = np.random.rand(nHidNeurons,1)-0.5 #weight matrix
+stepSize_out = np.ones(np.shape(W_out))*dinit
+dW_out = np.zeros(np.shape(W_out))
+dE_out = np.zeros(np.shape(W_out)) #error gradient
+prevdE_out = np.zeros(np.shape(W_out)) #gradient at previous step
+#Hidden weights (input -> hidden)
+W_in = np.random.rand(nInpNeurons, nHidNeurons)-0.5 #weight matrix
+stepSize_in = np.ones(np.shape(W_in))*dinit
+dW_in = np.zeros(np.shape(W_in))
+dE_in = np.zeros(np.shape(W_in)) #error gradient
+prevdE_in = np.zeros(np.shape(W_in)) #gradient at previous step
 
 allStates = np.ones((nImages, nDimStates+1)) #add 1 to input vector for bias node
-allStates[:,:-1] = images #np.random.randint(0 , 2, size=(nInput, nDimStates))
+allStates[:,:-1] = images
 concInput = np.zeros(nInpNeurons) #concatenated input vector with state and action input and bias node
-allActions = np.array([0, 1], dtype=int)
-allRewards = {'00':1, '01':0, '10':0, '11':1, '40':1, '41':0, '90':0, '91':1} #state+action
+# allActions = np.array([0, 1], dtype=int)
+# allRewards = {'00':1, '01':0, '10':0, '11':1, '40':1, '41':0, '90':0, '91':1} #state+action
 
 #training
 for e in range(nEpi):
 	batchErr = 0.
-	E = np.zeros(nInpNeurons)
-	dW = np.zeros(nInpNeurons)
+	dE_out = np.zeros(np.shape(W_out))
+	dW_out = np.zeros(np.shape(W_out))
+	dE_in = np.zeros(np.shape(W_in))
+	dW_in = np.zeros(np.shape(W_in))
 	for idxState in range(nImages):
 		cState = allStates[idxState, :]
 		# cAction = np.random.choice(allActions) #choose a random action
@@ -73,51 +102,50 @@ for e in range(nEpi):
 		##cReward = allRewards[str(labels[idxState])+str(cAction)] #get reward associated with state and action
 		cReward = labels[idxState] ##
 
-		# print 'labels : ' + str(cReward)
-		Q = sigmoid(np.dot(W,concInput[:,np.newaxis])) #compute Q-value/neuron activation
-		# print 'Q : ' + str(np.round(Q,3))
-
+		hidNeurons = sigmoid(np.dot(concInput, W_in))[np.newaxis,:]
+		Q = sigmoid(np.dot(hidNeurons, W_out)) #compute Q-value/neuron activation
+		# print cReward, np.round(Q[0][0],1)
 		batchErr += np.abs(Q-cReward)
-		E += (Q-cReward)*Q*(1-Q)*concInput #partial derivatives of the error with respect to the input weights
+		dE_out += np.dot(hidNeurons.T, (Q-cReward)*Q*(1-Q)) #partial derivatives of the error with respect to the output weights
+		dE_in += np.dot((concInput*(1-concInput))[:,np.newaxis], hidNeurons)*(dE_out*W_out).T/hidNeurons
 
-	print 'batch err : ' + str(np.round(batchErr/nImages,5))
-	s = np.sign(prevE * E)
+	print 'epi ' + str(e+1) + ' train err : ' + str(np.round(batchErr[0][0]/nImages,5))
+	# print np.sum(stepSize_in), np.sum(stepSize_out)
 
-	#compute weight update and adaptation
-	d[s==+1] *= npos
-	d[s==-1] *= nneg
-	np.clip(d, dmin, dmax)
-	dW[s==+1] = d[s==+1] * np.sign(E[s==+1])
-	# dW[s==-1] = -d[s==-1] ##? back-tracking, to include or not?
-	dW[s==0] = d[s==0] * np.sign(E[s==0])
-	E[s==-1] = 0.
-
-	W -= dW
-	prevE = E
-	print
+	stepSize_in, dE_in, prevdE_in, dW_in, W_in, = update(stepSize_in, dE_in, prevdE_in, dW_in, W_in,)
+	stepSize_out, dE_out, prevdE_out, dW_out, W_out = update(stepSize_out, dE_out, prevdE_out, dW_out, W_out)
 
 
 #testing
-# print 'testing...'
-# dataset = 'test'
-# images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
-# images/=255.
-# images, labels = evenLabels(images, labels)
-# nImages = np.size(images,0)
+if True:
+	print 'testing...'
+	dataset = 'test'
+	images_t, labels_t = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
+	images_t/=255.
+	images_t, labels_t = evenLabels(images_t, labels_t)
+	nImages_t = np.size(images_t,0)
 
-# allStates = np.ones((nImages, nDimStates+1)) #add 1 to input vector for bias node
-# allStates[:,:-1] = images
+	allStates = np.ones((nImages_t, nDimStates+1)) #add 1 to input vector for bias node
+	allStates[:,:-1] = images_t
 
-# totErr = 0.
-# countErr = 0.
-# for i in range(nImages):
-# 	Q = sigmoid(np.dot(W,allStates[i,:][:,np.newaxis]))
-# 	err = np.abs(Q-labels[i])
-# 	totErr += err
-# 	if err >= 0.1: countErr += 1.
-# print 'test error: ' + str(np.round(totErr/nImages,3))
-# print countErr
-# print 'test error count: ' + str(np.round(countErr/nImages,3))
+	totErr = 0.
+	countErr = 0
+	for idxState in range(nImages_t):
+		cState = allStates[idxState, :]
+		# cAction = np.random.choice(allActions) #choose a random action
+		concInput[:nDimStates+1] = cState #concatenate current state and action to be fed to the network
+		##concInput[nDimStates+1:] = cAction
+		##cReward = allRewards[str(labels[idxState])+str(cAction)] #get reward associated with state and action
+		cReward = labels_t[idxState] ##
+
+		hidNeurons = sigmoid(np.dot(concInput, W_in))[np.newaxis,:]
+		Q = sigmoid(np.dot(hidNeurons, W_out))
+		# print cReward, np.round(Q[0][0],1)
+		err = np.abs(Q-cReward)
+		totErr += err
+		if err >= 0.1: countErr += 1
+	print '\ntest error: ' + str(np.round(totErr[0][0]/nImages_t,3))
+	print 'test error count: ' + str(countErr) + '/' + str(nImages_t) + ' : ' + str(np.round(float(countErr)/nImages_t,3))
 
 
 
