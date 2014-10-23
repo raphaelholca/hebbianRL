@@ -1,1 +1,0 @@
-""" evaluates the quality of a representation using an SVM """
