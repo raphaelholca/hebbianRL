@@ -1,138 +1,127 @@
+""" 
+This function trains a hebbian neural network to learn a representation from the MNIST dataset. It makes use of a reward/relevance signal that increases the learning rate when the network makes a correct state-action pair selection.
+
+Output is saved under RL/data/[runName]
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random as rdm
 import sys
 import h5py
+import pickle
 import pdb
 import os
-os.chdir('../DPM/')
-import classes.input.mnist as mnist
-from utils import accel
-os.chdir('../RL/')
+from support.external import *
+from support.plots import *
+from configobj import ConfigObj
+import support.mnist as mnist
 
-np.random.seed(10)
+""" 
+experimental variables
 
-def softmax(activ):
-	""" input should be (training examples x neurons) """
-	#vectorial
-	scale = np.clip(np.max(activ,1)-700, 0, np.inf)
-	tmpRND=np.random.rand(np.shape(activ)[0],np.shape(activ)[1])/100000
-	activ+=tmpRND #add a random offset to insure that there is only a single min
-	activ[activ==np.min(activ,1)[:,np.newaxis]] = np.clip(np.min(activ,1), -740+scale, np.inf)
-	activ-=tmpRND
-	return np.exp(activ-scale[:,np.newaxis]) / np.sum(np.exp(activ-scale[:,np.newaxis]), 1)[:,np.newaxis]
+classes (int) 	: class of the MNIST dataset to use to train the network
+rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the action that is rewarded.
+"""
+classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+rActions 	= np.array(['0','1','a','0','0','b','0','0','0','0'], dtype='|S1')
 
-	# iterative
-	# activ_SM = np.zeros_like(activ)
-	# for i in range(np.size(activ,0)):
-	# 	scale = 0
-	# 	I = np.copy(activ[i,:])
-	# 	if (I[np.argmax(I)] > 700):
-	# 	    scale  = I[np.argmax(I)] - 700
-	# 	if (I[np.argmin(I)] < -740 + scale):
-	# 	    I[np.argmin(I)] = -740 + scale
-	# 	activ_SM[i,:] = np.exp(I-scale) / np.sum(np.exp(I-scale))
-	# return activ_SM
 
-def evenLabels(images, labels, classes):
-	nDigits, bins = np.histogram(labels, bins=10, range=(0,9))
-	m = np.min(nDigits[nDigits!=0])
-	images_even = np.zeros((m*nClasses, np.size(images,1)))
-	labels_even = np.zeros(m*nClasses, dtype=int)
-	for i, c in enumerate(classes):
-		images_even[i*m:(i+1)*m,:] = images[labels==c,:][0:m,:]
-		labels_even[i*m:(i+1)*m] = labels[labels==c][0:m]
-	images, labels = np.copy(images_even), np.copy(labels_even)
-	return images, labels
+""" parameters """
+nRun 		= 1 				# number of runs
+nEpiCrit	= 3					# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+nEpiAdlt	= 3					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+seed 		= None 				# seed of the random number generator
+A 			= 900 				# image normalization constant
+runName 	= 'testrun'			# name of the folder where to save results
+dataset 	= 'test'			# MNIST dataset to use; legal values: 'test', 'train'
+singleActiv = 20. 				# activation value of the action neurons
+nHidNeurons = 20				# number of hidden neurons
+rCrit		= 1.2 				# learning rate multiplier during 'critica period'
+rHigh 		= 1.0				# learning rate multiplier with relevance signal (ACh) during critical period
+rLow 		= 0.0				# lr multiplier without relevant signal (no ACh), i.e., most of the time outside of critical period
+nBatch 		= 60 				# mini-batch size
+lr 			= 0.05 				# learning rate
+randActions = True 				# whether to take random actions (True) or to take best possible action
 
-def learningStep(bInput, W_in, bReward=np.ones(1)):
-	hidNeurons = np.dot(bInput, accel.log(W_in))
-	hidNeurons = softmax(hidNeurons)*bReward[:, np.newaxis]
-	dW_in = lr*(np.dot(bInput.T, hidNeurons) - np.sum(hidNeurons, 0)*W_in)
-	return W_in + dW_in, hidNeurons
-
-def plotRF(W, e=''):
-	v = int(np.sqrt(nHidNeurons))
-	h = int(np.ceil(float(nHidNeurons)/v))
-	plt.figure()
-	for i in range(np.size(W,1)):
-		plt.subplot(v,h,i+1)
-		plt.imshow(np.reshape(W[:nDimStates,i], (28,28)), interpolation='nearest')
-		plt.xticks([])
-		plt.yticks([])
-	plt.suptitle('episode ' + e)
-
-classes  = [4, 7, 9] # np.arange(10) #
-rActions = [0, 1, 2] #rewarded actions for each class
-nClasses = len(classes)
-dataset = 'test'
-path = '../DPM/data-sets/MNIST'
-images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
-
-#Normalize each image to the sum of its pixel value (feedforward inhibition)
-A=900
-images = (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
+""" load and pre-process images """
+checkdir(runName)
+print "importing data..."
+imPath = 'support/data-sets/MNIST'
+images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
+images = normalize(images, A)
 images, labels = evenLabels(images, labels, classes)
 
-nEpi = 20
-singleActiv = 20.
+""" variable initialization """
+W_save = {}
+nEpiTot = nEpiCrit + nEpiAdlt
+lActions = np.unique(rActions[np.logical_and(rActions!='0', rActions!='1')]) #legal actions
+np.random.seed(seed)
+nClasses = len(classes)
 nImages = np.size(images,0)
 nDimStates = np.size(images,1)
-nDimActions = 3 #nClasses
+nDimActions = len(lActions)
 nInpNeurons = nDimStates + nDimActions
-nHidNeurons = 3
-rHigh = 1.0
-rLow = 0.0
-lr = 0.5*(nHidNeurons/np.float(nImages)) #learning rate
-nBatch = 60 #mini-batch size
-hidNeurons = np.zeros(nHidNeurons)[np.newaxis,:]
-W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1. ##something more than this?
-concInput = np.zeros((nImages, nInpNeurons)) #concatenated input vector with state and action input and bias node
-randActions = True
+lr *= nHidNeurons/np.float(nBatch) #learning rate adjusted to the number of neurons and mini-batch size
+if not randActions: np.clip(int(nEpi/nClasses),2, np.inf) #decreases number of episodes if always best action is chosen
 
-for e in range(nEpi):
-	print e
-	cAction = np.ones((nImages, nDimActions))
-	cReward = np.ones(nImages)
+""" training of the network """
+for r in range(nRun):
+	print 'run: ' + str(r+1)
+	#initialize network variables
+	hidNeurons = np.zeros((nBatch, nHidNeurons))
+	W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.
+	concInput = np.zeros((nImages, nInpNeurons)) #concatenated input vector with state, action
 
-	#(randomly) pick actions and assign reward accordingly
-	if randActions:
-		cActionIdx = np.random.randint(0, nDimActions, size=nImages)
-	else:
-		cActionIdx = np.ones(nImages, dtype=int)
-		for i,c in enumerate(classes):
-			cActionIdx[labels==c] = rActions[i]
+	for e in range(nEpiTot):
+		#reset reward-action variables
+		cAction = np.ones((nImages, nDimActions))
+		cReward = np.ones(nImages)
 
-	cAction[np.arange(nImages),cActionIdx] = singleActiv
-	cReward = np.ones(nImages)*rLow
-	for i in range(nClasses):
-		cReward[np.logical_and(labels==classes[i], cActionIdx==rActions[i])] = rHigh
+		#(randomly) pick actions
+		if nDimActions != 0:
+			if randActions:
+				cActionVal = np.random.choice(lActions, size=nImages)
+				cActionIdx = val2idx(cActionVal, lActions)
+			else:
+				cActionVal = labels2actionVal(labels, classes, rActions)	
+				cActionIdx = val2idx(cActionVal, lActions)
+		else: cActionIdx, cActionVal = [], []
 
-	#concatenate state-action
-	concInput[:,0:nDimStates] = images #States
-	concInput[:,nDimStates:nDimStates+nDimActions] = cAction #Actions
+		#assign reward according to state-action pair
+		if nDimActions != 0: cAction[np.arange(nImages),cActionIdx] = singleActiv
+		if e >= nEpiCrit:
+			cReward = np.ones(nImages)*rLow
+			for i in range(nClasses):
+				cReward[np.logical_and(labels==classes[i], cActionVal==rActions[i])] = rHigh #reward correct state-action pairs
+				cReward[np.logical_and(labels==classes[i], '1'==rActions[i])] = rHigh #reward states that are always rewarded
+				cReward[np.logical_and(labels==classes[i], '0'==rActions[i])] = rLow #do not reward states that are never rewarded
+		else:
+			cReward = np.ones(nImages)*rCrit
 
-	#shuffle input
-	rndIdx = np.arange(nImages)
-	np.random.shuffle(rndIdx)
-	concInput = concInput[rndIdx,:]
-	rndLabel = np.copy(labels[rndIdx])
-	cReward = cReward[rndIdx]
+		#concatenate state-action
+		concInput[:,0:nDimStates] = images #States
+		concInput[:,nDimStates:nDimStates+nDimActions] = cAction #Actions
 
-	#train network
-	for b in range(int(nImages/nBatch)): #may leave a few training examples out
-		bInput = concInput[b*nBatch:(b+1)*nBatch,:]
-		bReward = cReward[b*nBatch:(b+1)*nBatch]
-		W_in, hidNeurons = learningStep(bInput, W_in, bReward)
+		#shuffle input
+		concInput, rndLabel, cReward, rndIdx = shuffle(concInput, labels, cReward)
 
-plotRF(np.copy(W_in), e=str(e))
+		#train network with mini-batches
+		for b in range(int(nImages/nBatch)): #may leave a few training examples out
+			bInput = concInput[b*nBatch:(b+1)*nBatch,:]
+			bReward = cReward[b*nBatch:(b+1)*nBatch]
+			hidNeurons = propL1(bInput, W_in, bReward)
+			W_in += learningStep(bInput, hidNeurons, W_in, lr)
+
+	fig = plotRF(np.copy(W_in), e=str(e))
+	plt.savefig('output/' + runName + '/RFs/RF_' + str(r).zfill(2))
+	# plt.close(fig)
+	plt.show(block=False)
+	W_save[str(r)] = np.copy(W_in)
 
 
-# h5file = h5py.File('data/W_untuned', 'w')
-# h5file['W_untuned'] = W_in
-# h5file.close()
+savedata(runName, W_save, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt, singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, np.round(lr, 5), nBatch, randActions)
 
-plt.show(block=False)
 
 
 
