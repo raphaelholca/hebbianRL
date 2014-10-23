@@ -34,7 +34,7 @@ W = pickle.load(pFile)
 pFile.close()
 
 """ load and pre-process images """
-imPath = 'support/data-sets/MNIST'
+imPath = '../data-sets/MNIST'
 images_train, labels_train = mnist.read_images_from_mnist(classes=classes, dataset=dataset_train, path=imPath)
 images_train = normalize(images_train, int(settings['A']))
 images_train, labels_train = evenLabels(images_train, labels_train, classes)

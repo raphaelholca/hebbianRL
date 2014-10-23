@@ -4,7 +4,7 @@ import struct
 from array import array
 
 def read_images_from_mnist(classes, dataset = "train",
-                           path = "./data-sets/MNIST"):
+                           path = '../data-sets/MNIST'):
     """
     Python function for importing the MNIST data set.
     """

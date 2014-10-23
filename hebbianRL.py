@@ -47,7 +47,7 @@ randActions = True 				# whether to take random actions (True) or to take best p
 """ load and pre-process images """
 checkdir(runName)
 print "importing data..."
-imPath = 'support/data-sets/MNIST'
+imPath = '../data-sets/MNIST'
 images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 images = normalize(images, A)
 images, labels = evenLabels(images, labels, classes)
