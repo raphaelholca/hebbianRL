@@ -9,10 +9,19 @@ import matplotlib.pyplot as pyplot
 import random as rdm
 import support.external as ex
 import support.plots as pl
-from configobj import ConfigObj
+import support.neuralClassifier as nc
+import support.assessRF as rf
 import support.mnist as mnist
-pl = reload(pl)
+import support.accel
+import os
+import sys
+import shutil
+import time
+from configobj import ConfigObj
 ex = reload(ex)
+pl = reload(pl)
+nc = reload(nc)
+rf = reload(rf)
 
 """ 
 experimental variables
@@ -21,7 +30,7 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['0','0','0','0','0','0','0','0','0','1'], dtype='|S1')
+rActions 	= np.array(['0','0','0','0','0','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','0','0','0','0','1'], dtype='|S1')
@@ -31,7 +40,7 @@ rActions 	= np.array(['0','0','0','0','0','0','0','0','0','1'], dtype='|S1')
 
 
 """ parameters """
-nRun 		= 2					# number of runs
+nRun 		= 5					# number of runs
 nEpiCrit	= 20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAdlt	= 5					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 seed 		= None 				# seed of the random number generator
@@ -49,7 +58,7 @@ randActions = False				# whether to take random actions (True) or to take best p
 
 """ load and pre-process images """
 ex.checkdir(runName)
-print "importing data..."
+print "training network..."
 imPath = '../data-sets/MNIST'
 images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 images = ex.normalize(images, A)
@@ -123,14 +132,23 @@ for r in range(nRun):
 			W_in += ex.learningStep(bInput, bHidNeurons, W_in, lr)
 			W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lr)
 
+	#create and save plots of the weights
 	fig = pl.plotRF(np.copy(W_in), e=str(e))
 	pyplot.savefig('output/' + runName + '/RFs/RF_' + str(r).zfill(3))
 	# pyplot.show(block=False)
 	pyplot.close(fig)
+	
+	#save weights
 	W_in_save[str(r).zfill(3)] = np.copy(W_in)
 	W_class_save[str(r).zfill(3)] = np.copy(W_class)
 
+#compute histogram of RF classes
+rf.hist(runName, W_in_save, classes,show=True)
 
+#assess classification performance with neural classifier
+nc.performance(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDimStates, A, show=True)
+
+#save data
 ex.savedata(runName, W_in_save, W_class_save, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt, singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, np.round(lr, 5), nBatch, randActions)
 
 

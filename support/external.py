@@ -1,21 +1,12 @@
 
 """ support functions for hebbian network and neural classifier """
 
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import sys
-import shutil
-import pickle
-import time
-from configobj import ConfigObj
-from support import accel
-
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
 
-	Args:
+	Args:sys
+
 		images (numpy array): image to normalize
 		A (int): normalization constant
 
