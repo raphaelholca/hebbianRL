@@ -21,7 +21,7 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['0','0','0','0','0','1','0','0','0','0'], dtype='|S1')
+rActions 	= np.array(['0','0','0','0','0','0','0','0','0','1'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','0','0','0','0','1'], dtype='|S1')
@@ -31,12 +31,12 @@ rActions 	= np.array(['0','0','0','0','0','1','0','0','0','0'], dtype='|S1')
 
 
 """ parameters """
-nRun 		= 10				# number of runs
-nEpiCrit	= 10#20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+nRun 		= 2					# number of runs
+nEpiCrit	= 20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAdlt	= 5					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 seed 		= None 				# seed of the random number generator
 A 			= 900 				# image normalization constant
-runName 	= 'all_reward_5_rLow1_3'		# name of the folder where to save results
+runName 	= 'test'			# name of the folder where to save results
 dataset 	= 'test'			# MNIST dataset to use; legal values: 'test', 'train'
 singleActiv = 20. 				# activation value of the action neurons
 nHidNeurons = 20				# number of hidden neurons
@@ -56,7 +56,8 @@ images = ex.normalize(images, A)
 images, labels = ex.evenLabels(images, labels, classes)
 
 """ variable initialization """
-W_save = {}
+W_in_save = {}
+W_class_save = {}
 nEpiTot = nEpiCrit + nEpiAdlt
 lActions = np.unique(rActions[np.logical_and(rActions!='0', rActions!='1')]) #legal actions
 np.random.seed(seed)
@@ -65,15 +66,15 @@ nImages = np.size(images,0)
 nDimStates = np.size(images,1)
 nDimActions = len(lActions)
 nInpNeurons = nDimStates + nDimActions
+concInput = np.zeros((nImages, nInpNeurons)) #concatenated input vector with state, action
 lr *= nHidNeurons/np.float(nBatch) #learning rate adjusted to the number of neurons and mini-batch size
 
 """ training of the network """
 for r in range(nRun):
 	print 'run: ' + str(r+1)
 	#initialize network variables
-	hidNeurons = np.zeros((nBatch, nHidNeurons))
 	W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.
-	concInput = np.zeros((nImages, nInpNeurons)) #concatenated input vector with state, action
+	W_class = np.random.random_sample(size=(nHidNeurons, nClasses)) + 1.
 
 	for e in range(nEpiTot):
 		#reset reward-action variables
@@ -106,23 +107,31 @@ for r in range(nRun):
 		concInput[:,nDimStates:nDimStates+nDimActions] = cAction #Actions
 
 		#shuffle input
-		concInput, rndLabel, cReward, rndIdx = ex.shuffle(concInput, labels, cReward)
+		rndInput, rndLabel, cReward, rndIdx = ex.shuffle(concInput, labels, cReward)
+
+		#compute activation of hid and class neurons
+		hidNeurons = ex.propL1(rndInput, W_in, cReward)
+		classNeurons = ex.propL2_learn(classes, rndLabel, cReward)
 
 		#train network with mini-batches
 		for b in range(int(nImages/nBatch)): #may leave a few training examples out
-			bInput = concInput[b*nBatch:(b+1)*nBatch,:]
-			bReward = cReward[b*nBatch:(b+1)*nBatch]
-			hidNeurons = ex.propL1(bInput, W_in, bReward)
-			W_in += ex.learningStep(bInput, hidNeurons, W_in, lr)
+			bInput = rndInput[b*nBatch:(b+1)*nBatch,:]
+			bHidNeurons = hidNeurons[b*nBatch:(b+1)*nBatch,:]
+			bClassNeurons = classNeurons[b*nBatch:(b+1)*nBatch,:]
+			
+			#update weights
+			W_in += ex.learningStep(bInput, bHidNeurons, W_in, lr)
+			W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lr)
 
 	fig = pl.plotRF(np.copy(W_in), e=str(e))
 	pyplot.savefig('output/' + runName + '/RFs/RF_' + str(r).zfill(3))
 	# pyplot.show(block=False)
 	pyplot.close(fig)
-	W_save[str(r).zfill(3)] = np.copy(W_in)
+	W_in_save[str(r).zfill(3)] = np.copy(W_in)
+	W_class_save[str(r).zfill(3)] = np.copy(W_class)
 
 
-ex.savedata(runName, W_save, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt, singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, np.round(lr, 5), nBatch, randActions)
+ex.savedata(runName, W_in_save, W_class_save, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt, singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, np.round(lr, 5), nBatch, randActions)
 
 
 

@@ -66,6 +66,7 @@ def evenLabels(images, labels, classes):
 	Args:
 		images (numpy array): images
 		labels (numpy array): labels constant
+		classes (numpy array): all classes of the MNIST dataset used in the current run
 
 	returns:
 		numpy array: evened-out images
@@ -83,26 +84,44 @@ def evenLabels(images, labels, classes):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-def propL1(bInput, W_in, bReward=np.ones(1)):
+def propL1(bInput, W_in, reward=np.ones(1)):
 	"""
 	One propagation step from input to hidden layer
 
 	Args:
 		bInput (numpy array): input vector to the neurons of layer 1
 		W_in (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
-		bReward (numpy array, optional): learning rate multiplier
+		reward (numpy array, optional): learning rate multiplier
 
 	returns:
 		numpy array: the activation of the hidden neurons
 	"""
 
 	hidNeurons = np.dot(bInput, accel.log(W_in))
-	hidNeurons = softmax(hidNeurons)*bReward[:, np.newaxis]
+	hidNeurons = softmax(hidNeurons)*reward[:, np.newaxis]
 	return hidNeurons
 
-def propL2(hidNeurons, W_class):
+def propL2_learn(classes, labels, reward=np.ones(1)):
 	"""
-	One propagation step from hidden to classification layer
+	One propagation step from hidden to classification layer, during learning (activation determined by the labels)
+
+	Args:
+		classes (numpy array): all classes of the MNIST dataset used in the current run
+		labels (numpy matrix): labels associated with the input
+		reward (numpy array, optional): learning rate multiplier
+
+	returns:
+		numpy array: the activation of the classification neurons
+	"""
+
+	classNeurons = np.zeros((len(labels), len(classes)))
+	labelsIdx = label2idx(classes, labels)
+	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0*reward
+	return classNeurons
+
+def propL2_class(hidNeurons, W_class):
+	"""
+	One propagation step from hidden to classification layer, during classification (activation determined by the feedforward input)
 
 	Args:
 		hidNeurons (numpy array): activation of the hidden neurons, i.e., the input to the classification layer
@@ -131,7 +150,7 @@ def learningStep(preNeurons, postNeurons, W, lr):
 	dW = lr*(np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
 	return dW
 
-def savedata(runName, W_save, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions):
+def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -142,7 +161,11 @@ def savedata(runName, W_save, seed, classes, rActions, dataset, A, nEpiCrit, nEp
 	"""
 
 	pFile = open('output/' + runName + '/W_in', 'w')
-	pickle.dump(W_save, pFile)
+	pickle.dump(W_in, pFile)
+	pFile.close()
+
+	pFile = open('output/' + runName + '/W_class', 'w')
+	pickle.dump(W_class, pFile)
 	pFile.close()
 
 	settingFile = ConfigObj()
