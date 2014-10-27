@@ -1,5 +1,14 @@
 """ Hebbian learning-based classifier used to assess the performance of the representation """
 
+import numpy as np
+import matplotlib.pyplot as pyplot
+import support.mnist as mnist
+import support.external as ex
+import support.plots as pl
+import pickle
+ex = reload(ex)
+pl = reload(pl)
+
 def performance(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDimStates, A, show=True):
 	"""
 	evaluates the quality of a representation using a neural classifier
@@ -64,7 +73,7 @@ def performance(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons
 	print str(np.round(100*avgPerf,1)) + ' +/- ' + str(np.round(100*stePerf,1)) + '%'
 
 	fig = pl.plotCM(avgCM, classes)
-	pyplot.savefig('./output/' + runName + '/avgCM.png')
+	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.png')
 	if show:
 		pyplot.show(block=False)
 	else:

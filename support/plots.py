@@ -1,5 +1,6 @@
 """ plottting functions for the hebbian network and neural classifier """
 
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 

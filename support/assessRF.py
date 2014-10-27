@@ -1,5 +1,11 @@
 """ routine to classify and build a histogram of the distribution of the classes of the weights (RFs) of the representation  """
 
+import numpy as np
+import support.plots as pl
+import matplotlib.pyplot as pyplot
+import pickle
+pl = reload(pl)
+
 def hist(runName, W, classes, show=True):
 	"""
 	computes the class of the weight of each neuron using a SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset)
@@ -41,7 +47,7 @@ def hist(runName, W, classes, show=True):
 	pfile.close()
 
 	fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste)
-	pyplot.savefig('./output/'+runName+'/RFhist.png')
+	pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
 	if show:
 		pyplot.show(block=False)
 	else:

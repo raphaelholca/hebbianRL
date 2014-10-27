@@ -6,18 +6,11 @@ Output is saved under RL/data/[runName]
 
 import numpy as np
 import matplotlib.pyplot as pyplot
-import random as rdm
 import support.external as ex
 import support.plots as pl
 import support.neuralClassifier as nc
 import support.assessRF as rf
 import support.mnist as mnist
-import support.accel
-import os
-import sys
-import shutil
-import time
-from configobj import ConfigObj
 ex = reload(ex)
 pl = reload(pl)
 nc = reload(nc)
@@ -29,11 +22,11 @@ experimental variables
 classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
-classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['0','0','0','0','0','0','0','0','0','0'], dtype='|S1')
+# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# rActions 	= np.array(['0','0','0','0','0','0','0','0','0','0'], dtype='|S1')
 
-# classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['0','0','0','0','0','1'], dtype='|S1')
+classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+rActions 	= np.array(['0','0','0','0','0','1'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','a','a'], dtype='|S1')
@@ -42,19 +35,19 @@ rActions 	= np.array(['0','0','0','0','0','0','0','0','0','0'], dtype='|S1')
 """ parameters """
 nRun 		= 5					# number of runs
 nEpiCrit	= 20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-nEpiAdlt	= 5					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiAdlt	= 8					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 seed 		= None 				# seed of the random number generator
 A 			= 900 				# image normalization constant
-runName 	= 'test'			# name of the folder where to save results
+runName 	= 'all_reward_9_2'			# name of the folder where to save results
 dataset 	= 'test'			# MNIST dataset to use; legal values: 'test', 'train'
 singleActiv = 20. 				# activation value of the action neurons
 nHidNeurons = 20				# number of hidden neurons
 rCrit		= 1.0 				# learning rate multiplier during 'critica period'
-rHigh 		= 3.0				# learning rate multiplier with relevance signal (ACh) during critical period
-rLow 		= 1.0				# lr multiplier without relevant signal (no ACh), i.e., most of the time outside of critical period
+rHigh 		= 1.0				# learning rate multiplier with relevance signal (ACh) during critical period
+rLow 		= 0.3				# lr multiplier without relevant signal (no ACh), i.e., most of the time outside of critical period
 nBatch 		= 60 				# mini-batch size
 lr 			= 0.05 				# learning rate
-randActions = False				# whether to take random actions (True) or to take best possible action
+randActions = True				# whether to take random actions (True) or to take best possible action
 
 """ load and pre-process images """
 ex.checkdir(runName)
@@ -134,7 +127,7 @@ for r in range(nRun):
 
 	#create and save plots of the weights
 	fig = pl.plotRF(np.copy(W_in), e=str(e))
-	pyplot.savefig('output/' + runName + '/RFs/RF_' + str(r).zfill(3))
+	pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 	# pyplot.show(block=False)
 	pyplot.close(fig)
 	
