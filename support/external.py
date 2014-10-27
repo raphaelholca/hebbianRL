@@ -175,7 +175,7 @@ def checkdir(runName):
 	"""
 
 	if os.path.exists('output/' + runName):
-		overwrite = raw_input('Folder already exists. Overwrite? (y/n) ')
+		overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n) ')
 		if overwrite not in ['y', 'yes']:
 			sys.exit('Folder exits - not overwritten')
 		else:
@@ -185,7 +185,7 @@ def checkdir(runName):
 			shutil.rmtree('output/' + runName)
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
-	print
+	print ''
 
 def shuffle(concInput, labels, cReward=None):
 	"""

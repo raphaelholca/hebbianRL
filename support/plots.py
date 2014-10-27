@@ -44,7 +44,9 @@ def plotCM(confusMatrix, classes):
 	np.fill_diagonal(colorMatrix, -1.0)
 
 	#plot the matrix and number values
-	fig, ax = plt.subplots(figsize=(4,4))
+	sH = 1.0+0.5*nClasses
+	sV = 0.9+0.5*nClasses
+	fig, ax = plt.subplots(figsize=(sV,sH))
 	ax.imshow(colorMatrix, interpolation='nearest', cmap='RdYlGn_r', vmin=-1.2, vmax=1.2)
 	ax.imshow(confusMatrix, interpolation='nearest', cmap=cmap_trans, vmin=-0.0, vmax=1)
 	for i in range(nClasses):
@@ -66,7 +68,27 @@ def plotCM(confusMatrix, classes):
 	ax.yaxis.set_ticks_position('none')
 	ax.set_xlabel('classification', fontsize=20)
 	ax.set_ylabel('label', fontsize=20)
-	fig.subplots_adjust(top=1.08, left=0.18, right=1)
+	plt.tight_layout()
+	# fig.subplots_adjust(top=1, right=1)
+
+	return fig
+
+def plotHist(h, bins, h_err=None):
+	fig, ax = plt.subplots(figsize=(4,4))
+	# ax.hist(h,bins)
+	ax.bar(bins, h, width=bins[1]-bins[0])
+
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.set_xticks(bins+(bins[1]-bins[0])/2.)
+	ax.set_xticklabels(bins)
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('digit class', fontsize=20)
+	ax.set_ylabel('neuron count', fontsize=20)
+	plt.tight_layout()
 
 	return fig
 
