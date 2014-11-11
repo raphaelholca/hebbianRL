@@ -6,7 +6,7 @@ import matplotlib.pyplot as pyplot
 import pickle
 pl = reload(pl)
 
-def hist(runName, W, classes, show=True):
+def hist(runName, W, classes, nDimStates, proba=False, show=True):
 	"""
 	computes the class of the weight of each neuron using a SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset)
 
@@ -14,6 +14,8 @@ def hist(runName, W, classes, show=True):
 		runName (str) : name of the folder where to save results
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
+		nDimStates (int) : number of dimensions of the states (size of images)
+		proba (bool, optional) : whether to compute RF class histogram as the sum of the class probability or as the sum of the argmax of the class (winner-take-all)
 		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
 	"""
 
@@ -34,13 +36,16 @@ def hist(runName, W, classes, show=True):
 	RFclass = np.zeros((nRun,nClasses))
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
-		RFproba.append(np.round(svm_mnist.predict_proba(W[r].T),2))
-		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=nClasses, range=(-0.5,9.5))
+		RFproba.append(np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2))
+		if proba:
+			RFclass[i,:] = np.sum(RFproba[i],0)
+		else:
+			RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=nClasses, range=(-0.5,9.5))
 
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-	pRFclass = {'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste}
+	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste}
 
 	pfile = open('output/'+runName+'/RFclass', 'w')
 	pickle.dump(pRFclass, pfile)
@@ -52,6 +57,8 @@ def hist(runName, W, classes, show=True):
 		pyplot.show(block=False)
 	else:
 		pyplot.close(fig)
+
+	return RFproba, RFclass
 
 def sharp():
 	#TODO

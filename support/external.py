@@ -84,7 +84,7 @@ def evenLabels(images, labels, classes):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-def propL1(bInput, W_in, reward=np.ones(1)):
+def propL1(bInput, W_in, reward=np.ones(1), SM=True):
 	"""
 	One propagation step from input to hidden layer
 
@@ -92,23 +92,23 @@ def propL1(bInput, W_in, reward=np.ones(1)):
 		bInput (numpy array): input vector to the neurons of layer 1
 		W_in (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
 		reward (numpy array, optional): learning rate multiplier
+		SM (bool, optional): whether to pass the activation throught the Softmax function
 
 	returns:
 		numpy array: the activation of the hidden neurons
 	"""
 
 	hidNeurons = np.dot(bInput, accel.log(W_in))
-	hidNeurons = softmax(hidNeurons)*reward[:, np.newaxis]
+	if SM: hidNeurons = softmax(hidNeurons)*reward[:, np.newaxis]
 	return hidNeurons
 
-def propL2_learn(classes, labels, reward=np.ones(1)):
+def propL2_learn(classes, labels):
 	"""
 	One propagation step from hidden to classification layer, during learning (activation determined by the labels)
 
 	Args:
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		labels (numpy matrix): labels associated with the input
-		reward (numpy array, optional): learning rate multiplier
 
 	returns:
 		numpy array: the activation of the classification neurons
@@ -116,7 +116,7 @@ def propL2_learn(classes, labels, reward=np.ones(1)):
 
 	classNeurons = np.zeros((len(labels), len(classes)))
 	labelsIdx = label2idx(classes, labels)
-	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0*reward
+	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0
 	return classNeurons
 
 def propL2_class(hidNeurons, W_class):
@@ -133,7 +133,7 @@ def propL2_class(hidNeurons, W_class):
 
 	return	np.dot(hidNeurons, W_class)
 
-def learningStep(preNeurons, postNeurons, W, lr):
+def learningStep(preNeurons, postNeurons, W, lr, reward=np.ones(1)):
 	"""
 	One learning step for the hebbian network
 
@@ -147,10 +147,11 @@ def learningStep(preNeurons, postNeurons, W, lr):
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
 
+	postNeurons *= reward[:,np.newaxis]
 	dW = lr*(np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
 	return dW
 
-def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions):
+def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -187,6 +188,7 @@ def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCr
 	settingFile['lr'] 			= lr
 	settingFile['nBatch'] 		= nBatch
 	settingFile['randActions'] 	= randActions
+	settingFile['classifier'] 	= classifier
 	settingFile.write()
 
 def checkdir(runName):
@@ -198,42 +200,59 @@ def checkdir(runName):
 	"""
 
 	if os.path.exists('output/' + runName):
-		overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n) ')
-		if overwrite not in ['y', 'yes']:
+		overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n/<new name>) ')
+		if overwrite in ['n', 'no', 'not', ' ', '']:
 			sys.exit('Folder exits - not overwritten')
-		else:
+		elif overwrite in ['y', 'yes']:
 			if os.path.exists('output/' + runName + '/RFs'):
 				shutil.rmtree('output/' + runName + '/RFs')
-				time.sleep(0.5)
 			shutil.rmtree('output/' + runName)
+		else:
+			runName = overwrite
+			checkdir(runName)
+			return runName
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
-	print ''
+	print runName + '\n'
+	return runName
 
-def shuffle(concInput, labels, cReward=None):
+def checkClassifier(classifier):
+	"""
+	Checks if classifier has correct value. If not, raise an error.
+
+	Args:
+		classifier (str): name of the classifier
+	"""
+
+	if classifier not in ['neural', 'svm', 'neuronClass']:
+		raise ValueError('classifier not a legal value. Legal values are: neural, svm, neuronClass. given was: ' + classifier)
+
+
+def shuffle(images, labels, cReward=None):
 	"""
 	Shuffles the passed vectors according to the same random order
 
 	Args:
-		concInput (numpy array): array to shuffle
-		labels (numpy array): array to shuffle
-		cReward (numpy array, optional): array to shuffle
+		images (numpy array): images array to shuffle
+		labels (numpy array): labels array to shuffle
+		cReward (numpy array, optional): reward array to shuffle
 
 	returns:
-		numpy array: shuffled array
-		numpy array: shuffled array
-		numpy array: shuffled array
+		numpy array: shuffled images array
+		numpy array: shuffled labels array
+		numpy array, opitional: shuffled reward array
+		numpy array: indices of the random shuffling
 	"""
 
 	rndIdx = np.arange(len(labels))
 	np.random.shuffle(rndIdx)
-	concInput = concInput[rndIdx,:]
+	images = images[rndIdx,:]
 	rndLabel = np.copy(labels[rndIdx])
 	if cReward != None: 
 		cReward = cReward[rndIdx]
-		return concInput, rndLabel, cReward, rndIdx
+		return images, rndLabel, cReward, rndIdx
 	else:
-		return concInput, rndLabel, rndIdx
+		return images, rndLabel, rndIdx
 
 def val2idx(actionVal, lActions):
 	"""
