@@ -51,7 +51,7 @@ def hist(runName, W, classes, nDimStates, proba=False, show=True):
 	pickle.dump(pRFclass, pfile)
 	pfile.close()
 
-	fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste)
+	fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste[classes])
 	pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
 	if show:
 		pyplot.show(block=False)
@@ -59,6 +59,19 @@ def hist(runName, W, classes, nDimStates, proba=False, show=True):
 		pyplot.close(fig)
 
 	return RFproba, RFclass
+
+def plot(runName, W, RFproba, target=None):
+	print "ploting RFs..."
+	for i,r in enumerate(sorted(W.keys())):
+		print 'run: ' + str(i+1)
+		T=None
+		if target:
+			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target)
+			T = np.zeros((np.size(W[r],0),1,1))
+			T[T_idx,:,:]=1.0
+		fig = pl.plotRF(W[r], target=T)
+		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
+		pyplot.close(fig)
 
 def sharp():
 	#TODO

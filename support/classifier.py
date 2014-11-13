@@ -57,7 +57,7 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
 
-def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, show=True, SM=False):
+def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=False):
 	"""
 	evaluates the quality of a representation using an SVM
 
@@ -69,14 +69,17 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
-		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
+		train_dataset (str): name of the dataset used for learning the weights ('train' or 'test')
+		show (bool, optional): whether to display the confusion matrix (True) or not (False)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
 
 	""" load and pre-process images """
 	print 'assessing performance with SVM...'
 	imPath = '../data-sets/MNIST'
-	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset='test', path=imPath)
+	if  train_dataset=='train': test_dataset='test'
+	else: test_dataset='train'
+	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
 	images_test = ex.normalize(images_test, A)
 	images_test, labels_test = ex.evenLabels(images_test, labels_test, classes)
 	images_train, labels_train, shuffleIdx = ex.shuffle(images_train, labels_train)

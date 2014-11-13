@@ -46,7 +46,7 @@ def softmax(activ, vectorial=True):
 		activ-=tmpRND
 		return np.exp(activ-scale[:,np.newaxis]) / np.sum(np.exp(activ-scale[:,np.newaxis]), 1)[:,np.newaxis]
 
-	# iterative
+	#iterative
 	else:
 		activ_SM = np.zeros_like(activ)
 		for i in range(np.size(activ,0)):
@@ -133,7 +133,7 @@ def propL2_class(hidNeurons, W_class):
 
 	return	np.dot(hidNeurons, W_class)
 
-def learningStep(preNeurons, postNeurons, W, lr, reward=np.ones(1)):
+def learningStep(preNeurons, postNeurons, W, lr, ach=np.zeros(1), dopa=np.zeros(1)):
 	"""
 	One learning step for the hebbian network
 
@@ -142,14 +142,15 @@ def learningStep(preNeurons, postNeurons, W, lr, reward=np.ones(1)):
 		postNeurons (numpy array): activation of the post-synaptic neurons
 		W (numpy array): weight matrix
 		lr (float): learning rate
+		ach(numpy array, optional): learning rate increase for the effect of acetylcholine
+		dopa(numpy array, optional): learning rate increase for the effect of dopamine
 
 	returns:
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
 
-	postNeurons *= reward[:,np.newaxis]
-	dW = lr*(np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
-	return dW
+	postNeurons *= (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine increase  
+	return (np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
 
 def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier):
 	"""
@@ -224,8 +225,8 @@ def checkClassifier(classifier):
 		classifier (str): name of the classifier
 	"""
 
-	if classifier not in ['neural', 'svm', 'neuronClass']:
-		raise ValueError('classifier not a legal value. Legal values are: neural, svm, neuronClass. given was: ' + classifier)
+	if classifier not in ['neural', 'SVM', 'neuronClass']:
+		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neural\', \'SVM\', \'neuronClass\'.')
 
 
 def shuffle(images, labels, cReward=None):
