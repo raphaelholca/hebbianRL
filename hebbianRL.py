@@ -36,15 +36,15 @@ classes 	= np.array([ 4 , 9 ], dtype=int)
 rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
-nRun 		= 20 				# number of runs
+nRun 		= 1 				# number of runs
 nEpiCrit	= 20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAdlt	= 20				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 seed 		= None 				# seed of the random number generator
 A 			= 900 				# image normalization constant
-runName 	= 't-2'				# name of the folder where to save results
+runName 	= 't-1'				# name of the folder where to save results
 dataset 	= 'test'			# MNIST dataset to use; legal values: 'test', 'train'
-singleActiv = 50.	 			# activation value of the action neurons
-nHidNeurons = 4					# number of hidden neurons
+singleActiv = 5.	 			# activation value of the action neurons
+nHidNeurons = 20				# number of hidden neurons
 lrCrit		= 0.01 				# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.0 				# learning rate after the end of the 'critica period' (adult/training, nEpiADlt)
 aHigh 		= 0.01#0.0005			# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -52,14 +52,12 @@ aLow		= 0 				# learning rate increase without relevant signal (no ACh)
 dHigh 		= 0.01				# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0				# learning rate increase for correct reward prediction (neutral dopamine)
 dLow 		= -0.001			# learning rate increase for incorrect reward prediction (low dopamine)
-nBatch 		= 60 				# mini-batch size
+nBatch 		= 100 				# mini-batch size
 randActions = False				# whether to take random actions (True) or to take best possible action
 classifier	= 'neural'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
 showPlots	= False				# whether to display plots
 target		= None 				# target digit (to be used to color plots). Use 'None' if not desired
 balReward	= False				# whether to insure that reward sums to the same value for stimuli that are always rewarded and those that are rewarded for specific actions
-
-print randActions
 
 """ load and pre-process images """
 ex.checkClassifier(classifier)
@@ -128,16 +126,15 @@ for r in range(nRun):
 		#shuffle input
 		rndInput, rndLabels, rndReward, rndIdx = ex.shuffle(concInput, labels, cReward)
 
-		#compute activation of hid and class neurons
-		hidNeurons = ex.propL1(rndInput, W_in)
-		if trainNeuro: classNeurons = ex.propL2_learn(classes, rndLabels)
-
 		#train network with mini-batches
 		for b in range(int(nImages/nBatch)): #may leave a few training examples out
 			bInput = rndInput[b*nBatch:(b+1)*nBatch,:]
 			bReward = rndReward[b*nBatch:(b+1)*nBatch]
-			bHidNeurons = hidNeurons[b*nBatch:(b+1)*nBatch,:]
-			if trainNeuro: bClassNeurons = classNeurons[b*nBatch:(b+1)*nBatch,:]
+			bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
+			
+			#compute activation of hid and class neurons
+			bHidNeurons = ex.propL1(bInput, W_in, t=1.)
+			if trainNeuro: bClassNeurons = ex.propL2_learn(classes, bLabels)
 			
 			#update weights
 			W_in += ex.learningStep(bInput, bHidNeurons, W_in, lr, ach=bReward)

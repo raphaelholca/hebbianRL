@@ -25,13 +25,14 @@ def normalize(images, A):
 
 	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 
-def softmax(activ, vectorial=True):
+def softmax(activ, vectorial=True, t=1.):
 	"""
 	Softmax function (equivalent to lateral inhibition, or winner-take-all)
 
 	Args:
 		activ (numpy array): activation of neurons to be fed to the function; should be (training examples x neurons)
 		vectorial (bool, optional): whether to use vectorial of iterative method
+		t (float): temperature parameter; determines the sharpness of the softmax, or the strength of the competition
 
 	returns:
 		numpy array: the activation fed through the softmax function
@@ -44,7 +45,7 @@ def softmax(activ, vectorial=True):
 		activ+=tmpRND #add a random offset to insure that there is only a single min
 		activ[activ==np.min(activ,1)[:,np.newaxis]] = np.clip(np.min(activ,1), -740+scale, np.inf)
 		activ-=tmpRND
-		return np.exp(activ-scale[:,np.newaxis]) / np.sum(np.exp(activ-scale[:,np.newaxis]), 1)[:,np.newaxis]
+		return np.exp((activ-scale[:,np.newaxis])/t) / np.sum(np.exp((activ-scale[:,np.newaxis])/t), 1)[:,np.newaxis]
 
 	#iterative
 	else:
@@ -56,7 +57,7 @@ def softmax(activ, vectorial=True):
 			    scale  = I[np.argmax(I)] - 700
 			if (I[np.argmin(I)] < -740 + scale):
 			    I[np.argmin(I)] = -740 + scale
-			activ_SM[i,:] = np.exp(I-scale) / np.sum(np.exp(I-scale))
+			activ_SM[i,:] = np.exp((I-scale)/t) / np.sum(np.exp((I-scale)/t))
 		return activ_SM
 
 def evenLabels(images, labels, classes):
@@ -84,7 +85,7 @@ def evenLabels(images, labels, classes):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-def propL1(bInput, W_in, reward=np.ones(1), SM=True):
+def propL1(bInput, W_in, reward=np.ones(1), SM=True, t=1.):
 	"""
 	One propagation step from input to hidden layer
 
@@ -93,13 +94,14 @@ def propL1(bInput, W_in, reward=np.ones(1), SM=True):
 		W_in (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
 		reward (numpy array, optional): learning rate multiplier
 		SM (bool, optional): whether to pass the activation throught the Softmax function
+		t (float): temperature parameter for the softmax function (only passed to the function, not used here)
 
 	returns:
 		numpy array: the activation of the hidden neurons
 	"""
 
 	hidNeurons = np.dot(bInput, accel.log(W_in))
-	if SM: hidNeurons = softmax(hidNeurons)*reward[:, np.newaxis]
+	if SM: hidNeurons = softmax(hidNeurons, t)*reward[:, np.newaxis]
 	return hidNeurons
 
 def propL2_learn(classes, labels):
