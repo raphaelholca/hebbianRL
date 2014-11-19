@@ -154,7 +154,7 @@ def learningStep(preNeurons, postNeurons, W, lr, ach=np.zeros(1), dopa=np.zeros(
 	postNeurons *= (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine increase  
 	return (np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
 
-def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier):
+def savedata(runName, W_in, W_class, seed, classes, rActions, lActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -177,6 +177,7 @@ def savedata(runName, W_in, W_class, seed, classes, rActions, dataset, A, nEpiCr
 	settingFile['seed'] 		= seed
 	settingFile['classes'] 		= list(classes)
 	settingFile['rActions'] 	= list(rActions) 
+	settingFile['lActions'] 	= list(lActions) 
 	settingFile['dataset'] 		= dataset
 	settingFile['A'] 			= A
 	settingFile['nEpiCrit']		= nEpiCrit
@@ -231,31 +232,25 @@ def checkClassifier(classifier):
 		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neural\', \'SVM\', \'neuronClass\'.')
 
 
-def shuffle(images, labels, cReward=None):
+def shuffle(arrays):
 	"""
 	Shuffles the passed vectors according to the same random order
 
 	Args:
-		images (numpy array): images array to shuffle
-		labels (numpy array): labels array to shuffle
-		cReward (numpy array, optional): reward array to shuffle
+		arrays (list): list of arrays to shuffle
 
 	returns:
-		numpy array: shuffled images array
-		numpy array: shuffled labels array
-		numpy array, opitional: shuffled reward array
+		list: list of shuffled arrays
 		numpy array: indices of the random shuffling
 	"""
 
-	rndIdx = np.arange(len(labels))
+	rndIdx = np.arange(len(arrays[0]))
 	np.random.shuffle(rndIdx)
-	images = images[rndIdx,:]
-	rndLabel = np.copy(labels[rndIdx])
-	if cReward != None: 
-		cReward = cReward[rndIdx]
-		return images, rndLabel, cReward, rndIdx
-	else:
-		return images, rndLabel, rndIdx
+	shuffled_arrays = []
+	for a in arrays:
+		shuffled_arrays.append(a[rndIdx,:])
+
+	return shuffled_arrays#, rndIdx
 
 def val2idx(actionVal, lActions):
 	"""
@@ -284,12 +279,13 @@ def labels2actionVal(labels, classes, rActions):
 		rActions (numpy array of str): reward actions associated with each of the classes of MNIST
 
 	returns:
-		numpy array str: rewarded action value for each images
+		numpy array str: rewarded action value for each images. Returns empty space ' ' if provided label is not part of the considered classes
 	"""
 
 	actionVal = np.empty(len(labels), dtype='|S1')
 	for i in range(len(classes)):
 		actionVal[labels==classes[i]] = rActions[i]
+	actionVal[actionVal=='']=' '
 	return actionVal
 
 def label2idx(classes, labels):

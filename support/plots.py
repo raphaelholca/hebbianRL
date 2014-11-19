@@ -64,7 +64,7 @@ def plotCM(confusMatrix, classes):
 	ax.imshow(confusMatrix, interpolation='nearest', cmap=cmap_trans, vmin=-0.0, vmax=1)
 	for i in range(nClasses):
 		for j in range(nClasses):
-			perc = int(confusMatrix[i,j]*100)
+			perc = int(np.round(confusMatrix[i,j],2)*100)
 			ax.annotate(perc, xy=(0, 0),  xycoords='data', xytext=(j, i), textcoords='data', size=15, ha='center', va='center')
 
 	#plot parameters
@@ -89,6 +89,7 @@ def plotCM(confusMatrix, classes):
 def plotHist(h, bins, h_err=None):
 	fig, ax = plt.subplots(figsize=(1+0.5*len(h),3))
 	Xs = np.arange(len(h))
+	y_max = np.ceil(np.sum(h))
 	ax.bar(Xs, h, yerr=h_err, color=my_blues[6], ecolor=my_blues[7])
 
 	fig.patch.set_facecolor('white')
@@ -96,8 +97,8 @@ def plotHist(h, bins, h_err=None):
 	ax.spines['top'].set_visible(False)
 	ax.set_xticks(Xs+0.5)
 	ax.set_xticklabels(bins)
-	s = np.where(np.max(h)>4, 2,1)
-	ax.set_yticks(np.arange(np.max(h)+1, step=s))
+	s = np.where(y_max>4, 2,1)
+	ax.set_yticks(np.arange(y_max+1, step=s))
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')

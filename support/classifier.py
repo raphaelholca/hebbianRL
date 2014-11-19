@@ -10,7 +10,7 @@ from sklearn.svm import SVC
 ex = reload(ex)
 pl = reload(pl)
 
-def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDimStates, A, show=True):
+def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDimStates, A, train_dataset, show=True):
 	"""
 	evaluates the quality of a representation using a neural classifier
 
@@ -30,7 +30,9 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	""" load and pre-process images """
 	print "assessing performance with neural classifier..."
 	imPath = '../data-sets/MNIST'
-	images, labels = mnist.read_images_from_mnist(classes=classes, dataset='test', path=imPath)
+	if  train_dataset=='train': test_dataset='test'
+	else: test_dataset='test'  #'train' ##
+	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
 	images = ex.normalize(images, A)
 	images, labels = ex.evenLabels(images, labels, classes)
 
@@ -38,7 +40,6 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	allCMs = []
 	allPerf = []
 
-	""" training of the neural classifier """
 	for iw in sorted(W_in_save.keys()):
 		print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
@@ -82,7 +83,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
 	images_test = ex.normalize(images_test, A)
 	images_test, labels_test = ex.evenLabels(images_test, labels_test, classes)
-	images_train, labels_train, shuffleIdx = ex.shuffle(images_train, labels_train)
+	images_train, labels_train = ex.shuffle([images_train, labels_train])
 
 	""" variable initialization """
 	allCMs = []
