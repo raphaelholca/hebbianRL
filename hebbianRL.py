@@ -36,10 +36,10 @@ rActions 	= np.array(['a','b','c'], dtype='|S1')
 # rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
-nRun 		= 10 				# number of runs
+nRun 		= 1 				# number of runs
 nEpiCrit	= 20				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAdlt	= 20					# number of 'adult' episodes in each run (episodes when reward is not required for learning)
-seed 		= None 				# seed of the random number generator
+seed 		= 1 				# seed of the random number generator
 A 			= 900 				# image normalization constant
 runName 	= 'dopa'			# name of the folder where to save results
 dataset 	= 'test'			# MNIST dataset to use; legal values: 'test', 'train'
@@ -51,8 +51,8 @@ lrAdlt		= 0.0 				# learning rate after the end of the 'critica period' (adult/t
 aHigh 		= 0.01#0.0005		# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 0 				# learning rate increase without relevant signal (no ACh)
 dHigh 		= 0.01				# learning rate increase for unexpected reward (high dopamine) outside of critical period
-dNeut 		= 0.0				# learning rate increase for correct reward prediction (neutral dopamine)
-dLow 		= -0.01/3			# learning rate increase for incorrect reward prediction (low dopamine)
+dNeut 		= 0.01				# learning rate increase for correct reward prediction (neutral dopamine)
+dLow 		= 0.#-0.01/3			# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 60 				# mini-batch size
 randActions = True				# whether to take random actions (True) or to take best possible action
 classifier	= 'neural'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
@@ -123,7 +123,7 @@ for r in range(nRun):
 
 		#concatenate state-action
 		concInput[:,0:nDimStates] = images #States
-		concInput[:,nDimStates:nDimStates+nDimActions] = cAction #Actions ## temp
+		concInput[:,nDimStates:nDimStates+nDimActions] = cAction #Actions
 
 		#shuffle input
 		rndInput, rndLabels, rndReward, rndActionVal = ex.shuffle([concInput, labels, cReward, cActionVal])
@@ -138,7 +138,8 @@ for r in range(nRun):
 			#compute activation of hid and class neurons
 			bHidNeurons = ex.propL1(bInput, W_in, t=t)
 			bHidNeurons_noClass = ex.propL1(bInput[:,0:nDimStates], W_in[0:nDimStates,:], t=t)
-			bPredict = classes[np.argmax(ex.propL2_class(bHidNeurons_noClass, W_class),1)] ##now excludes class neurons for prediction
+			# bPredict = classes[np.argmax(ex.propL2_class(bHidNeurons_noClass, W_class),1)] ##now excludes class neurons for prediction
+			bPredict = classes[np.argmax(ex.propL2_class(bHidNeurons, W_class),1)]
 			bClassNeurons = ex.propL2_learn(classes, bLabels)
 
 			ach = np.zeros(nBatch)
@@ -152,18 +153,19 @@ for r in range(nRun):
 			
 				#determine dopamine signal strength based on reward
 				bPredictActions = ex.labels2actionVal(bPredict, classes, rActions)
-				dopa[np.logical_and(bPredictActions==bActionsVal, bReward==1)] 	= dHigh#dNeut		#correct reward prediction
-				dopa[np.logical_and(bPredictActions!=bActionsVal, bReward==0)] 	= dHigh#dNeut		#correct no reward prediction
+				dopa[np.logical_and(bPredictActions==bActionsVal, bReward==1)] 	= dHigh		#correct reward prediction
 				dopa[np.logical_and(bPredictActions==bActionsVal, bReward==0)] 	= dLow		#incorrect reward prediction
-				dopa[np.logical_and(bPredictActions!=bActionsVal, bReward==1)] 	= dLow#dHigh		#incorrect no reward prediction
+				dopa[np.logical_and(bPredictActions!=bActionsVal, bReward==0)] 	= dLow		#correct no reward prediction
+				dopa[np.logical_and(bPredictActions!=bActionsVal, bReward==1)] 	= dLow		#incorrect no reward prediction
 				dopa[bReward==-1]												= dNeut		#never rewarded
 				dopa[bReward== 2]												= dNeut		#always rewarded
 
 			#update weights
 			W_in += ex.learningStep(bInput, bHidNeurons, W_in, lr, dopa=dopa)
 			W_in = np.clip(W_in,1.0,np.inf) #necessary if using negative lr
-			W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit) ##may cause some differences between randActions True and False; the learning rate should be set to 0 when incorrect actions are taken (maybe).
+			W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit) ##may cause some differences between randActions True and False; the learning rate should be set to 0 when incorrect actions are taken (maybe, not sure...).
 
+		print np.round(W_in[784:,:].T,1)
 	#save weights
 	W_in_save[str(r).zfill(3)] = np.copy(W_in)
 	if trainNeuro: W_class_save[str(r).zfill(3)] = np.copy(W_class)
