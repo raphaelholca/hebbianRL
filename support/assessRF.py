@@ -60,16 +60,19 @@ def hist(runName, W, classes, nDimStates, proba=False, show=True):
 
 	return RFproba, RFclass
 
-def plot(runName, W, RFproba, target=None):
+def plot(runName, W, RFproba, target=None, W_act=None):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
-		T=None
+		target_pass=None
 		if target:
 			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target)
-			T = np.zeros((np.size(W[r],0),1,1))
-			T[T_idx,:,:]=1.0
-		fig = pl.plotRF(W[r], target=T)
+			target_pass = np.zeros((np.size(W[r],0),1,1))
+			target_pass[T_idx,:,:]=1.0
+		W_act_pass=None
+		if W_act:
+			W_act_pass = W_act[r]
+		fig = pl.plotRF(W[r], target=target_pass, W_act=W_act_pass)
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
 

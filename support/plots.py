@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 NUM_COLORS = 9
 my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 
-def plotRF(W, target=None):
+def plotRF(W, target=None, W_act=None):
 	""" plot weights """
 	#plot parameters
 	nHidNeurons = np.size(W,1)
@@ -17,19 +17,21 @@ def plotRF(W, target=None):
 	h = int(np.ceil(float(nHidNeurons)/v))
 
 	#create a transparent colormap
-	cmap_trans = plt.get_cmap('binary')#mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['w','k'],256) 
+	cmap_trans = plt.get_cmap('binary') 
 	cmap_trans._init()
-	if type(target)!=type(None):
-		alphas = np.linspace(0., 1., cmap_trans.N+3)
-		cmap_trans._lut[:,-1] = alphas
+	alphas = np.linspace(0., 1., cmap_trans.N+3)
+	cmap_trans._lut[:,-1] = alphas
 
 	#plot figure
 	fig, ax = plt.subplots(figsize=(h,v))
 	for i in range(np.size(W,1)):
 		plt.subplot(v,h,i+1)
 		if type(target)!=type(None):
-			plt.imshow(target[i], cmap='Blues', vmin=0., vmax=3, extent=(0,nDimStates,nDimStates,0))
-		plt.imshow(np.reshape(W[:nDimStates,i], (28,28)), interpolation='nearest', cmap=cmap_trans)
+			plt.imshow(target[i], cmap='Blues', vmin=0., vmax=3, extent=(0,28,0,28))
+		plt.imshow(np.reshape(W[:nDimStates,i], (28,28)), interpolation='nearest', cmap=cmap_trans, extent=(0,28,0,28))
+		if type(W_act)!=type(None):
+			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(28,30,0,28))
+			plt.imshow([[0.]], interpolation='nearest', cmap='binary', alpha=0, extent=(0,30,0,28))
 		plt.xticks([])
 		plt.yticks([])
 

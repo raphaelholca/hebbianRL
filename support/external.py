@@ -85,14 +85,13 @@ def evenLabels(images, labels, classes):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-def propL1(bInput, W_in, reward=np.ones(1), SM=True, t=1.):
+def propL1(bInput, W_in, SM=True, t=1.):
 	"""
 	One propagation step from input to hidden layer
 
 	Args:
 		bInput (numpy array): input vector to the neurons of layer 1
 		W_in (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
-		reward (numpy array, optional): learning rate multiplier
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 		t (float): temperature parameter for the softmax function (only passed to the function, not used here)
 
@@ -101,7 +100,7 @@ def propL1(bInput, W_in, reward=np.ones(1), SM=True, t=1.):
 	"""
 
 	hidNeurons = np.dot(bInput, accel.log(W_in))
-	if SM: hidNeurons = softmax(hidNeurons, t)*reward[:, np.newaxis]
+	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 
 def propL2_learn(classes, labels):
@@ -151,10 +150,31 @@ def learningStep(preNeurons, postNeurons, W, lr, ach=np.zeros(1), dopa=np.zeros(
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
 
-	postNeurons *= (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine increase  
-	return (np.dot(preNeurons.T, postNeurons) - np.sum(postNeurons, 0)*W)
+	postNeurons_lr = postNeurons * (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine increase  
+	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
-def savedata(runName, W_in, W_class, seed, classes, rActions, lActions, dataset, A, nEpiCrit, nEpiAdlt,  singleActiv, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier):
+def compute_reward(labels, classes, actions, rActions):
+	"""
+	Computes the reward based on the action taken and the label of the current input
+
+	Args:
+		labels (numpy array): image labels
+		classes (numpy array): all classes of the MNIST dataset used in the current run
+		actions (numpy array): action taken
+		rActions (numpy array): rewarded action
+
+	returns:
+		numpy array: reward for the label and action pair
+	"""
+	reward = np.zeros(len(labels), dtype=int)
+	for i in range(len(classes)):
+		reward[np.logical_and(labels==classes[i], actions==rActions[i])] = 1 #reward correct state-action pairs
+		reward[np.logical_and(labels==classes[i], '1'==rActions[i])] = 2 #reward states that are always rewarded
+		reward[np.logical_and(labels==classes[i], '0'==rActions[i])] = -1 #do not reward states that are never rewarded
+
+	return reward
+
+def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, lActions, dataset, A, nEpiCrit, nEpiAdlt, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier, correct_W_act):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -168,34 +188,39 @@ def savedata(runName, W_in, W_class, seed, classes, rActions, lActions, dataset,
 	pickle.dump(W_in, pFile)
 	pFile.close()
 
-	pFile = open('output/' + runName + '/W_class', 'w')
-	pickle.dump(W_class, pFile)
+	pFile = open('output/' + runName + '/W_act', 'w')
+	pickle.dump(W_act, pFile)
 	pFile.close()
 
+	if W_class:
+		pFile = open('output/' + runName + '/W_class', 'w')
+		pickle.dump(W_class, pFile)
+		pFile.close()
+
 	settingFile = ConfigObj()
-	settingFile.filename 		= 'output/' + runName + '/settings.txt'
-	settingFile['seed'] 		= seed
-	settingFile['classes'] 		= list(classes)
-	settingFile['rActions'] 	= list(rActions) 
-	settingFile['lActions'] 	= list(lActions) 
-	settingFile['dataset'] 		= dataset
-	settingFile['A'] 			= A
-	settingFile['nEpiCrit']		= nEpiCrit
-	settingFile['nEpiAdlt']		= nEpiAdlt
-	settingFile['singleActiv'] 	= singleActiv
-	settingFile['nImages'] 		= nImages
-	settingFile['nDimStates'] 	= nDimStates
-	settingFile['nDimActions'] 	= nDimActions
-	settingFile['nHidNeurons'] 	= nHidNeurons
-	settingFile['rHigh'] 		= rHigh
-	settingFile['rLow'] 		= rLow
-	settingFile['lr'] 			= lr
-	settingFile['nBatch'] 		= nBatch
-	settingFile['randActions'] 	= randActions
-	settingFile['classifier'] 	= classifier
+	settingFile.filename 			= 'output/' + runName + '/settings.txt'
+	settingFile['seed'] 			= seed
+	settingFile['classes'] 			= list(classes)
+	settingFile['rActions'] 		= list(rActions) 
+	settingFile['lActions'] 		= list(lActions) 
+	settingFile['dataset'] 			= dataset
+	settingFile['A'] 				= A
+	settingFile['nEpiCrit']			= nEpiCrit
+	settingFile['nEpiAdlt']			= nEpiAdlt
+	settingFile['nImages'] 			= nImages
+	settingFile['nDimStates'] 		= nDimStates
+	settingFile['nDimActions'] 		= nDimActions
+	settingFile['nHidNeurons'] 		= nHidNeurons
+	settingFile['rHigh'] 			= rHigh
+	settingFile['rLow'] 			= rLow
+	settingFile['lr'] 				= lr
+	settingFile['nBatch'] 			= nBatch
+	settingFile['randActions'] 		= randActions
+	settingFile['classifier'] 		= classifier
+	settingFile['correct_W_act'] 	= correct_W_act
 	settingFile.write()
 
-def checkdir(runName):
+def checkdir(runName, OW_bool=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
 
@@ -204,7 +229,8 @@ def checkdir(runName):
 	"""
 
 	if os.path.exists('output/' + runName):
-		overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n/<new name>) ')
+		if OW_bool: overwrite='yes'
+		else: overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n/<new name>) ')
 		if overwrite in ['n', 'no', 'not', ' ', '']:
 			sys.exit('Folder exits - not overwritten')
 		elif overwrite in ['y', 'yes']:
@@ -217,7 +243,7 @@ def checkdir(runName):
 			return runName
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
-	print runName + '\n'
+	print 'run:  ' + runName
 	return runName
 
 def checkClassifier(classifier):
