@@ -26,27 +26,27 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indic
 # classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','a','a','a','a','a','a','a','a','a'], dtype='|S1')
 
-# classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['0','0','0','0','0','0'], dtype='|S1')
+classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+rActions 	= np.array(['a','0','0','0','0','b'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c'], dtype='|S1')
 
-classes 	= np.array([ 4 , 9 ], dtype=int)
-rActions 	= np.array(['a','b'], dtype='|S1')
+# classes 	= np.array([ 4 , 9 ], dtype=int)
+# rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
-nRun 		= 1			# number of runs
+nRun 		= 1				# number of runs
 nEpiCrit	= 10			# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiAdlt	= 10			# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 900			# image normalization constant
-runName 	= 'dopa'		# name of the folder where to save results
+runName 	= 'ab'			# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train'
 nHidNeurons = 10			# number of hidden neurons
 lrCrit		= 0.01 			# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.0 			# learning rate after the end of the 'critica period' (adult/training, nEpiAdlt)
-aHigh 		= 0.001#0.0005	# learning rate increase for relevance signal (high ACh) outside of critical period
+aHigh 		= 0.005			# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 0 			# learning rate increase without relevant signal (no ACh)
 dHigh 		= 0.01			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for correct reward prediction (neutral dopamine)
@@ -60,6 +60,8 @@ showPlots	= False			# whether to display plots
 show_W_act	= True 			# whether to display W_act weights on the weight plots
 target		= None 			# target digit (to be used to color plots). Use 'None' if not desired
 seed 		= 75#np.random.randint(1000) 				# seed of the random number generator
+
+##cannot take random actions (bestAction=False) when using feedback with ACh because taking random actions leads to incorrect/meaningless feedback that is still paired with learning (ACh signal). Should this be solved? How?
 
 """ load and pre-process images """
 ex.checkClassifier(classifier)
@@ -84,7 +86,6 @@ nImages = np.size(images,0)
 nDimStates = np.size(images,1)
 nDimActions = len(lActions)
 trainNeuro = np.where(classifier == 'neural', True, False)
-rewardDiv = np.where(balReward, len(lActions), 1.)
 
 """ training of the network """
 for r in range(nRun):
@@ -122,25 +123,22 @@ for r in range(nRun):
 				#initialize variables
 				if e == nEpiCrit: 
 					lr = lrAdlt
-				ach = np.zeros(nBatch)
-				dopa = np.zeros(nBatch)
+				ach = np.ones(nBatch)*aLow
+				dopa = np.ones(nBatch)*dNeut
 
 				#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
 				
 				#determine acetylcholine strength based on task involvement
-				ach[bReward==-1]=aLow				#never 
-				ach[bReward== 0]=aLow				#incorred, or during critical period
-				ach[bReward== 1]=aHigh				#correct
-				ach[bReward== 2]=aHigh/rewardDiv	#always
+				ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh
 			
 				#determine dopamine signal strength based on reward
-				dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dHigh			#correct reward prediction
-				dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
-				dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-				dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
- 				dopa[bReward==-1]											= dNeut			#never rewarded
-				dopa[bReward== 2]											= dNeut			#always rewarded
+				# dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dHigh			#correct reward prediction
+				# dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+				# dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
+				# dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
+				# dopa[bReward==-1]											= dNeut			#never rewarded
+				# dopa[bReward== 2]											= dNeut			#always rewarded
 
 				#feedback from classification layer
 				if feedback and e >= (nEpiCrit + nEpiProc): bHidNeurons += ex.propL1(bActNeurons, ex.softmax(W_act, t=0.01).T)*100 #feeding through softmax makes feedback even for all hidden neurons ##compare with Pieter Roelfsema's work
