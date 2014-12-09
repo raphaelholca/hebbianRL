@@ -174,7 +174,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, lActions, dataset, A, nEpiCrit, nEpiAdlt, nImages, nDimStates, nDimActions, nHidNeurons, rHigh, rLow, lr, nBatch, randActions, classifier, correct_W_act):
+def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, ach_bool, aHigh, aLow, dopa_bool, dHigh, dNeut, dLow, nBatch, bestAction, feedback, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -199,25 +199,29 @@ def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, lActions, d
 
 	settingFile = ConfigObj()
 	settingFile.filename 			= 'output/' + runName + '/settings.txt'
+	settingFile['runName'] 			= runName
 	settingFile['seed'] 			= seed
 	settingFile['classes'] 			= list(classes)
-	settingFile['rActions'] 		= list(rActions) 
-	settingFile['lActions'] 		= list(lActions) 
-	settingFile['dataset'] 			= dataset
-	settingFile['A'] 				= A
+	settingFile['rActions'] 		= list(rActions)
 	settingFile['nEpiCrit']			= nEpiCrit
-	settingFile['nEpiAdlt']			= nEpiAdlt
-	settingFile['nImages'] 			= nImages
-	settingFile['nDimStates'] 		= nDimStates
-	settingFile['nDimActions'] 		= nDimActions
+	settingFile['nEpiProc']			= nEpiProc
+	settingFile['nEpiAdlt']			= nEpiAdlt 
 	settingFile['nHidNeurons'] 		= nHidNeurons
-	settingFile['rHigh'] 			= rHigh
-	settingFile['rLow'] 			= rLow
-	settingFile['lr'] 				= lr
-	settingFile['nBatch'] 			= nBatch
-	settingFile['randActions'] 		= randActions
+	settingFile['ach_bool'] 		= ach_bool
+	settingFile['dopa_bool'] 		= dopa_bool
+	settingFile['bestAction'] 		= bestAction
+	settingFile['feedback'] 		= feedback
+	settingFile['lrCrit']			= lrCrit
+	settingFile['lrAdlt']			= lrAdlt
+	settingFile['aHigh'] 			= aHigh
+	settingFile['aLow'] 			= aLow
+	settingFile['dHigh'] 			= dHigh
+	settingFile['dNeut'] 			= dNeut
+	settingFile['dLow'] 			= dLow
 	settingFile['classifier'] 		= classifier
-	settingFile['correct_W_act'] 	= correct_W_act
+	settingFile['dataset'] 			= dataset
+	settingFile['nBatch'] 			= nBatch
+	settingFile['A'] 				= A
 	settingFile.write()
 
 def checkdir(runName, OW_bool=True):
