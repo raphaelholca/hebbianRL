@@ -23,11 +23,11 @@ experimental variables
 classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
-# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['a','a','a','a','a','a','a','a','a','a'], dtype='|S1')
+classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+rActions 	= np.array(['0','0','0','0','a','0','0','0','0','b'], dtype='|S1')
 
-classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['a','0','0','0','0','f'], dtype='|S1')
+# classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# rActions 	= np.array(['1','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c'], dtype='|S1')
@@ -41,15 +41,15 @@ nEpiCrit	= 10			# number of 'critical period' episodes in each run (episodes whe
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiAdlt	= 30			# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 900			# image normalization constant
-runName 	= 'ach_1'	# name of the folder where to save results
-dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train'
-nHidNeurons = 25			# number of hidden neurons
+runName 	= 'ach_dopa'	# name of the folder where to save results
+dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
+nHidNeurons = 100			# number of hidden neurons
 lrCrit		= 0.01 			# learning rate during 'critica period' (pre-training, nEpiCrit)
-lrAdlt		= 0.00#1			# learning rate after the end of the 'critica period' (adult/training, nEpiAdlt)
+lrAdlt		= 0.001		# learning rate after the end of the 'critica period' (adult/training, nEpiAdlt)
 ach_bool	= True			# whether to use ACh signalling
-aHigh 		= 0.01			# learning rate increase for relevance signal (high ACh) outside of critical period
+aHigh 		= 0.03			# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 0 			# learning rate increase without relevant signal (no ACh)
-dopa_bool	= False			# whether to use dopa signalling
+dopa_bool	= True			# whether to use dopa signalling
 dHigh 		= 0.01			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for correct reward prediction (neutral dopamine)
 dLow 		= -0.01/2		# learning rate increase for incorrect reward prediction (low dopamine)
