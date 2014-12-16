@@ -72,7 +72,7 @@ ex.checkClassifier(classifier)
 runName = ex.checkdir(runName, OW_bool=True)
 print 'seed: ' + str(seed) + '\n'
 print 'training network...'
-imPath = '../data-sets/MNIST'
+imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 images = ex.normalize(images, A)
 images, labels = ex.evenLabels(images, labels, classes)

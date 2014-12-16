@@ -126,7 +126,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, show=True):
 
 	""" load and pre-process images """
 	print "assessing performance with neuron class..."
-	imPath = '../data-sets/MNIST'
+	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 	images, labels = mnist.read_images_from_mnist(classes=classes, dataset='test', path=imPath)
 	images = ex.normalize(images, A)
 	images, labels = ex.evenLabels(images, labels, classes)
