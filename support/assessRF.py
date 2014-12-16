@@ -1,10 +1,12 @@
 """ routine to classify and build a histogram of the distribution of the classes of the weights (RFs) of the representation  """
 
 import numpy as np
-import support.plots as pl
+import plots as pl
+import external as ex
 import matplotlib.pyplot as pyplot
 import pickle
 pl = reload(pl)
+ex = reload(ex)
 
 def hist(runName, W, classes, nDimStates, proba=False, show=True):
 	"""
@@ -60,10 +62,15 @@ def hist(runName, W, classes, nDimStates, proba=False, show=True):
 
 	return RFproba, RFclass
 
-def plot(runName, W, RFproba, target=None, W_act=None):
+def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
+		if sort: #sort weights according to their class
+			RFclass = np.argmax(RFproba[i],1)
+			sort_idx = np.array([x for (y,x) in sorted(zip(RFclass, np.arange(len(RFclass))), key=lambda pair: pair[0])])
+			W[r] = W[r][:,sort_idx] 
+			RFproba[i] 	= np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
 		target_pass=None
 		if target:
 			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target)
@@ -76,9 +83,22 @@ def plot(runName, W, RFproba, target=None, W_act=None):
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
 
-def sharp():
-	#TODO
-	return
+def selectivity(W, RFproba, images, labels, classes):
+	
+	acti = ex.propL1(images, W, SM=False)
+	nNeurons = np.size(acti,1)
+	nClasses = len(classes)
+	best_neuron = np.argmax(acti, 1)
+	RFclass = np.argmax(RFproba,1)
+	select_neuron = np.zeros(nNeurons)
+	select_class = np.zeros(nClasses)
+	for n in range(nNeurons):
+		all_acti, _ = np.histogram(labels[best_neuron==n], bins=10, range=(0,9))
+		select_neuron[n] = float(all_acti[RFclass[n]])/np.sum(all_acti)
+	for i, c in enumerate(classes):
+		select_class[i] = np.mean(select_neuron[RFclass==c])
+
+	return select_class, select_neuron
 
 
 

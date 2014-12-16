@@ -40,12 +40,15 @@ def softmax(activ, vectorial=True, t=1.):
 	
 	#vectorial
 	if vectorial:
-		scale = np.clip(np.max(activ,1)-700, 0, np.inf)
-		tmpRND=np.random.rand(np.shape(activ)[0],np.shape(activ)[1])/100000
-		activ+=tmpRND #add a random offset to insure that there is only a single min
-		activ[activ==np.min(activ,1)[:,np.newaxis]] = np.clip(np.min(activ,1), -740+scale, np.inf)
-		activ-=tmpRND
-		return np.exp((activ-scale[:,np.newaxis])/t) / np.sum(np.exp((activ-scale[:,np.newaxis])/t), 1)[:,np.newaxis]
+		# scale = np.clip(np.max(activ,1)-700, 0, np.inf)
+		# tmpRND=np.random.rand(np.shape(activ)[0],np.shape(activ)[1])/100000
+		# activ+=tmpRND #add a random offset to insure that there is only a single min
+		# activ[activ==np.min(activ,1)[:,np.newaxis]] = np.clip(np.min(activ,1), -740+scale, np.inf)
+		# activ-=tmpRND
+		# return np.exp((activ-scale[:,np.newaxis])/t) / np.sum(np.exp((activ-scale[:,np.newaxis])/t), 1)[:,np.newaxis]
+
+		activ_norm = np.copy(activ - np.max(activ,1)[:,np.newaxis])
+		return np.exp((activ_norm)/t) / np.sum(np.exp((activ_norm)/t), 1)[:,np.newaxis]
 
 	#iterative
 	else:
@@ -174,7 +177,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, ach_bool, aHigh, aLow, dopa_bool, dHigh, dNeut, dLow, nBatch, bestAction, feedback, classifier):
+def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, ach_bool, aHigh, aLow, dopa_bool, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -199,30 +202,93 @@ def savedata(runName, W_in, W_act, W_class, seed, classes, rActions, dataset, A,
 
 	settingFile = ConfigObj()
 	settingFile.filename 			= 'output/' + runName + '/settings.txt'
-	settingFile['runName'] 			= runName
-	settingFile['seed'] 			= seed
 	settingFile['classes'] 			= list(classes)
 	settingFile['rActions'] 		= list(rActions)
+	settingFile['nRun'] 			= nRun
 	settingFile['nEpiCrit']			= nEpiCrit
 	settingFile['nEpiProc']			= nEpiProc
 	settingFile['nEpiAdlt']			= nEpiAdlt 
+	settingFile['A'] 				= A
+	settingFile['runName'] 			= runName
+	settingFile['dataset'] 			= dataset
 	settingFile['nHidNeurons'] 		= nHidNeurons
-	settingFile['ach_bool'] 		= ach_bool
-	settingFile['dopa_bool'] 		= dopa_bool
-	settingFile['bestAction'] 		= bestAction
-	settingFile['feedback'] 		= feedback
 	settingFile['lrCrit']			= lrCrit
 	settingFile['lrAdlt']			= lrAdlt
+	settingFile['ach_bool'] 		= ach_bool
 	settingFile['aHigh'] 			= aHigh
 	settingFile['aLow'] 			= aLow
+	settingFile['dopa_bool'] 		= dopa_bool
 	settingFile['dHigh'] 			= dHigh
+	settingFile['dMid'] 			= dMid
 	settingFile['dNeut'] 			= dNeut
 	settingFile['dLow'] 			= dLow
-	settingFile['classifier'] 		= classifier
-	settingFile['dataset'] 			= dataset
 	settingFile['nBatch'] 			= nBatch
-	settingFile['A'] 				= A
+	settingFile['classifier'] 		= classifier
+	settingFile['bestAction'] 		= bestAction
+	settingFile['feedback'] 		= feedback
+	settingFile['seed'] 			= seed
+	
 	settingFile.write()
+
+def load_data(runs):
+	"""
+	Loads data from files for specified runs
+
+	Args:
+		runs (dict): dictionary of dictionaries of the runs to load from files
+
+	returns:
+		dict: orinigal dictionary filled with data loaded from file
+	"""
+
+	for k in runs.keys():
+		runName = k
+		datapath = '../output/' + runName
+
+		pFile = open('../output/' + runName + '/W_in', 'r')
+		runs[k]['W_in'] = pickle.load(pFile)
+		pFile.close()
+
+		pFile = open('../output/' + runName + '/W_act', 'r')
+		runs[k]['W_act'] = pickle.load(pFile)
+		pFile.close()
+
+		pFile = open('../output/' + runName + '/classResults', 'r')
+		runs[k]['classResults'] = pickle.load(pFile)
+		pFile.close()
+
+		pFile = open('../output/' + runName + '/RFclass', 'r')
+		runs[k]['RFclass'] = pickle.load(pFile)
+		pFile.close()
+
+		settingFile = ConfigObj(datapath+'/settings.txt')
+
+		runs[k]['runName'] 			= runName
+		runs[k]['classes'] 			= map(int, settingFile['classes'])
+		runs[k]['rActions'] 		= settingFile['rActions']
+		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
+		runs[k]['nEpiProc'] 		= int(settingFile['nEpiProc'])
+		runs[k]['nEpiAdlt'] 		= int(settingFile['nEpiAdlt'])
+		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
+		runs[k]['ach_bool'] 		= conv_bool(settingFile['ach_bool'])
+		runs[k]['dopa_bool'] 		= conv_bool(settingFile['dopa_bool'])
+		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
+		runs[k]['feedback'] 		= conv_bool(settingFile['feedback'])
+		runs[k]['lrCrit'] 			= float(settingFile['lrCrit'])
+		runs[k]['lrAdlt'] 			= float(settingFile['lrAdlt'])
+		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
+		runs[k]['aLow']				= float(settingFile['aLow'])
+		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
+		runs[k]['dMid'] 			= float(settingFile['dMid'])
+		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
+		runs[k]['dLow'] 			= float(settingFile['dLow'])
+		runs[k]['classifier'] 		= settingFile['classifier']
+		runs[k]['dataset'] 			= settingFile['dataset']
+		runs[k]['nRun'] 			= int(settingFile['nRun'])
+		runs[k]['nBatch'] 			= int(settingFile['nBatch'])
+		runs[k]['A'] 				= float(settingFile['A'])
+
+		runs[k]['nClasses'] = len(runs[k]['classes'])
 
 def checkdir(runName, OW_bool=True):
 	"""
@@ -357,7 +423,20 @@ def computeCM(classResults, labels_test, classes):
 			confusMatrix[ilabel, iclassif] = float(classifiedAs)/overTot
 	return confusMatrix
 
+def conv_bool(bool_str):
+	"""
+	Converts a string ('True', 'False') value to boolean (True, False)
 
+	Args:
+		bool_str (str): string to convert
+
+	returns:
+		bool: boolean value of the string
+	"""
+
+	if bool_str=='True': return True
+	elif bool_str=='False': return False
+	else: return None
 
 
 
