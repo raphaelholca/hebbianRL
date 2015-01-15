@@ -4,41 +4,53 @@ import numpy as np
 import plots as pl
 import external as ex
 import matplotlib.pyplot as pyplot
+import support.mnist as mnist
 import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, nDimStates, proba=False, show=True):
+def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True):
 	"""
-	computes the class of the weight of each neuron using a SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset)
+	computes the class of the weight of each neuron
 
 	Args:
 		runName (str) : name of the folder where to save results
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
+		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False)
 		proba (bool, optional) : whether to compute RF class histogram as the sum of the class probability or as the sum of the argmax of the class (winner-take-all)
 		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
 	"""
 
+	print "computing RF classes..."
 	nClasses = 10
 	nRun = len(W.keys())
+	nNeurons = np.size(W['000'],1)
 
-	#load classifier from file; parameters of the model from:
-	#http://peekaboo-vision.blogspot.co.uk/2010/09/mnist-for-ever.html
-	#svm_mnist = SVC(kernel="rbf", C=2.8, gamma=.0073, probability=True, verbose=True)
-	print "computing RF classes..."
-	pfile = open('support/SVM-MNIST-proba', 'r')
-	svm_mnist = pickle.load(pfile)
-	pfile.close()
+	if SVM:
+		#load classifier from file; parameters of the model from:
+		#http://peekaboo-vision.blogspot.co.uk/2010/09/mnist-for-ever.html
+		#svm_mnist = SVC(kernel="rbf", C=2.8, gamma=.0073, probability=True, verbose=True)
+		pfile = open('support/SVM-MNIST-proba', 'r')
+		svm_mnist = pickle.load(pfile)
+		pfile.close()
+	else:
+		images, labels = mnist.read_images_from_mnist(classes=classes, dataset='test')
 
-	RFproba = []
-	perf = np.zeros((nRun,nClasses))
-	RFsharp = np.zeros((nRun,nClasses))
+	RFproba = np.zeros((nRun,nNeurons,nClasses))
 	RFclass = np.zeros((nRun,nClasses))
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
-		RFproba.append(np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2))
+		if SVM:
+			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2)
+		else:
+			mostActiv = np.argmax(ex.propL1(images, W[r]),1)
+			for n in range(nNeurons):
+				# print str(n) + '  ' + str(np.sum(mostActiv==n))
+				RFproba[r,n,:] = np.histogram(labels[mostActiv==n], bins=nClasses, range=(-0.5,9.5))[0]
+				RFproba[r,n,:]/= np.sum(mostActiv==n)+1e-20
+				RFproba[r,n,:] = np.round(RFproba[r,n,:], 2)
 		if proba:
 			RFclass[i,:] = np.sum(RFproba[i],0)
 		else:
@@ -62,6 +74,49 @@ def hist(runName, W, classes, nDimStates, proba=False, show=True):
 
 	return RFproba, RFclass
 
+def hist_MostActiv(runName, W, classes, nDimStates, images, labels, proba=False, show=True):
+	nClasses = 10
+	nRun = len(W.keys())
+	nNeurons = np.size(W['000'],1)
+
+	RFproba = np.zeros((nRun,nNeurons,nClasses))
+	RFclass = np.zeros((nRun,nClasses))
+	for i,r in enumerate(sorted(W.keys())):
+		print 'run: ' + str(i+1)
+		mostActiv = np.argmax(ex.propL1(images, W[r]),1)
+		for n in range(nNeurons):
+			RFproba[r,n,:] = np.histogram(labels[mostActiv==n], bins=nClasses, range=(-0.5,9.5))[0]/float(np.sum(mostActiv==n))
+
+	print RFproba
+
+
+	# RFproba = []
+	# RFclass = np.zeros((nRun,nClasses))
+	# for i,r in enumerate(sorted(W.keys())):
+	# 	print 'run: ' + str(i+1)
+	# 	RFproba.append(np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2))
+	# 	if proba:
+	# 		RFclass[i,:] = np.sum(RFproba[i],0)
+	# 	else:
+	# 		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=nClasses, range=(-0.5,9.5))
+
+	# RFclass_mean = np.mean(RFclass, 0)
+	# RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
+
+	# pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste}
+
+	# pfile = open('output/'+runName+'/RFclass', 'w')
+	# pickle.dump(pRFclass, pfile)
+	# pfile.close()
+
+	# fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste[classes])
+	# pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
+	# if show:
+	# 	pyplot.show(block=False)
+	# else:
+	# 	pyplot.close(fig)
+
+	# return RFproba, RFclass
 def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
