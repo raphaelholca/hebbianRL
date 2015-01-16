@@ -153,7 +153,7 @@ def learningStep(preNeurons, postNeurons, W, lr, ach=np.zeros(1), dopa=np.zeros(
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
 
-	postNeurons_lr = postNeurons * (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine increase  
+	postNeurons_lr = postNeurons * (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 def compute_reward(labels, classes, actions, rActions):
@@ -177,7 +177,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, ach_bool, aHigh, aLow, dopa_bool, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, classifier):
+def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -214,10 +214,8 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	settingFile['nHidNeurons'] 		= nHidNeurons
 	settingFile['lrCrit']			= lrCrit
 	settingFile['lrAdlt']			= lrAdlt
-	settingFile['ach_bool'] 		= ach_bool
 	settingFile['aHigh'] 			= aHigh
 	settingFile['aLow'] 			= aLow
-	settingFile['dopa_bool'] 		= dopa_bool
 	settingFile['dHigh'] 			= dHigh
 	settingFile['dMid'] 			= dMid
 	settingFile['dNeut'] 			= dNeut
@@ -270,8 +268,6 @@ def load_data(runs):
 		runs[k]['nEpiProc'] 		= int(settingFile['nEpiProc'])
 		runs[k]['nEpiAdlt'] 		= int(settingFile['nEpiAdlt'])
 		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
-		runs[k]['ach_bool'] 		= conv_bool(settingFile['ach_bool'])
-		runs[k]['dopa_bool'] 		= conv_bool(settingFile['dopa_bool'])
 		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
 		runs[k]['feedback'] 		= conv_bool(settingFile['feedback'])
 		runs[k]['lrCrit'] 			= float(settingFile['lrCrit'])

@@ -29,10 +29,9 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 
 	""" load and pre-process images """
 	print "assessing performance with neural classifier..."
-	imPath = '../data-sets/MNIST'
 	if  train_dataset=='train': test_dataset='test'
 	else: test_dataset='test'  #'train' ##
-	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
+	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
 	images = ex.normalize(images, A*nDimStates)
 	images, labels = ex.evenLabels(images, labels, classes)
 
@@ -77,10 +76,9 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 
 	""" load and pre-process images """
 	print 'assessing performance with SVM...'
-	imPath = '../data-sets/MNIST'
 	if  train_dataset=='train': test_dataset='test'
 	else: test_dataset='train'
-	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
+	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
 	images_test = ex.normalize(images_test, A*nDimStates)
 	images_test, labels_test = ex.evenLabels(images_test, labels_test, classes)
 	images_train, labels_train = ex.shuffle([images_train, labels_train])

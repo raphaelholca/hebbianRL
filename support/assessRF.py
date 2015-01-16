@@ -18,7 +18,7 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True):
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
-		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False)
+		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
 		proba (bool, optional) : whether to compute RF class histogram as the sum of the class probability or as the sum of the argmax of the class (winner-take-all)
 		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
 	"""
