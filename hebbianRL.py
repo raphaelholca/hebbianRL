@@ -42,7 +42,7 @@ nEpiAch		= 10				# number of ACh episodes in each run (episodes when ACh only is
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'Ach+ACh'		# name of the folder where to save results
+runName 	= 'test'		# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.0002 		# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -198,7 +198,7 @@ for r in range(nRun):
 """ compute network statistics and performance """
 
 #compute histogram of RF classes
-RFproba, _ = rf.hist(runName, W_in_save, classes, nDimStates, SVM=True, proba=False, show=showPlots)
+RFproba, _ = rf.hist(runName, W_in_save, classes, nDimStates, SVM=False, proba=False, show=showPlots, lr_ratio=aHigh/lrAdlt, rel_classes=classes[rActions!='0'])
 
 #compute correct weight assignment in the action layer
 correct_W_act = 0.

@@ -9,7 +9,7 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True):
+def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
 	computes the class of the weight of each neuron
 
@@ -47,8 +47,8 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True):
 		else:
 			mostActiv = np.argmax(ex.propL1(images, W[r]),1)
 			for n in range(nNeurons):
-				# print str(n) + '  ' + str(np.sum(mostActiv==n))
 				RFproba[r,n,:] = np.histogram(labels[mostActiv==n], bins=nClasses, range=(-0.5,9.5))[0]
+				RFproba[r,n,rel_classes] *= lr_ratio #to balance the effect of ACh
 				RFproba[r,n,:]/= np.sum(mostActiv==n)+1e-20
 				RFproba[r,n,:] = np.round(RFproba[r,n,:], 2)
 		if proba:
