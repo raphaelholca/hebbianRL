@@ -135,7 +135,7 @@ for r in range(nRun):
 
 			elif e >= nEpiCrit + nEpiAch and e < nEpiCrit + nEpiAch + nEpiProc: #procedural learning
 				#compute reward, and ach and dopa signals for procedural learning
-				ach *= lrAdlt
+				ach += lrAdlt
 				ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh
 
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
