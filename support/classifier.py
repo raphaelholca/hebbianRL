@@ -59,7 +59,7 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 
 def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=False):
 	"""
-	evaluates the quality of a representation using an SVM
+	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
 
 	Args:
 		runName (str) : name of the folder where to save results
@@ -94,7 +94,6 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		W_in = W_in_save[iw][0:nDimStates,:]
 		hidNeurons_train = ex.propL1(images_train, W_in, SM=SM)
 		hidNeurons_test = ex.propL1(images_test, W_in, SM=SM)
-
 
 		""" train SVM """
 		svm_repres = SVC(kernel="rbf", C=1000.0, gamma=0.25) #kernel="linear" #C=1000000000.0 #C=1000.0

@@ -11,7 +11,7 @@ ex = reload(ex)
 
 def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
-	computes the class of the weight of each neuron
+	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
 		runName (str) : name of the folder where to save results
@@ -21,6 +21,8 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
 		proba (bool, optional) : whether to compute RF class histogram as the sum of the class probability or as the sum of the argmax of the class (winner-take-all)
 		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
+		lr_ratio (float, optional) : the ratio between ach signal and normal learning rate
+		rel_classes (numpy array, optional) : the classes relevant in the training protocol (i.e., those not equal to '0')
 	"""
 
 	print "computing RF classes..."
@@ -49,8 +51,7 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 			for n in range(nNeurons):
 				RFproba[r,n,:] = np.histogram(labels[mostActiv==n], bins=nClasses, range=(-0.5,9.5))[0]
 				RFproba[r,n,rel_classes] *= lr_ratio #to balance the effect of ACh
-				RFproba[r,n,:]/= np.sum(mostActiv==n)+1e-20
-				RFproba[r,n,:] = np.round(RFproba[r,n,:], 2)
+				RFproba[r,n,:]/= np.sum(RFproba[r,n,:])+1e-20 #+1e-20 to avoid divide zero error
 		if proba:
 			RFclass[i,:] = np.sum(RFproba[i],0)
 		else:
@@ -74,49 +75,6 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 
 	return RFproba, RFclass
 
-def hist_MostActiv(runName, W, classes, nDimStates, images, labels, proba=False, show=True):
-	nClasses = 10
-	nRun = len(W.keys())
-	nNeurons = np.size(W['000'],1)
-
-	RFproba = np.zeros((nRun,nNeurons,nClasses))
-	RFclass = np.zeros((nRun,nClasses))
-	for i,r in enumerate(sorted(W.keys())):
-		print 'run: ' + str(i+1)
-		mostActiv = np.argmax(ex.propL1(images, W[r]),1)
-		for n in range(nNeurons):
-			RFproba[r,n,:] = np.histogram(labels[mostActiv==n], bins=nClasses, range=(-0.5,9.5))[0]/float(np.sum(mostActiv==n))
-
-	print RFproba
-
-
-	# RFproba = []
-	# RFclass = np.zeros((nRun,nClasses))
-	# for i,r in enumerate(sorted(W.keys())):
-	# 	print 'run: ' + str(i+1)
-	# 	RFproba.append(np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2))
-	# 	if proba:
-	# 		RFclass[i,:] = np.sum(RFproba[i],0)
-	# 	else:
-	# 		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=nClasses, range=(-0.5,9.5))
-
-	# RFclass_mean = np.mean(RFclass, 0)
-	# RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
-
-	# pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste}
-
-	# pfile = open('output/'+runName+'/RFclass', 'w')
-	# pickle.dump(pRFclass, pfile)
-	# pfile.close()
-
-	# fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste[classes])
-	# pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
-	# if show:
-	# 	pyplot.show(block=False)
-	# else:
-	# 	pyplot.close(fig)
-
-	# return RFproba, RFclass
 def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
@@ -139,7 +97,9 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 		pyplot.close(fig)
 
 def selectivity(W, RFproba, images, labels, classes):
-	
+	"""
+	computes the selectivity of a neuron
+	"""
 	acti = ex.propL1(images, W, SM=False)
 	nNeurons = np.size(acti,1)
 	nClasses = len(classes)

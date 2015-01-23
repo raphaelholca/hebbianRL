@@ -177,7 +177,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, classifier):
+def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -222,6 +222,7 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	settingFile['dLow'] 			= dLow
 	settingFile['nBatch'] 			= nBatch
 	settingFile['classifier'] 		= classifier
+	settingFile['SVM'] 				= SVM
 	settingFile['bestAction'] 		= bestAction
 	settingFile['feedback'] 		= feedback
 	settingFile['seed'] 			= seed
