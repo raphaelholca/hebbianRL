@@ -177,7 +177,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAdlt, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
+def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -206,8 +206,9 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	settingFile['rActions'] 		= list(rActions)
 	settingFile['nRun'] 			= nRun
 	settingFile['nEpiCrit']			= nEpiCrit
+	settingFile['nEpiAch']			= nEpiAch 
 	settingFile['nEpiProc']			= nEpiProc
-	settingFile['nEpiAdlt']			= nEpiAdlt 
+	settingFile['nEpiDopa']			= nEpiDopa 
 	settingFile['A'] 				= A
 	settingFile['runName'] 			= runName
 	settingFile['dataset'] 			= dataset
@@ -229,45 +230,50 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	
 	settingFile.write()
 
-def load_data(runs):
+def load_data(runs_list, path='../output/'):
 	"""
 	Loads data from files for specified runs
 
 	Args:
-		runs (dict): dictionary of dictionaries of the runs to load from files
+		runs_list (dict): list of the runs to load from files; should be something like: runs = ['control_49-small', 'dopa_49-small']
+		path (string, optional): path to the folders containing the data
 
 	returns:
-		dict: orinigal dictionary filled with data loaded from file
+		dict: dictionary of dictionaries filled with data loaded from file
 	"""
+
+	runs = {}
+	for r in runs_list: runs[r]=dict()
 
 	for k in runs.keys():
 		runName = k
-		datapath = '../output/' + runName
+		datapath = path + runName
 
-		pFile = open('../output/' + runName + '/W_in', 'r')
+		pFile = open(path + runName + '/W_in', 'r')
 		runs[k]['W_in'] = pickle.load(pFile)
 		pFile.close()
 
-		pFile = open('../output/' + runName + '/W_act', 'r')
+		pFile = open(path + runName + '/W_act', 'r')
 		runs[k]['W_act'] = pickle.load(pFile)
 		pFile.close()
 
-		pFile = open('../output/' + runName + '/classResults', 'r')
+		pFile = open(path + runName + '/classResults', 'r')
 		runs[k]['classResults'] = pickle.load(pFile)
 		pFile.close()
 
-		pFile = open('../output/' + runName + '/RFclass', 'r')
+		pFile = open(path + runName + '/RFclass', 'r')
 		runs[k]['RFclass'] = pickle.load(pFile)
 		pFile.close()
 
 		settingFile = ConfigObj(datapath+'/settings.txt')
 
 		runs[k]['runName'] 			= runName
-		runs[k]['classes'] 			= map(int, settingFile['classes'])
-		runs[k]['rActions'] 		= settingFile['rActions']
+		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
+		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
 		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
 		runs[k]['nEpiProc'] 		= int(settingFile['nEpiProc'])
-		runs[k]['nEpiAdlt'] 		= int(settingFile['nEpiAdlt'])
+		runs[k]['nEpiAch'] 			= int(settingFile['nEpiAch'])
+		runs[k]['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
 		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
 		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
 		runs[k]['feedback'] 		= conv_bool(settingFile['feedback'])
@@ -286,6 +292,8 @@ def load_data(runs):
 		runs[k]['A'] 				= float(settingFile['A'])
 
 		runs[k]['nClasses'] = len(runs[k]['classes'])
+
+		return runs
 
 def checkdir(runName, OW_bool=True):
 	"""

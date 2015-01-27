@@ -57,7 +57,7 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
 
-def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=False):
+def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=True):
 	"""
 	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
 
@@ -69,7 +69,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
-		train_dataset (str): name of the dataset used for learning the weights ('train' or 'test')
+		train_dataset (str): name of the dataset used for training
 		show (bool, optional): whether to display the confusion matrix (True) or not (False)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
