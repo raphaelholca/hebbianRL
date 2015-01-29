@@ -27,7 +27,7 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['0','0','0','0','0','e','0','0','0','0'], dtype='|S1')
+rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','0','0','0','0','0'], dtype='|S1')
@@ -43,22 +43,25 @@ nRun 		= 1				# number of runs
 nEpiCrit	= 2				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 2				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 1				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 2				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'ach'		# name of the folder where to save results
+runName 	= 'dopa+ach'	# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49				# number of hidden neurons
 lrCrit		= 0.0002 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.0002		# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 lrDopa		= 0.0		
-aHigh 		= 0.0008		# learning rate increase for relevance signal (high ACh) outside of critical period
-aLow		= 0 			# learning rate increase without relevant signal (no ACh)
-dHigh 		= 0.0002		# learning rate increase for unexpected reward (high dopamine) outside of critical period
-dMid 		= dHigh/3.		# learning rate increase for correct reward prediction
+aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
+aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
+# aHigh 		= 0.0008		# learning rate increase for relevance signal (high ACh) outside of critical period
+# aLow		= 0 			# learning rate increase without relevant signal (no ACh)
+dHigh 		= 1.		# learning rate increase for unexpected reward (high dopamine) outside of critical period
+# dHigh 		= 0.0002		# learning rate increase for unexpected reward (high dopamine) outside of critical period
+dMid 		= dHigh/3		# learning rate increase for correct reward prediction
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
-dLow 		= -dHigh		# learning rate increase for incorrect reward prediction (low dopamine)
+dLow 		= -dHigh/3		# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
-classifier	= 'neuronClass'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
+classifier	= 'SVM'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
 SVM			= False			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 bestAction 	= False			# whether to take predicted best action (True) or take random actions (False)
 feedback	= True			# whether to feedback activation of classification neurons to hidden neurons
@@ -79,6 +82,15 @@ imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 images = ex.normalize(images, A*np.size(images,1))
 images, labels = ex.evenLabels(images, labels, classes)
+
+# if True: #duplicates some of the training examples, to be used instead to ach
+# 	labels_ori = np.copy(labels)
+# 	images_ori = np.copy(images)
+# 	for i in range(3):	#number of times to duplicate the training examples
+# 		for d in [4]: #digit classes to duplicate
+# 			images = np.append(images, images_ori[labels_ori==d])
+# 			images = np.reshape(images, (-1, 784))
+# 			labels = np.append(labels, labels_ori[labels_ori==d])
 
 """ variable initialization """
 W_in_save = {}
@@ -146,11 +158,12 @@ for r in range(nRun):
 					# aHigh = lrAdlt ##??
 
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-				dopa[bReward==1] = dHigh/100.
+				dopa[bReward==1] = dHigh/100. ## why /100 again?
 
 			elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
 				#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
-				bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
+				# bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
+				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 			
 				#determine acetylcholine strength based on task involvement
 				if nEpiAch == 0: aHigh = aLow
@@ -163,10 +176,10 @@ for r in range(nRun):
 				dopa[bReward==-1]											= dNeut			#never rewarded
 				dopa[bReward== 2]											= dNeut			#always rewarded
 
-			#feedback from classification layer
-			if feedback: 
-				bFeedback = ex.propL1(bActNeurons, ex.softmax(W_act, t=0.0001).T)*100 ##feeding through softmax makes feedback even for all hidden neurons that project to the top neurons (i.e., feedback weights are either ~1 or ~0) ##compare with Pieter Roelfsema's work
-				bHidNeurons += bFeedback
+				#feedback from classification layer
+				if feedback: 
+					bFeedback = ex.propL1(bActNeurons, ex.softmax(W_act, t=0.0001).T, SM=False)*100 ##feeding through softmax makes feedback even for all hidden neurons that project to the top neurons (i.e., feedback weights are either ~1 or ~0) ##compare with Pieter Roelfsema's work
+					bHidNeurons += bFeedback
 
 			bHidNeurons = ex.softmax(bHidNeurons)*A*nHidNeurons #activation must be done after feedback is added to activity
 
@@ -178,16 +191,18 @@ for r in range(nRun):
 				dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lrAdlt, ach=ach)
 			
 			elif e >= nEpiCrit + nEpiAch and e < nEpiCrit + nEpiAch + nEpiProc: #procedural learning 
-				dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=0.0, dopa=dopa*ach)
+				# dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=0.0, dopa=dopa*ach)
+				dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=lrAdlt, ach=ach, dopa=dopa)
 			
 			elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
-				dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lrDopa, ach=ach, dopa=dopa)
+				# dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lrDopa, ach=ach, dopa=dopa)
+				dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lrAdlt, ach=ach, dopa=dopa)
 
 			W_in += dW_in
-			W_in = np.clip(W_in,1.0,np.inf) #necessary if using negative lr ##?
+			# W_in = np.clip(W_in,1.0,np.inf) #necessary if using negative lr ##?
 			
 			W_act += dW_act
-			W_act = np.clip(W_act,1e-10,np.inf) #necessary if using negative lr ##?
+			# W_act = np.clip(W_act,1e-10,np.inf) #necessary if using negative lr ##?
 			
 			if trainNeuro: W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit)
 

@@ -107,7 +107,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, show=True):
+def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, vote=False, show=True):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
@@ -118,6 +118,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, show=True):
 		RFproba (numpy array) : probability of that a RF belongs to a certain class (of the MNIST dataset)
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
+		vote (bool, optional) : whether to use the sum of the activation of all neurons of each class (True - all neurons 'vote' with their activation value for its class), or to use the class of the maximally activated neuron (False)
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
@@ -137,9 +138,17 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, show=True):
 		""" load weight matrix and find most activated neuron """
 		print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
-		neuronC = np.argmax(RFproba[i],1)
-		argmaxActiv = np.argmax(ex.propL1(images, W_in, SM=False),1)
-		classResults = neuronC[argmaxActiv]
+		neuronC = np.argmax(RFproba[i],1) #class of each neuron
+		# if vote==True:
+		# 	activ = ex.propL1(images, W_in, SM=False)
+		# 	votes = np.zeros((len(labels), len(classes)))
+		# 	for ic, c in enumerate(classes):
+		# 		votes[:,ic] = np.sum(RFproba[i][:,c]*activ,1)/np.sum(RFproba[i][:,c])
+		# 	argmaxActiv = np.argmax(votes,1)
+		# 	classResults = classes[argmaxActiv]
+		if vote==False:
+			argmaxActiv = np.argmax(ex.propL1(images, W_in, SM=False),1)
+			classResults = neuronC[argmaxActiv]
 
 		""" compute classification performance """
 		allPerf.append(float(np.sum(classResults==labels))/len(labels))
