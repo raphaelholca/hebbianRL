@@ -37,7 +37,7 @@ def softmax(activ, vectorial=True, t=1.):
 	returns:
 		numpy array: the activation fed through the softmax function
 	"""
-	
+
 	#vectorial
 	if vectorial:
 		# scale = np.clip(np.max(activ,1)-700, 0, np.inf)
@@ -48,7 +48,8 @@ def softmax(activ, vectorial=True, t=1.):
 		# return np.exp((activ-scale[:,np.newaxis])/t) / np.sum(np.exp((activ-scale[:,np.newaxis])/t), 1)[:,np.newaxis]
 
 		activ_norm = np.copy(activ - np.max(activ,1)[:,np.newaxis])
-		return np.exp((activ_norm)/t) / np.sum(np.exp((activ_norm)/t), 1)[:,np.newaxis]
+		activ_SM = np.exp((activ_norm)/t) / np.sum(np.exp((activ_norm)/t), 1)[:,np.newaxis]
+		return activ_SM
 
 	#iterative
 	else:
@@ -137,8 +138,7 @@ def propL2_class(hidNeurons, W_class):
 
 	return	np.dot(hidNeurons, W_class)
 
-def learningStep(preNeurons, postNeurons, W, lr, ach=np.ones(1), dopa=np.ones(1)):
-# def learningStep(preNeurons, postNeurons, W, lr, ach=np.zeros(1), dopa=np.zeros(1)):
+def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	"""
 	One learning step for the hebbian network
 
@@ -147,15 +147,13 @@ def learningStep(preNeurons, postNeurons, W, lr, ach=np.ones(1), dopa=np.ones(1)
 		postNeurons (numpy array): activation of the post-synaptic neurons
 		W (numpy array): weight matrix
 		lr (float): learning rate
-		ach(numpy array, optional): learning rate increase for the effect of acetylcholine
-		dopa(numpy array, optional): learning rate increase for the effect of dopamine
+		disinhib (numpy array, optional): learning rate increase for the effect of acetylcholine and dopamine
 
 	returns:
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
 
-	# postNeurons_lr = postNeurons * (lr + ach[:,np.newaxis] + dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
-	postNeurons_lr = postNeurons * (lr * ach[:,np.newaxis] * dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
+	postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 def compute_reward(labels, classes, actions, rActions):
@@ -246,7 +244,6 @@ def load_data(runs_list, path='../output/'):
 
 	runs = {}
 	for r in runs_list: runs[r]=dict()
-
 	for k in runs.keys():
 		runName = k
 		datapath = path + runName
@@ -295,7 +292,7 @@ def load_data(runs_list, path='../output/'):
 
 		runs[k]['nClasses'] = len(runs[k]['classes'])
 
-		return runs
+	return runs
 
 def checkdir(runName, OW_bool=True):
 	"""

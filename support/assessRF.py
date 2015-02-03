@@ -9,7 +9,7 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
+def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -18,11 +18,18 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
+		images (numpy array) : images of the MNIST dataset used for training
+		labels (numpy array) : labels corresponding tto the images of the MNIST dataset
 		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
 		proba (bool, optional) : whether to compute RF class histogram as the sum of the class probability or as the sum of the argmax of the class (winner-take-all)
 		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
 		lr_ratio (float, optional) : the ratio between ach signal and normal learning rate
 		rel_classes (numpy array, optional) : the classes relevant in the training protocol (i.e., those not equal to '0')
+
+	return:
+		RFproba (numpy array) : probability that a each RF belongs to a certain digit class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x nHidNeurons x 10). This can be used to compute the selectivity index of a neuron (when SVM=False abd lr_ratio=1.0) by taking np.max(RFproba,2)
+		RFclass (numpy array) : count of weights/RFs responsive of each digit class (shape= nRun x 10)
+		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
 	print "computing RF classes..."
@@ -37,11 +44,10 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 		pfile = open('support/SVM-MNIST-proba', 'r')
 		svm_mnist = pickle.load(pfile)
 		pfile.close()
-	else:
-		images, labels = mnist.read_images_from_mnist(classes=classes, dataset='test')
 
 	RFproba = np.zeros((nRun,nNeurons,nClasses))
 	RFclass = np.zeros((nRun,nClasses))
+	RFselec = np.zeros((nRun,nClasses))
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
 		if SVM:
@@ -56,11 +62,13 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 			RFclass[i,:] = np.sum(RFproba[i],0)
 		else:
 			RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=nClasses, range=(-0.5,9.5))
+		for c in range(nClasses):
+			RFselec[i,c] = np.mean(np.max(RFproba[i],1)[np.argmax(RFproba[i],1)==c])
 
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste}
+	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	pfile = open('output/'+runName+'/RFclass', 'w')
 	pickle.dump(pRFclass, pfile)
@@ -73,7 +81,10 @@ def hist(runName, W, classes, nDimStates, SVM=True, proba=False, show=True, lr_r
 	else:
 		pyplot.close(fig)
 
-	return RFproba, RFclass
+	""" compute selectivity index """
+
+
+	return RFproba, RFclass, RFselec
 
 def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 	print "ploting RFs..."
@@ -98,7 +109,11 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 
 def selectivity(W, RFproba, images, labels, classes):
 	"""
-	computes the selectivity of a neuron
+	computes the selectivity of a neuron, using the already computed RFproba. This RFproba must have been computed using hist() with SVM=False and lr_ratio=1.0
+
+	Args:
+		W (numpy array) : weights from input to hidden neurons
+		RFproba (numpy array) : 
 	"""
 	acti = ex.propL1(images, W, SM=False)
 	nNeurons = np.size(acti,1)
