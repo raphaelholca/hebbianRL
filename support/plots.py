@@ -15,9 +15,10 @@ def plotRF(W, target=None, W_act=None, cmap='Blues'):
 	"""
 	#plot parameters
 	nHidNeurons = np.size(W,1)
-	nDimStates = 784
 	v = int(np.sqrt(nHidNeurons))
 	h = int(np.ceil(float(nHidNeurons)/v))
+	Wmin = np.min(W)
+	Wmax = np.max(W)
 
 	#create a transparent colormap
 	cmap_trans = plt.get_cmap('binary') 
@@ -31,7 +32,7 @@ def plotRF(W, target=None, W_act=None, cmap='Blues'):
 		plt.subplot(v,h,i+1)
 		if type(target)!=type(None) and target[i]!=0:
 			plt.imshow(target[i], cmap=cmap, vmin=0., vmax=3, extent=(0,28,0,28))
-		plt.imshow(np.reshape(W[:nDimStates,i], (28,28)), interpolation='nearest', cmap=cmap_trans, extent=(0,28,0,28))
+		plt.imshow(np.reshape(W[:,i], (28,28)), interpolation='nearest', cmap=cmap_trans, extent=(0,28,0,28), vmin=Wmin)
 		if type(W_act)!=type(None):
 			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(28,30,0,28))
 			plt.imshow([[0.]], interpolation='nearest', cmap='binary', alpha=0, extent=(0,30,0,28))

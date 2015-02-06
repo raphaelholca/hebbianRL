@@ -28,7 +28,8 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indic
 """
 
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','0','0','0','0','0'], dtype='|S1')
@@ -37,7 +38,7 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 # rActions 	= np.array(['c','0','b'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 9 ], dtype=int)
-# rActions 	= np.array(['a','0'], dtype='|S1')
+# rActions 	= np.array(['a','b'], dtype='|S1')
 
 # dHigh_list = [0.0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.75]
 # for dd in dHigh_list:
@@ -45,34 +46,34 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 # runName 	= 'selec-0_' + str(int(dd*100))
 
 """ parameters """
-nRun 		= 1				# number of runs
+nRun 		= 1			# number of runs
 nEpiCrit	= 2				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-nEpiAch		= 2				# number of ACh episodes in each run (episodes when ACh only is active)
+nEpiAch		= 0				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 1				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 2				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 't-singleVar'			# name of the folder where to save results
+runName 	= 't+ach+dopa_3'			# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 20			# number of hidden neurons
 lrCrit		= 0.0002 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.0002		# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
-dHigh 		= 1			# learning rate increase for unexpected reward (high dopamine) outside of critical period
-dMid 		= dHigh/3		# learning rate increase for correct reward prediction
+dHigh 		= 0.5			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
-dLow 		= -dHigh/3		# learning rate increase for incorrect reward prediction (low dopamine)
+dLow 		= -dHigh		# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
 classifier	= 'neuronClass'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
 SVM			= False			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-bestAction 	= False			# whether to take predicted best action (True) or take random actions (False)
+bestAction 	= True			# whether to take predicted best action (True) or take random actions (False)
 feedback	= True			# whether to feedback activation of classification neurons to hidden neurons
 balReward	= False			# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 showPlots	= False			# whether to display plots
-show_W_act	= False			# whether to display W_act weights on the weight plots
-sort 		= True			# whether to sort weights by their class when displaying
-target		= 4 			# target digit (to be used to color plots). Use 'None' if not desired
+show_W_act	= True			# whether to display W_act weights on the weight plots
+sort 		= False			# whether to sort weights by their class when displaying
+target		= None 			# target digit (to be used to color plots). Use None if not desired
 seed 		= 992#np.random.randint(1000) 				# seed of the random number generator
+
 
 """ load and pre-process images """
 ex.checkClassifier(classifier)
@@ -170,6 +171,7 @@ for r in range(nRun):
 
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 				dopa[bReward==1] = dHigh
+				dopa[bReward==0] = -dHigh
 
 				lr_current = lrAdlt/10.
 				disinhib_L1 = np.zeros(nBatch) #no learning in L1 during proc.
@@ -180,15 +182,18 @@ for r in range(nRun):
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 			
 				#determine acetylcholine strength based on task involvement
-				if nEpiAch == 0: aHigh = aLow
-				ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh			#stimulus involved in task
+				if nEpiAch > 0:
+					ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh #stimulus involved in task
 				#determine dopamine signal strength based on reward
-				dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
-				dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
-				dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-				dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
-				dopa[bReward==-1]											= dNeut			#never rewarded
-				dopa[bReward== 2]											= dNeut			#always rewarded
+				dopa[bReward==1] 	= dHigh 	#correct action
+				dopa[bReward==0] 	= -dHigh 	#incorrect action
+				dopa[bReward==-1]	= dNeut		#never rewarded
+				dopa[bReward== 2]	= dNeut		#always rewarded
+
+				# dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
+				# dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+				# dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
+				# dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
 
 				#feedback from classification layer
 				if feedback: 
@@ -206,7 +211,7 @@ for r in range(nRun):
 			dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=lr_current, disinhib=disinhib_L2)
 			W_in += dW_in
 			W_act += dW_act
-			
+
 			if trainNeuro: W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit)
 
 	#save weights
@@ -217,7 +222,7 @@ for r in range(nRun):
 """ compute network statistics and performance """
 
 #compute histogram of RF classes
-RFproba, _, _ = rf.hist(runName, W_in_save, classes, nDimStates, images, labels, SVM=True, proba=False, show=showPlots, lr_ratio=aHigh/lrAdlt, rel_classes=classes[rActions!='0'])
+RFproba, _, _ = rf.hist(runName, W_in_save, classes, nDimStates, images, labels, SVM=False, proba=False, show=showPlots, lr_ratio=aHigh/lrAdlt, rel_classes=classes[rActions!='0'])
 #compute the selectivity of RFs
 _, _, RFselec = rf.hist(runName, W_in_save, classes, nDimStates, images, labels, SVM=False, proba=False, show=showPlots, lr_ratio=1.0)
 
@@ -242,7 +247,7 @@ print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
 #save data
-ex.save_data(runName, W_in_save, W_act_save, W_class_save, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier)
+ex.save_data(runName, W_in_save, W_act_save, W_class_save, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier)
 
 print '\nrun: '+runName
 
