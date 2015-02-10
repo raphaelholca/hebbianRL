@@ -35,7 +35,7 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indic
 # rActions 	= np.array(['a','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
-# rActions 	= np.array(['c','0','b'], dtype='|S1')
+# rActions 	= np.array(['a','b','c'], dtype='|S1')
 
 classes 	= np.array([ 4 , 9 ], dtype=int)
 rActions 	= np.array(['a','b'], dtype='|S1')
@@ -46,22 +46,22 @@ rActions 	= np.array(['a','b'], dtype='|S1')
 # runName 	= 'selec-0_' + str(int(dd*100))
 
 """ parameters """
-nRun 		= 1				# number of runs
+nRun 		= 1			# number of runs
 nEpiCrit	= 2				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 0				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 1				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 2				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'proc-0'			# name of the folder where to save results
+runName 	= 'proc-1'			# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 20			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
-lrAdlt		= 0.005			# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
+lrAdlt		= 0.005		# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
 dHigh 		= 0.5			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
-dLow 		= -dHigh/10		# learning rate increase for incorrect reward prediction (low dopamine)
+dLow 		= -dHigh/1.5		# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
 classifier	= 'neuronClass'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
 SVM			= False			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -112,8 +112,8 @@ nActNeurons = len(lActions)
 trainNeuro = np.where(classifier == 'neural', True, False)
 
 """ training of the network """
+print 'training network...'
 for r in range(nRun):
-	print 'training network...'
 	print 'run: ' + str(r+1)
 	#initialize network variables
 	ach = np.zeros(nBatch)
