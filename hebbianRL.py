@@ -27,18 +27,18 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
 """
 
-# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
-# rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
+rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
-# rActions 	= np.array(['a','b','c'], dtype='|S1')
+# rActions 	= np.array(['a','0','0'], dtype='|S1')
 
-classes 	= np.array([ 4 , 9 ], dtype=int)
-rActions 	= np.array(['a','b'], dtype='|S1')
+# classes 	= np.array([ 4 , 9 ], dtype=int)
+# rActions 	= np.array(['a','b'], dtype='|S1')
 
 # dHigh_list = [0.0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.75]
 # for dd in dHigh_list:
@@ -52,9 +52,9 @@ nEpiAch		= 0				# number of ACh episodes in each run (episodes when ACh only is 
 nEpiProc	= 1				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'proc-1'			# name of the folder where to save results
+runName 	= 'proc+dopa'			# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
-nHidNeurons = 20			# number of hidden neurons
+nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.005		# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -108,7 +108,7 @@ nEpiTot = nEpiCrit + nEpiAch + nEpiProc + nEpiDopa
 np.random.seed(seed)
 nImages = np.size(images,0)
 nInpNeurons = np.size(images,1)
-nActNeurons = len(lActions)
+nActNeurons = nClasses
 trainNeuro = np.where(classifier == 'neural', True, False)
 
 """ training of the network """
@@ -134,11 +134,10 @@ for r in range(nRun):
 			#compute activation of hidden, action, and classification neurons
 			bHidNeurons = ex.propL1(bImages, W_in, SM=False)
 			bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=0.001), W_act, t=0.001)
-			# bActNeurons = ex.propL1(ex.softmax(bHidNeurons), W_act)
 			if trainNeuro: bClassNeurons = ex.propL2_learn(classes, bLabels)
 
 			#take action - either random or predicted best
-			bPredictActions = lActions[np.argmax(bActNeurons,1)] #predicted best action
+			bPredictActions = rActions_z[np.argmax(bActNeurons,1)] #predicted best action
 			if bestAction: bActions = np.copy(bPredictActions) #predicted best action taken
 			else: #random action taken
 				bActions = np.random.choice(lActions, size=nBatch) 
@@ -174,7 +173,7 @@ for r in range(nRun):
 
 				#determine dopamine signal strength based on reward
 				dopa[bReward==1] = dHigh
-				dopa[bReward==0] = dLow ##?
+				dopa[bReward==0] = dLow
 
 				lr_current = lrAdlt
 				disinhib_L1 = np.zeros(nBatch) #no learning in L1 during proc.
@@ -204,7 +203,6 @@ for r in range(nRun):
 				disinhib_L2 = np.zeros(nBatch) #no learning in L2 during perc.
 
 			bHidNeurons = ex.softmax(bHidNeurons, t=0.001) ##t? ##*A*nHidNeurons? #activation must be done after feedback is added to activity
-			# bHidNeurons = ex.softmax(bHidNeurons) ##t? ##*A*nHidNeurons? #activation must be done after feedback is added to activity
 
 			#compute weight updates
 			dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lr_current, disinhib=disinhib_L1)
@@ -229,14 +227,16 @@ for r in range(nRun):
 """ compute network statistics and performance """
 
 #compute histogram of RF classes
-RFproba, _, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, show=showPlots, lr_ratio=aHigh/lrAdlt, rel_classes=classes[rActions!='0'])
+if nEpiAch>0: lr_ratio=aHigh/lrAdlt
+else: lr_ratio=1.0
+RFproba, _, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, show=showPlots, lr_ratio=lr_ratio, rel_classes=classes[rActions!='0'])
 #compute the selectivity of RFs
 _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, show=showPlots, lr_ratio=1.0)
 
 #compute correct weight assignment in the action layer
 correct_W_act = 0.
 for k in W_act_save.keys():
-	correct_W_act += np.sum(ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions_z) == lActions[np.argmax(W_act_save[k],1)])
+	correct_W_act += np.sum(ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions_z) == rActions_z[np.argmax(W_act_save[k],1)])
 correct_W_act/=len(RFproba)
 
 #plot the weights
