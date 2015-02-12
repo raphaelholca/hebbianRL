@@ -28,8 +28,8 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indic
 """
 
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
-rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
+rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+# rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','0','0','0','0','0'], dtype='|S1')
@@ -48,13 +48,13 @@ rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
 # 	runName 	= 'selec-0_' + str(int(dHigh*100))
 
 """ parameters """
-nRun 		= 1			# number of runs
+nRun 		= 3			# number of runs
 nEpiCrit	= 2				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 0				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 1				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 2				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 't'		# name of the folder where to save results
+runName 	= 't-cont'		# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -62,6 +62,7 @@ lrAdlt		= 0.005			# learning rate after the end of the 'critica period' (adult/t
 aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
 dHigh 		= 0.8			# learning rate increase for unexpected reward (high dopamine) outside of critical period
+dHigh 		= 0.1			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
 dLow 		= -dHigh*0.5	# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
@@ -74,7 +75,7 @@ showPlots	= False			# whether to display plots
 show_W_act	= True			# whether to display W_act weights on the weight plots
 sort 		= False			# whether to sort weights by their class when displaying
 target		= None 			# target digit (to be used to color plots). Use None if not desired
-seed 		= np.random.randint(1000) 				# seed of the random number generator
+seed 		= 992#np.random.randint(1000) 				# seed of the random number generator
 
 
 """ load and pre-process images """
@@ -191,18 +192,20 @@ for r in range(nRun):
 
 				#determine dopamine signal strength based on reward
 				dopa[bReward==1] 	= dHigh 	#correct action
-				dopa[bReward==0] 	= dLow 	#incorrect action
+				dopa[bReward==0] 	= dLow 		#incorrect action
 				dopa[bReward==-1]	= dNeut		#never rewarded
 				dopa[bReward== 2]	= dNeut		#always rewarded
 
 				#feedback from classification layer
 				if feedback: 
 					bFeedback = np.dot(bActNeurons, W_act.T)*100
+					# bFeedback = np.dot(bActNeurons, ex.softmax(W_act, t=0.001).T)*100
 					bHidNeurons += np.log(bFeedback)
 
 				lr_current = lrAdlt
 				disinhib_L1 = ach*dopa
 				disinhib_L2 = np.zeros(nBatch) #no learning in L2 during perc.
+				# disinhib_L2 = ach*dopa
 
 			bHidNeurons = ex.softmax(bHidNeurons, t=0.001) ##t? ##*A*nHidNeurons? #activation must be done after feedback is added to activity
 
@@ -237,9 +240,10 @@ _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels
 
 #compute correct weight assignment in the action layer
 correct_W_act = 0.
+notsame = {}
 for k in W_act_save.keys():
 	same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions_z) == rActions_z[np.argmax(W_act_save[k],1)]
-	notsame = np.argwhere(~same)
+	notsame[k] = np.argwhere(~same)
 	correct_W_act += np.sum(same)
 correct_W_act/=len(RFproba)
 
@@ -256,7 +260,6 @@ if classifier=='neuronClass': cl.neuronClass(runName, W_in_save, classes, RFprob
 print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 
 print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
-print 'incorrect assignments: ' + str(notsame)
 
 #save data
 ex.save_data(runName, W_in_save, W_act_save, W_class_save, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier)
