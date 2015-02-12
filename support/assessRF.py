@@ -86,7 +86,7 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 
 	return RFproba, RFclass, RFselec
 
-def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
+def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=np.array([])):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
 		print 'run: ' + str(i+1)
@@ -103,7 +103,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False):
 		W_act_pass=None
 		if W_act:
 			W_act_pass = W_act[r]
-		fig = pl.plotRF(W[r], target=target_pass, W_act=W_act_pass)
+		fig = pl.plotRF(W[r], target=target_pass, W_act=W_act_pass, notsame=notsame)
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
 

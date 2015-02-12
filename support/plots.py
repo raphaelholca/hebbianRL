@@ -9,7 +9,7 @@ NUM_COLORS = 9
 my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 
-def plotRF(W, target=None, W_act=None, cmap='Blues'):
+def plotRF(W, target=None, W_act=None, cmap='Blues', notsame=np.array([])):
 	""" 
 	plots of the weights, with superimposed colouring for target digit and L2 weights 
 	"""
@@ -34,6 +34,8 @@ def plotRF(W, target=None, W_act=None, cmap='Blues'):
 			plt.imshow(target[i], cmap=cmap, vmin=0., vmax=3, extent=(0,28,0,28))
 		plt.imshow(np.reshape(W[:,i], (28,28)), interpolation='nearest', cmap=cmap_trans, extent=(0,28,0,28), vmin=Wmin)
 		if type(W_act)!=type(None):
+			if i in notsame:
+				plt.imshow([[0]], cmap='RdYlBu', vmin=0., vmax=3, extent=(28,30,0,28))
 			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(28,30,0,28))
 			plt.imshow([[0.]], interpolation='nearest', cmap='binary', alpha=0, extent=(0,30,0,28))
 		plt.xticks([])
@@ -117,37 +119,37 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
-def plotBar(levels, xlabels, ylabel, fsize, color):
-	"""
-	plots the different values of dopamine used during training
-	"""
+# def plotBar(levels, xlabels, ylabel, fsize, color):
+# 	"""
+# 	plots the different values of dopamine used during training
+# 	"""
 
-	c = np.where(color=='blue', my_blues[6], my_reds[5])
+# 	c = np.where(color=='blue', my_blues[6], my_reds[5])
 
-	#values
-	levels[levels==0]+=1e-5
-	Xs = np.arange(len(levels))
+# 	#values
+# 	levels[levels==0]+=1e-5
+# 	Xs = np.arange(len(levels))
 
-	#plot
-	fig, ax = plt.subplots(figsize=fsize)
-	ax.bar(Xs, levels, color=c, width=0.8)
+# 	#plot
+# 	fig, ax = plt.subplots(figsize=fsize)
+# 	ax.bar(Xs, levels, color=c, width=0.8)
 	
 
-	#plot parameters
-	fig.patch.set_facecolor('white')
-	ax.spines['right'].set_visible(False)
-	ax.spines['top'].set_visible(False)
-	ax.set_xticks(Xs+0.5)
-	ax.set_xticklabels(xlabels, rotation=70)
-	ax.set_yticks([-0.02, 0.0, 0.02, 0.04])
-	ax.set_ylim(-0.03,0.05)
-	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
-	ax.xaxis.set_ticks_position('bottom')
-	ax.yaxis.set_ticks_position('left')
-	ax.set_ylabel(ylabel, fontsize=18)
-	plt.tight_layout()
+# 	#plot parameters
+# 	fig.patch.set_facecolor('white')
+# 	ax.spines['right'].set_visible(False)
+# 	ax.spines['top'].set_visible(False)
+# 	ax.set_xticks(Xs+0.5)
+# 	ax.set_xticklabels(xlabels, rotation=70)
+# 	ax.set_yticks([-0.02, 0.0, 0.02, 0.04])
+# 	ax.set_ylim(-0.03,0.05)
+# 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+# 	ax.xaxis.set_ticks_position('bottom')
+# 	ax.yaxis.set_ticks_position('left')
+# 	ax.set_ylabel(ylabel, fontsize=18)
+# 	plt.tight_layout()
 
-	return fig
+# 	return fig
 
 
 
