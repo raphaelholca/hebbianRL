@@ -177,7 +177,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
+def save_data(runName, W_in, W_act, W_class, target, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, dMid, aLow, dHigh, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -204,6 +204,7 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	settingFile.filename 			= 'output/' + runName + '/settings.txt'
 	settingFile['classes'] 			= list(classes)
 	settingFile['rActions'] 		= list(rActions)
+	settingFile['target'] 			= target
 	settingFile['nRun'] 			= nRun
 	settingFile['nEpiCrit']			= nEpiCrit
 	settingFile['nEpiAch']			= nEpiAch 
@@ -218,6 +219,7 @@ def save_data(runName, W_in, W_act, W_class, seed, nRun, classes, rActions, data
 	settingFile['aHigh'] 			= aHigh
 	settingFile['aLow'] 			= aLow
 	settingFile['dHigh'] 			= dHigh
+	settingFile['dMid'] 			= dMid
 	settingFile['dNeut'] 			= dNeut
 	settingFile['dLow'] 			= dLow
 	settingFile['nBatch'] 			= nBatch

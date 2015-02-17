@@ -30,7 +30,7 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	""" load and pre-process images """
 	print "assessing performance with neural classifier..."
 	if  train_dataset=='train': test_dataset='test'
-	else: test_dataset='test'  #'train' ##
+	else: test_dataset='train'
 	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
 	images = ex.normalize(images, A*nDimStates)
 	images, labels = ex.evenLabels(images, labels, classes)
