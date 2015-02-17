@@ -9,6 +9,10 @@ def read_images_from_mnist(classes, dataset = "train",
     Python function for importing the MNIST data set.
     """
 
+    if not os.path.exists(path): #in case the code is running on the server
+        path = '/mnt/antares_raid/home/raphaelholca/Documents/data-sets/MNIST'
+
+
     if dataset is "train":
         fname_img = os.path.join(path, 'train-images.idx3-ubyte')
         fname_lbl = os.path.join(path, 'train-labels.idx1-ubyte')
