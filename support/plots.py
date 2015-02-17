@@ -1,28 +1,49 @@
-""" plottting functions for the hebbian network and neural classifier """
+""" support plottting functions """
 
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-def plotRF(W, e=''):
-	""" plot weights """
+""" initialize color maps """
+NUM_COLORS = 9
+my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
+my_reds = [plt.get_cmap('YlOrRd')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
+
+def plotRF(W, target=None, W_act=None, cmap='Blues', notsame=np.array([])):
+	""" 
+	plots of the weights, with superimposed colouring for target digit and L2 weights 
+	"""
 	#plot parameters
 	nHidNeurons = np.size(W,1)
-	nDimStates = 784
 	v = int(np.sqrt(nHidNeurons))
 	h = int(np.ceil(float(nHidNeurons)/v))
-	
+	Wmin = np.min(W)
+	Wmax = np.max(W)
+
+	#create a transparent colormap
+	cmap_trans = plt.get_cmap('binary') 
+	cmap_trans._init()
+	alphas = np.linspace(0., 1., cmap_trans.N+3)
+	cmap_trans._lut[:,-1] = alphas
+
 	#plot figure
-	fig, ax = plt.subplots()
+	fig, ax = plt.subplots(figsize=(h,v))
 	for i in range(np.size(W,1)):
 		plt.subplot(v,h,i+1)
-		plt.imshow(np.reshape(W[:nDimStates,i], (28,28)), interpolation='nearest')
+		if type(target)!=type(None) and target[i]!=0:
+			plt.imshow(target[i], cmap=cmap, vmin=0., vmax=3, extent=(0,28,0,28))
+		plt.imshow(np.reshape(W[:,i], (28,28)), interpolation='nearest', cmap=cmap_trans, extent=(0,28,0,28), vmin=Wmin)
+		if type(W_act)!=type(None):
+			if i in notsame:
+				plt.imshow([[0]], cmap='RdYlBu', vmin=0., vmax=3, extent=(28,30,0,28))
+			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(28,30,0,28))
+			plt.imshow([[0.]], interpolation='nearest', cmap='binary', alpha=0, extent=(0,30,0,28))
 		plt.xticks([])
 		plt.yticks([])
 
 	#plot parameters
 	fig.patch.set_facecolor('white')
-	plt.suptitle('episode ' + e)
+	plt.subplots_adjust(left=0., right=1., bottom=0., top=1., wspace=0., hspace=0.)
 
 	return fig
 
@@ -44,12 +65,14 @@ def plotCM(confusMatrix, classes):
 	np.fill_diagonal(colorMatrix, -1.0)
 
 	#plot the matrix and number values
-	fig, ax = plt.subplots(figsize=(4,4))
+	sH = 1.0+0.5*nClasses
+	sV = 0.9+0.5*nClasses
+	fig, ax = plt.subplots(figsize=(sH,sV))
 	ax.imshow(colorMatrix, interpolation='nearest', cmap='RdYlGn_r', vmin=-1.2, vmax=1.2)
 	ax.imshow(confusMatrix, interpolation='nearest', cmap=cmap_trans, vmin=-0.0, vmax=1)
 	for i in range(nClasses):
 		for j in range(nClasses):
-			perc = int(confusMatrix[i,j]*100)
+			perc = int(np.round(confusMatrix[i,j],2)*100)
 			ax.annotate(perc, xy=(0, 0),  xycoords='data', xytext=(j, i), textcoords='data', size=15, ha='center', va='center')
 
 	#plot parameters
@@ -60,15 +83,105 @@ def plotCM(confusMatrix, classes):
 	ax.spines['top'].set_visible(False)
 	ax.set_xticks(np.arange(nClasses))
 	ax.set_yticks(np.arange(nClasses))
-	ax.set_xticklabels(classes, fontsize=20)
-	ax.set_yticklabels(classes, fontsize=20)
+	ax.set_xticklabels(classes, fontsize=18)
+	ax.set_yticklabels(classes, fontsize=18)
 	ax.xaxis.set_ticks_position('none')
 	ax.yaxis.set_ticks_position('none')
-	ax.set_xlabel('classification', fontsize=20)
-	ax.set_ylabel('label', fontsize=20)
-	fig.subplots_adjust(top=1.08, left=0.18, right=1)
+	ax.set_xlabel('prediction', fontsize=17)
+	ax.set_ylabel('label', fontsize=18)
+	plt.tight_layout()
+	# fig.subplots_adjust(top=1, right=1)
 
 	return fig
+
+def plotHist(h, bins, h_err=None):
+	"""
+	plots the histogram of receptive field class distribution
+	"""
+	fig, ax = plt.subplots(figsize=(1+0.5*len(h),3))
+	Xs = np.arange(len(h))
+	y_max = np.ceil(np.sum(h))
+	ax.bar(Xs, h, yerr=h_err, color=my_blues[6], ecolor=my_blues[7])
+
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.set_xticks(Xs+0.5)
+	ax.set_xticklabels(bins)
+	s = np.where(y_max>4, 2,1)
+	ax.set_yticks(np.arange(y_max+1, step=s))
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('class', fontsize=18)
+	ax.set_ylabel('neuron count', fontsize=18)
+	plt.tight_layout()
+
+	return fig
+
+# def plotBar(levels, xlabels, ylabel, fsize, color):
+# 	"""
+# 	plots the different values of dopamine used during training
+# 	"""
+
+# 	c = np.where(color=='blue', my_blues[6], my_reds[5])
+
+# 	#values
+# 	levels[levels==0]+=1e-5
+# 	Xs = np.arange(len(levels))
+
+# 	#plot
+# 	fig, ax = plt.subplots(figsize=fsize)
+# 	ax.bar(Xs, levels, color=c, width=0.8)
+	
+
+# 	#plot parameters
+# 	fig.patch.set_facecolor('white')
+# 	ax.spines['right'].set_visible(False)
+# 	ax.spines['top'].set_visible(False)
+# 	ax.set_xticks(Xs+0.5)
+# 	ax.set_xticklabels(xlabels, rotation=70)
+# 	ax.set_yticks([-0.02, 0.0, 0.02, 0.04])
+# 	ax.set_ylim(-0.03,0.05)
+# 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+# 	ax.xaxis.set_ticks_position('bottom')
+# 	ax.yaxis.set_ticks_position('left')
+# 	ax.set_ylabel(ylabel, fontsize=18)
+# 	plt.tight_layout()
+
+# 	return fig
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
