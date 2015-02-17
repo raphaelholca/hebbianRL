@@ -97,7 +97,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=None)
 			RFproba[i] 	= np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
 		target_pass=None
 		if target:
-			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target)
+			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target[r])
 			target_pass = np.zeros((np.size(W[r],0),1,1))
 			target_pass[T_idx,:,:]=1.0
 		W_act_pass=None
