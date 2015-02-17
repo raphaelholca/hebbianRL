@@ -346,7 +346,10 @@ def shuffle(arrays):
 	np.random.shuffle(rndIdx)
 	shuffled_arrays = []
 	for a in arrays:
-		shuffled_arrays.append(a[rndIdx,:])
+		if len(np.shape)==1:
+			shuffled_arrays.append(a[rndIdx])
+		elif len(np.shape)==2:
+			shuffled_arrays.append(a[rndIdx,:])
 
 	return shuffled_arrays#, rndIdx
 
