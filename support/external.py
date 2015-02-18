@@ -271,6 +271,7 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
 		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
 		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
+		runs[k]['target'] 			= settingFile['target']
 		runs[k]['nEpiProc'] 		= int(settingFile['nEpiProc'])
 		runs[k]['nEpiAch'] 			= int(settingFile['nEpiAch'])
 		runs[k]['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
@@ -282,6 +283,10 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
 		runs[k]['aLow']				= float(settingFile['aLow'])
 		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
+		try:
+			runs[k]['dMid'] 		= float(settingFile['dMid'])
+		except KeyError:
+			pass#print 'while loading data: no dMid provided'
 		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
 		runs[k]['dLow'] 			= float(settingFile['dLow'])
 		runs[k]['classifier'] 		= settingFile['classifier']

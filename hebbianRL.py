@@ -24,12 +24,12 @@ su = reload(su)
 experimental variables
 
 classes (int) 	: class of the MNIST dataset to use to train the network
-rActions (str)	: for each class of MNIST, the action that is rewarded. '0' indicates a class that is never rewarded; '1' indicates a class that is always rewarded; chararcters (e.g., 'a', 'b', etc.) indicate the specific action that is rewarded.
+rActions (str)	: for each class of MNIST, the action that is rewarded. Capital letters indicates a class that is paired with ACh release.
 """
 
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
-# rActions 	= np.array(['0','0','0','0','e','0','0','0','0','0'], dtype='|S1')
+# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+rActions 	= np.array(['a','b','c','d','e','f','g','h','i','J'], dtype='|S1')
 
 # classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
@@ -48,33 +48,33 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 # 	runName 	= 'selec-0_' + str(int(dHigh*100))
 
 """ parameters """
-nRun 		= 1			# number of runs
-nEpiCrit	= 2				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-nEpiAch		= 0				# number of ACh episodes in each run (episodes when ACh only is active)
+nRun 		= 5				# number of runs
+nEpiCrit	= 0				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+nEpiAch		= 3				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 0				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 2				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 5				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'n_DA_0-8'		# name of the folder where to save results
+runName 	= 'dopa_0-0'		# name of the folder where to save results
 dataset 	= 'train'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.005			# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-aHigh 		= 6.			# learning rate increase for relevance signal (high ACh) outside of critical period
+aHigh 		= 1. #<--		# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
-dHigh 		= 4.			# learning rate increase for unexpected reward (high dopamine) outside of critical period
-dMid 		= 0.8 #<--		# learning rate increase for correct reward prediction
+dMid 		= 0.0 #<--		# learning rate increase for correct reward prediction
+dHigh 		= dMid*2.			# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
 dLow 		= -dMid*0.5		# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
-classifier	= 'SVM'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
-SVM			= False			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
+classifier	= 'neuronClass'			# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
+SVM			= True			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 bestAction 	= True			# whether to take predicted best action (True) or take random actions (False)
 feedback	= False			# whether to feedback activation of classification neurons to hidden neurons
 balReward	= False			# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 showPlots	= False			# whether to display plots
 show_W_act	= True			# whether to display W_act weights on the weight plots
 sort 		= False			# whether to sort weights by their class when displaying
-target		= None 			# target digit (to be used to color plots). Use None if not desired
+target		= 9 			# target digit (to be used to color plots). Use None if not desired
 seed 		= 992#np.random.randint(1000) 				# seed of the random number generator
 
 """ load and pre-process images """
@@ -122,7 +122,7 @@ for r in range(nRun):
 	ach = np.zeros(nBatch)
 	dopa = np.zeros(nBatch)
 	W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-	W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))+1.0)/nHidNeurons
+	W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 	if trainNeuro: W_class = np.random.random_sample(size=(nHidNeurons, nClasses)) + 1.
 
 	for e in range(nEpiTot):
@@ -162,7 +162,7 @@ for r in range(nRun):
 
 			elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: #ACh - perceptual learning
 				#determine acetylcholine strength based on task involvement
-				ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh			#stimulus involved in task
+				ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
 
 				lr_current = lrAdlt
 				disinhib_L1 = ach
@@ -173,31 +173,26 @@ for r in range(nRun):
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 				
 				#compute reward, and ach and dopa signals for procedural learning
-				if nEpiAch > 0:
-					ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh
+				ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
 				#determine dopamine signal strength based on reward
-				dopa[bReward==1] = dHigh
-				dopa[bReward==0] = dLow*2 ##
-
-				# dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
-				# dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
-				# dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-				# dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
-				# dopa[bReward==-1]											= dNeut			#never rewarded
-				# dopa[bReward== 2]											= dNeut			#always rewarded
+				dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
+				dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+				dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
+				dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
+				dopa[bReward==-1]											= dNeut			#never rewarded
+				dopa[bReward== 2]											= dNeut			#always rewarded
 
 				lr_current = lrAdlt
 				disinhib_L1 = np.zeros(nBatch) #no learning in L1 during proc.
-				disinhib_L2 = ach*dopa
+				disinhib_L2 = dopa
 
 			elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
 				#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
 				bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 			
 				#determine acetylcholine strength based on task involvement
-				if nEpiAch > 0:
-					ach[ex.labels2actionVal(bLabels, classes, rActions)!='0'] = aHigh
+				ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
 				#determine dopamine signal strength based on reward
 				dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
@@ -217,9 +212,9 @@ for r in range(nRun):
 
 				lr_current = lrAdlt
 				disinhib_L1 = ach*dopa
-				disinhib_L2 = ach*dopa#np.zeros(nBatch) #no learning in L2 during perc.
+				disinhib_L2 = dopa
 
-			bHidNeurons = ex.softmax(bHidNeurons, t=0.001) ##t? ##*A*nHidNeurons? #activation must be done after feedback is added to activity
+			bHidNeurons = ex.softmax(bHidNeurons, t=0.001) #activation must be done after feedback is added to activity
 
 			#compute weight updates
 			dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lr_current, disinhib=disinhib_L1)
@@ -265,7 +260,7 @@ if classifier=='neural': cl.neural(runName, W_in_save, W_class_save, classes, rA
 if classifier=='SVM': cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', show=showPlots)
 if classifier=='neuronClass': cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, show=showPlots)
 
-print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
+# print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 
 print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
