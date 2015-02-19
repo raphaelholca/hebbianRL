@@ -47,12 +47,12 @@ nEpiAch		= 8				# number of ACh episodes in each run (episodes when ACh only is 
 nEpiProc	= 0				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'ach_00_2'		# name of the folder where to save results
+runName 	= 'ach_02'		# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 20			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.005			# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-aHigh 		= 8. #<--		# learning rate increase for relevance signal (high ACh) outside of critical period
+aHigh 		= 2. #<--		# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
 dMid 		= 0.0 #<--		# learning rate increase for correct reward prediction
 dHigh 		= dMid*2.		# learning rate increase for unexpected reward (high dopamine) outside of critical period
@@ -68,7 +68,7 @@ showPlots	= False			# whether to display plots
 show_W_act	= False			# whether to display W_act weights on the weight plots
 sort 		= False			# whether to sort weights by their class when displaying
 target		= 9 			# target digit (to be used to color plots). Use None if not desired
-seed 		= 992#np.random.randint(1000) 				# seed of the random number generator
+seed 		= np.random.randint(1000) 				# seed of the random number generator
 
 """ load and pre-process images """
 ex.checkClassifier(classifier)
