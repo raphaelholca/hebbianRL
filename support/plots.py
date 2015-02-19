@@ -9,7 +9,7 @@ NUM_COLORS = 9
 my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 
-def plotRF(W, target=None, W_act=None, cmap='Blues', notsame=np.array([])):
+def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
 	""" 
 	plots of the weights, with superimposed colouring for target digit and L2 weights 
 	"""
