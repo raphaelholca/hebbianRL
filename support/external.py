@@ -8,6 +8,7 @@ import os
 import sys
 import shutil
 import time	
+import string
 from configobj import ConfigObj
 
 def normalize(images, A):
@@ -450,7 +451,27 @@ def conv_bool(bool_str):
 	elif bool_str=='False': return False
 	else: return None
 
+def rand_ACh(nClasses):
+	"""
+	Randommly assigns a class to ACh release (creates an array of lower case characters of length nClasses and randomly sets one character to upper case, which triggers ACh release).
 
+	Args:
+		nClasses (int): number of digit classes
+
+	returns:
+		int: target digit class
+		numpy array: array of rewarded actions
+		numpy array: array of rewarded actions
+		numpy array: array of legal actions
+	"""
+	target = np.random.randint(nClasses)
+	rActions = np.array(list(string.ascii_lowercase)[:nClasses])
+	rActions[target] = rActions[target].upper()
+	rActions_z = np.copy(rActions)
+	lActions = np.copy(rActions)
+	print 'target digit: ' + str(target)
+
+	return target, rActions, rActions_z, lActions
 
 
 
