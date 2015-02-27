@@ -27,34 +27,36 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. Capital letters indicates a class that is paired with ACh release.
 """
 
-classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
-rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
-# classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
+classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
+# rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
+# rActions 	= np.array(['a','a','a','a','a','a'], dtype='|S1')
+rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
 # rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
-# rActions 	= np.array(['a','0','0'], dtype='|S1')
+# rActions 	= np.array(['a','c','a'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
-nRun 		= 3				# number of runs
+nRun 		= 10				# number of runs
 nEpiCrit	= 0				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 8				# number of ACh episodes in each run (episodes when ACh only is active)
-nEpiProc	= 0				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
+nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'ach_02'		# name of the folder where to save results
+runName 	= 'ach_10'			# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
-nHidNeurons = 20			# number of hidden neurons
+nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
 lrAdlt		= 0.005			# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-aHigh 		= 2. #<--		# learning rate increase for relevance signal (high ACh) outside of critical period
+aHigh 		= 6. #<--		# learning rate increase for relevance signal (high ACh) outside of critical period
 aLow		= 1. 			# learning rate increase without relevant signal (no ACh)
-dMid 		= 0.0 #<--		# learning rate increase for correct reward prediction
+dMid 		= 0.6 #<--		# learning rate increase for correct reward prediction
 dHigh 		= dMid*2.		# learning rate increase for unexpected reward (high dopamine) outside of critical period
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
 dLow 		= -dMid*0.5		# learning rate increase for incorrect reward prediction (low dopamine)
@@ -65,10 +67,10 @@ bestAction 	= True			# whether to take predicted best action (True) or take rand
 feedback	= False			# whether to feedback activation of classification neurons to hidden neurons
 balReward	= False			# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 showPlots	= False			# whether to display plots
-show_W_act	= False			# whether to display W_act weights on the weight plots
+show_W_act	= True			# whether to display W_act weights on the weight plots
 sort 		= False			# whether to sort weights by their class when displaying
-target		= 9 			# target digit (to be used to color plots). Use None if not desired
-seed 		= np.random.randint(1000) 				# seed of the random number generator
+target		= 4 			# target digit (to be used to color plots). Use None if not desired
+seed 		= 992#np.random.randint(1000) 				# seed of the random number generator
 
 """ load and pre-process images """
 ex.checkClassifier(classifier)
@@ -113,13 +115,14 @@ for r in range(nRun):
 	print 'run: ' + str(r+1)
 
 	#randommly assigns a class with ACh release (used to run multiple runs of ACh)
-	if True: target, rActions, rActions_z, lActions = ex.rand_ACh(nClasses)
+	# if True: target, rActions, rActions_z, lActions = ex.rand_ACh(nClasses)
 
 	#initialize network variables
 	ach = np.zeros(nBatch)
 	dopa = np.zeros(nBatch)
 	W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 	W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+	W_act_init = np.copy(W_act)
 	if trainNeuro: W_class = np.random.random_sample(size=(nHidNeurons, nClasses)) + 1.
 
 	for e in range(nEpiTot):
@@ -199,6 +202,7 @@ for r in range(nRun):
 				dopa[bReward==-1]											= dNeut			#never rewarded
 				dopa[bReward== 2]											= dNeut			#always rewarded
 
+
 				#feedback from classification layer
 				if feedback: 
 					bFeedback = np.log(np.dot(bActNeurons, ex.softmax(W_act, t=0.001).T)*100+1)*10
@@ -216,9 +220,17 @@ for r in range(nRun):
 			#compute weight updates
 			dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lr_current, disinhib=disinhib_L1)
 			dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=lr_current, disinhib=disinhib_L2)
+
+			###
+			# postNeurons_lr = bActNeurons * (lr_current * disinhib_L2[:,np.newaxis])
+			# dW_act = (np.dot(bHidNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W_act)
+			# dW_act = (np.dot((bHidNeurons*ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W_act)
+			###
+
 			W_in += dW_in
 			W_act += dW_act
 
+			# W_in = np.clip(W_in, 1e-10, np.inf)
 			W_act = np.clip(W_act, 1e-10, np.inf)
 
 			if trainNeuro: W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit)

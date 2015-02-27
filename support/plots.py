@@ -119,38 +119,6 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
-# def plotBar(levels, xlabels, ylabel, fsize, color):
-# 	"""
-# 	plots the different values of dopamine used during training
-# 	"""
-
-# 	c = np.where(color=='blue', my_blues[6], my_reds[5])
-
-# 	#values
-# 	levels[levels==0]+=1e-5
-# 	Xs = np.arange(len(levels))
-
-# 	#plot
-# 	fig, ax = plt.subplots(figsize=fsize)
-# 	ax.bar(Xs, levels, color=c, width=0.8)
-	
-
-# 	#plot parameters
-# 	fig.patch.set_facecolor('white')
-# 	ax.spines['right'].set_visible(False)
-# 	ax.spines['top'].set_visible(False)
-# 	ax.set_xticks(Xs+0.5)
-# 	ax.set_xticklabels(xlabels, rotation=70)
-# 	ax.set_yticks([-0.02, 0.0, 0.02, 0.04])
-# 	ax.set_ylim(-0.03,0.05)
-# 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
-# 	ax.xaxis.set_ticks_position('bottom')
-# 	ax.yaxis.set_ticks_position('left')
-# 	ax.set_ylabel(ylabel, fontsize=18)
-# 	plt.tight_layout()
-
-# 	return fig
-
 
 
 
