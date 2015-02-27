@@ -26,7 +26,7 @@ def normalize(images, A):
 
 	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 
-def softmax(activ, vectorial=True, t=1.):
+def softmax(activ, vectorial=True, t=1., disinhib=np.ones(1)):
 	"""
 	Softmax function (equivalent to lateral inhibition, or winner-take-all)
 
@@ -41,13 +41,6 @@ def softmax(activ, vectorial=True, t=1.):
 
 	#vectorial
 	if vectorial:
-		# scale = np.clip(np.max(activ,1)-700, 0, np.inf)
-		# tmpRND=np.random.rand(np.shape(activ)[0],np.shape(activ)[1])/100000
-		# activ+=tmpRND #add a random offset to insure that there is only a single min
-		# activ[activ==np.min(activ,1)[:,np.newaxis]] = np.clip(np.min(activ,1), -740+scale, np.inf)
-		# activ-=tmpRND
-		# return np.exp((activ-scale[:,np.newaxis])/t) / np.sum(np.exp((activ-scale[:,np.newaxis])/t), 1)[:,np.newaxis]
-
 		activ_norm = np.copy(activ - np.max(activ,1)[:,np.newaxis])
 		activ_SM = np.exp((activ_norm)/t) / np.sum(np.exp((activ_norm)/t), 1)[:,np.newaxis]
 		return activ_SM

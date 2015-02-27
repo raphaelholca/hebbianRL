@@ -43,13 +43,13 @@ rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
 # rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
-nRun 		= 10				# number of runs
+nRun 		= 1				# number of runs
 nEpiCrit	= 0				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 8				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 5				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'ach_10'			# name of the folder where to save results
+runName 	= 'work_2'			# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -136,7 +136,7 @@ for r in range(nRun):
 			
 			#compute activation of hidden, action, and classification neurons
 			bHidNeurons = ex.propL1(bImages, W_in, SM=False)
-			bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=0.001), W_act, t=0.001)
+			bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=0.001), W_act, SM=False)
 			if trainNeuro: bClassNeurons = ex.propL2_learn(classes, bLabels)
 
 			#take action - either random or predicted best
@@ -151,22 +151,22 @@ for r in range(nRun):
 			dopa = np.ones(nBatch)*dNeut
 			dW_in = 0.
 			dW_act = 0.
-			disinhib_L1 = np.zeros(nBatch)
-			disinhib_L2 = np.zeros(nBatch)
+			disinhib_Hid = np.zeros(nBatch)
+			disinhib_Act = np.zeros(nBatch)
 
 			#compute reward, ach, and dopa based on learning period
 			if e < nEpiCrit: #critical period
 				lr_current = lrCrit 
-				disinhib_L1 = np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
-				disinhib_L2 = np.zeros(nBatch) #no learning in L1 during crit.
+				disinhib_Hid = np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
+				disinhib_Act = np.zeros(nBatch) #no learning in L1 during crit.
 
 			elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: #ACh - perceptual learning
 				#determine acetylcholine strength based on task involvement
 				ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
 
 				lr_current = lrAdlt
-				disinhib_L1 = ach
-				disinhib_L2 = np.zeros(nBatch) #no learning in L2 during perc.
+				disinhib_Hid = ach
+				disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc.
 
 			elif e >= nEpiCrit + nEpiAch and e < nEpiCrit + nEpiAch + nEpiProc: #procedural learning
 				#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
@@ -184,8 +184,8 @@ for r in range(nRun):
 				dopa[bReward== 2]											= dNeut			#always rewarded
 
 				lr_current = lrAdlt
-				disinhib_L1 = np.zeros(nBatch) #no learning in L1 during proc.
-				disinhib_L2 = dopa
+				disinhib_Hid = np.zeros(nBatch) #no learning in L1 during proc.
+				disinhib_Act = dopa
 
 			elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
 				#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
@@ -212,21 +212,23 @@ for r in range(nRun):
 					bHidNeurons += bFeedback
 
 				lr_current = lrAdlt
-				disinhib_L1 = ach*dopa
-				disinhib_L2 = dopa
+				disinhib_Hid = ach*dopa
+				disinhib_Act = dopa
 
+			# lateral inhibition
 			bHidNeurons = ex.softmax(bHidNeurons, t=0.001) #activation must be done after feedback is added to activity
-
+			bActNeurons = ex.softmax(bActNeurons, t=0.001)
+			
 			#compute weight updates
-			dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=lr_current, disinhib=disinhib_L1)
-			dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=lr_current, disinhib=disinhib_L2)
-
+			dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr_current, disinhib=disinhib_Hid)
+			# dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr_current, disinhib=disinhib_Act)
+		
 			###
-			# postNeurons_lr = bActNeurons * (lr_current * disinhib_L2[:,np.newaxis])
-			# dW_act = (np.dot(bHidNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W_act)
-			# dW_act = (np.dot((bHidNeurons*ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W_act)
+			postNeurons_lr = bActNeurons * (lr_current * disinhib_Act[:,np.newaxis])
+			dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 			###
 
+			# W_in += dW_in
 			W_in += dW_in
 			W_act += dW_act
 
