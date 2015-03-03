@@ -101,36 +101,38 @@ def propL1(bInput, W_in, SM=True, t=1.):
 	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 
-def propL2_learn(classes, labels):
-	"""
-	One propagation step from hidden to classification layer, during learning (activation determined by the labels)
+###deprecated?###
+# def propL2_learn(classes, labels):
+# 	"""
+# 	One propagation step from hidden to classification layer, during learning (activation determined by the labels)
 
-	Args:
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		labels (numpy matrix): labels associated with the input
+# 	Args:
+# 		classes (numpy array): all classes of the MNIST dataset used in the current run
+# 		labels (numpy matrix): labels associated with the input
 
-	returns:
-		numpy array: the activation of the classification neurons
-	"""
+# 	returns:
+# 		numpy array: the activation of the classification neurons
+# 	"""
 
-	classNeurons = np.zeros((len(labels), len(classes)))
-	labelsIdx = label2idx(classes, labels)
-	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0
-	return classNeurons
+# 	classNeurons = np.zeros((len(labels), len(classes)))
+# 	labelsIdx = label2idx(classes, labels)
+# 	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0
+# 	return classNeurons
 
-def propL2_class(hidNeurons, W_class):
-	"""
-	One propagation step from hidden to classification layer, during classification (activation determined by the feedforward input)
+###deprecated?###
+# def propL2_class(hidNeurons, W_class):
+# 	"""
+# 	One propagation step from hidden to classification layer, during classification (activation determined by the feedforward input)
 
-	Args:
-		hidNeurons (numpy array): activation of the hidden neurons, i.e., the input to the classification layer
-		W_class (numpy matrix): weight matrix; shape: (hidden neurons x classification neurons)
+# 	Args:
+# 		hidNeurons (numpy array): activation of the hidden neurons, i.e., the input to the classification layer
+# 		W_class (numpy matrix): weight matrix; shape: (hidden neurons x classification neurons)
 
-	returns:
-		numpy array: the activation of the classification neurons
-	"""
+# 	returns:
+# 		numpy array: the activation of the classification neurons
+# 	"""
 
-	return	np.dot(hidNeurons, W_class)
+# 	return	np.dot(hidNeurons, W_class)
 
 def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	"""
@@ -171,7 +173,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, W_class, target, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
+def save_data(runName, W_in, W_act, target, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -188,11 +190,6 @@ def save_data(runName, W_in, W_act, W_class, target, seed, nRun, classes, rActio
 	pFile = open('output/' + runName + '/W_act', 'w')
 	pickle.dump(W_act, pFile)
 	pFile.close()
-
-	if W_class:
-		pFile = open('output/' + runName + '/W_class', 'w')
-		pickle.dump(W_class, pFile)
-		pFile.close()
 
 	settingFile = ConfigObj()
 	settingFile.filename 			= 'output/' + runName + '/settings.txt'
@@ -327,8 +324,8 @@ def checkClassifier(classifier):
 		classifier (str): name of the classifier
 	"""
 
-	if classifier not in ['neural', 'SVM', 'neuronClass']:
-		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neural\', \'SVM\', \'neuronClass\'.')
+	if classifier not in ['neuronClass', 'SVM', 'actionNeurons']:
+		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neuronClass\', \'SVM\', \'actionNeurons\'.')
 
 
 def shuffle(arrays):
@@ -369,6 +366,8 @@ def val2idx(actionVal, lActions):
 	actionIdx = np.zeros_like(actionVal, dtype=int)
 	for i,v in enumerate(lActions):
 		actionIdx[actionVal==v] = i
+
+	import pdb; pdb.set_trace()###
 	return actionIdx
 
 def labels2actionVal(labels, classes, rActions):
@@ -390,9 +389,27 @@ def labels2actionVal(labels, classes, rActions):
 	actionVal[actionVal=='']=' '
 	return actionVal
 
+def actionVal2labels(actionVal, classes, rActions):
+	"""
+	returns a list of length identical to actionVal but with class labels (int) rather than action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
+
+	Args:
+		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
+		classes (numpy array): all classes of the MNIST dataset used in the current run
+		rActions (numpy array): rewarded actions for each class (may be rActions_z)
+
+	returns:
+		list: label associated with each action value
+	"""
+
+	labels=[]
+	for act in actionVal:
+		labels.append(list(classes[act==rActions]))
+	return labels
+
 def label2idx(classes, labels):
 	"""
-	Creates a vector of length identical to labels but with the index of the label rather than its class
+	Creates a vector of length identical to labels but with the index of the label rather than its class label (int)
 
 	Args:
 		classes (numpy array): all classes of the MNIST dataset used in the current run
@@ -414,7 +431,7 @@ def computeCM(classResults, labels_test, classes):
 	Args:
 		classResults (numpy array): result of the classifcation task
 		labels_test (numpy array): labels of the test dataset
-		classes (numpy array): all classes of the MNIST dataset used in the current run
+		classes (numpy array): all classes of the MNIST dataset used in the current run (or rAction, the correct action associated with each digit class)
 
 	returns:
 		numpy array: confusion matrix of shape (actual class x predicted class)

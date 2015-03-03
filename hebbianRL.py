@@ -32,9 +32,8 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 
 classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
-# rActions 	= np.array(['a','a','a','a','a','a'], dtype='|S1')
-rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
-# rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
+# rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
+rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','c','a'], dtype='|S1')
@@ -47,9 +46,9 @@ nRun 		= 1				# number of runs
 nEpiCrit	= 0				# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 nEpiAch		= 8				# number of ACh episodes in each run (episodes when ACh only is active)
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-nEpiDopa	= 5				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'work_2'			# name of the folder where to save results
+runName 	= 'work_c'		# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -61,7 +60,7 @@ dHigh 		= dMid*2.		# learning rate increase for unexpected reward (high dopamine
 dNeut 		= 0.0			# learning rate increase for no reward, when none predicted
 dLow 		= -dMid*0.5		# learning rate increase for incorrect reward prediction (low dopamine)
 nBatch 		= 20 			# mini-batch size
-classifier	= 'neuronClass'	# which classifier to use for performance assessment. Possible values are: 'neural', 'SVM', 'neuronClass'
+classifier	= 'neuronClass'	# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 SVM			= True			# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 bestAction 	= True			# whether to take predicted best action (True) or take random actions (False)
 feedback	= False			# whether to feedback activation of classification neurons to hidden neurons
@@ -95,7 +94,6 @@ images, labels = ex.evenLabels(images, labels, classes)
 """ variable initialization """
 W_in_save = {}
 W_act_save = {}
-W_class_save = {}
 target_save = {}
 nClasses = len(classes)
 rActions_z = np.copy(rActions)
@@ -107,7 +105,6 @@ np.random.seed(seed)
 nImages = np.size(images,0)
 nInpNeurons = np.size(images,1)
 nActNeurons = nClasses
-trainNeuro = np.where(classifier == 'neural', True, False)
 
 """ training of the network """
 print 'training network...'
@@ -123,7 +120,6 @@ for r in range(nRun):
 	W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 	W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 	W_act_init = np.copy(W_act)
-	if trainNeuro: W_class = np.random.random_sample(size=(nHidNeurons, nClasses)) + 1.
 
 	for e in range(nEpiTot):
 		#shuffle input
@@ -137,7 +133,6 @@ for r in range(nRun):
 			#compute activation of hidden, action, and classification neurons
 			bHidNeurons = ex.propL1(bImages, W_in, SM=False)
 			bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=0.001), W_act, SM=False)
-			if trainNeuro: bClassNeurons = ex.propL2_learn(classes, bLabels)
 
 			#take action - either random or predicted best
 			bPredictActions = rActions_z[np.argmax(bActNeurons,1)] #predicted best action
@@ -235,13 +230,10 @@ for r in range(nRun):
 			# W_in = np.clip(W_in, 1e-10, np.inf)
 			W_act = np.clip(W_act, 1e-10, np.inf)
 
-			if trainNeuro: W_class += ex.learningStep(bHidNeurons, bClassNeurons, W_class, lrCrit)
-
 	#save weights
 	W_in_save[str(r).zfill(3)] = np.copy(W_in)
 	W_act_save[str(r).zfill(3)] = np.copy(W_act)
 	target_save[str(r).zfill(3)] = np.copy(target)
-	if trainNeuro: W_class_save[str(r).zfill(3)] = np.copy(W_class)
 
 """ compute network statistics and performance """
 
@@ -267,16 +259,16 @@ else: W_act_pass=None
 rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
 
 #assess classification performance with neural classifier or SVM 
-if classifier=='neural': cl.neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, show=showPlots)
+if classifier=='actionNeurons': cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, show=showPlots)
 if classifier=='SVM': cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', show=showPlots)
-if classifier=='neuronClass': cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, show=showPlots)
+if classifier=='neuronClass': cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, show=showPlots)
 
 # print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 
 print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
 #save data
-ex.save_data(runName, W_in_save, W_act_save, W_class_save, target_save, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier)
+ex.save_data(runName, W_in_save, W_act_save, target_save, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier)
 
 print '\nrun: '+runName
 
