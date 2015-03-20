@@ -71,7 +71,7 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, rActions_uni, runName, show)
-	# print_save(allCMs, allPerf, labels_print, runName, show)
+	return allCMs, allPerf
 
 def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=True):
 	"""
@@ -122,6 +122,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
+	return allCMs, allPerf
 
 def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, show=True):
 	"""
@@ -166,6 +167,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_datas
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
+	return allCMs, allPerf
 
 def print_save(allCMs, allPerf, classes, runName, show):
 	""" print and save performance measures """

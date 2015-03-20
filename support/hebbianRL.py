@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, showPlots, show_W_act, sort, target, seed, images, labels, args):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	images = ex.normalize(images, A*np.size(images,1)) #normalize input images
@@ -190,18 +190,20 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 	rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons': cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, show=showPlots)
-	if classifier=='SVM': cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', show=showPlots)
-	if classifier=='neuronClass': cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, show=showPlots)
+	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', show=showPlots)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, show=showPlots)
 
 	# print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 
 	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
 	#save data
-	ex.save_data(W_in_save, W_act_save, args)
+	ex.save_data(W_in_save, W_act_save, kwargs)
 
 	print '\nrun: '+runName
+
+	return allCMs, allPerf
 
 
 

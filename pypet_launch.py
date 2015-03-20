@@ -1,4 +1,8 @@
+import pypet
+import os
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 import support.hebbianRL as rl
 import support.external as ex
 import support.mnist as mnist
@@ -14,19 +18,40 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. Capital letters indicates a class that is paired with ACh release.
 """
 
-# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+""" pypet-specific implementation """
+def add_parameters(traj, kwargs):
+	for k in kwargs.keys():
+		traj.f_add_parameter(k, kwargs[k])
 
-# classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
-# rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
-# rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
+def add_exploration(traj):
+	explore_dict = {
+	'dMid'			:	[-0.3, 0.6], #np.arange(0.6, 0.61, 0.1).tolist(),
+	'dLow'			:	[-0.3, 0.6]  #np.arange(0.5, 0.61, 0.1).tolist(),
+	}
+	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dLow'))
+	traj.f_explore(explore_dict)
 
-# classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
-# rActions 	= np.array(['a','c','a'], dtype='|S1')
+def pypet_RLnetwork(traj):
+	images, labels = get_images()
+	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
+	allCMs, allPerf = rl.RLnetwork(images=images, labels=labels, kwargs=parameter_dict, **parameter_dict)
+	
+	traj.f_add_result('RLnetwork.$', 
+					perf=np.round(np.mean(allPerf),2), 
+					comment='exploring dMid')
 
-classes 	= np.array([ 4 , 9 ], dtype=int)
-rActions 	= np.array(['a','b'], dtype='|S1')
+	return np.round(np.mean(allPerf),2)
+
+def postproc(traj, result_list):
+	""" TODO? """
+	return
+
+def get_images():
+	""" load and pre-process images """
+	images, labels = mnist.read_images_from_mnist(classes = classes, dataset = kwargs['dataset'], path = imPath)
+	images, labels = ex.evenLabels(images, labels, classes)
+
+	return images, labels
 
 """ parameters """
 kwargs = {
@@ -60,30 +85,47 @@ kwargs = {
 'seed' 			: 992#np.random.randint(1000) 				# seed of the random number generator
 }
 
+# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+
+# classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
+# rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
+# rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
+# rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
+
+# classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
+# rActions 	= np.array(['a','c','a'], dtype='|S1')
+
+classes 	= np.array([ 4 , 9 ], dtype=int)
+rActions 	= np.array(['a','b'], dtype='|S1')
+
 kwargs['classes'] 	= classes
 kwargs['rActions'] 	= rActions
 
-
-""" load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
 kwargs['runName'] = ex.checkdir(kwargs['runName'], OW_bool=True)
 print 'seed: ' + str(kwargs['seed']) + '\n'
 print 'loading data...'
 imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 
-images, labels = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = kwargs['dataset'], path = imPath)
-images, labels = ex.evenLabels(images, labels, classes)
+""" launch simulation with pypet """
+filename = os.path.join('pypet_test', 'perf.hdf5')
+env = pypet.Environment(trajectory = 'dMid',
+						comment = 'testing pypet...',
+						log_stdout=False, #not sure what this does...
+						add_time = False,
+						multiproc = False,
+						# ncores = 2,
+						filename=filename,
+						overwrite_file=True)
 
-# if True: #duplicates some of the training examples, to be used instead to ach
-# 	labels_ori = np.copy(labels)
-# 	images_ori = np.copy(images)
-# 	for i in range(3):	#number of times to duplicate the training examples
-# 		for d in [4]: #digit classes to duplicate
-# 			images = np.append(images, images_ori[labels_ori==d])
-# 			images = np.reshape(images, (-1, 784))
-# 			labels = np.append(labels, labels_ori[labels_ori==d])
+traj = env.v_trajectory
+add_parameters(traj, kwargs)
+add_exploration(traj)
 
-allCMs, allPerf = rl.RLnetwork(images=images, labels=labels, kwargs=kwargs, **kwargs)
+#run the simuation
+env.f_run(pypet_RLnetwork)
+env.f_disable_logging() #disable logging and close all log-files
 
 
 
