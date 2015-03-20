@@ -30,16 +30,16 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 # classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
-classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
+# classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
 # rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
-rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
+# rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','c','a'], dtype='|S1')
 
-# classes 	= np.array([ 4 , 9 ], dtype=int)
-# rActions 	= np.array(['a','b'], dtype='|S1')
+classes 	= np.array([ 4 , 9 ], dtype=int)
+rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
 nRun 		= 1				# number of runs
@@ -48,7 +48,7 @@ nEpiAch		= 8				# number of ACh episodes in each run (episodes when ACh only is 
 nEpiProc	= 3				# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 nEpiDopa	= 0				# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 A 			= 1.2			# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-runName 	= 'work_c'		# name of the folder where to save results
+runName 	= 'pypet'		# name of the folder where to save results
 dataset 	= 'test'		# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 nHidNeurons = 49			# number of hidden neurons
 lrCrit		= 0.005 		# learning rate during 'critica period' (pre-training, nEpiCrit)
