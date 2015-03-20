@@ -173,52 +173,30 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def save_data(runName, W_in, W_act, target, seed, nRun, classes, rActions, dataset, A, nEpiCrit, nEpiProc, nEpiAch, nEpiDopa, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dHigh, dMid, dNeut, dLow, nBatch, bestAction, feedback, SVM, classifier):
+def save_data(W_in, W_act, args):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
 	Args:
-		runName (str): name of the current experiment/folder where to save the data
-		W_save (numpy array): weight matrix to be saved to pickle file
-		rest of args: setting parameters to be saved to ConfigObj
+		W_in (numpy array): weight matrix to be saved to pickle file
+		W_act (numpy array): weight matrix to be saved to pickle file
+		args (dict): arguments to the hebbianRL function to be saved to ConfigObj
 	"""
 
-	pFile = open('output/' + runName + '/W_in', 'w')
+	pFile = open('output/' + args['runName'] + '/W_in', 'w')
 	pickle.dump(W_in, pFile)
 	pFile.close()
 
-	pFile = open('output/' + runName + '/W_act', 'w')
+	pFile = open('output/' + args['runName'] + '/W_act', 'w')
 	pickle.dump(W_act, pFile)
 	pFile.close()
 
 	settingFile = ConfigObj()
-	settingFile.filename 			= 'output/' + runName + '/settings.txt'
-	settingFile['classes'] 			= list(classes)
-	settingFile['rActions'] 		= list(rActions)
-	settingFile['target'] 			= target
-	settingFile['nRun'] 			= nRun
-	settingFile['nEpiCrit']			= nEpiCrit
-	settingFile['nEpiAch']			= nEpiAch 
-	settingFile['nEpiProc']			= nEpiProc
-	settingFile['nEpiDopa']			= nEpiDopa 
-	settingFile['A'] 				= A
-	settingFile['runName'] 			= runName
-	settingFile['dataset'] 			= dataset
-	settingFile['nHidNeurons'] 		= nHidNeurons
-	settingFile['lrCrit']			= lrCrit
-	settingFile['lrAdlt']			= lrAdlt
-	settingFile['aHigh'] 			= aHigh
-	settingFile['aLow'] 			= aLow
-	settingFile['dHigh'] 			= dHigh
-	settingFile['dMid'] 			= dMid
-	settingFile['dNeut'] 			= dNeut
-	settingFile['dLow'] 			= dLow
-	settingFile['nBatch'] 			= nBatch
-	settingFile['classifier'] 		= classifier
-	settingFile['SVM'] 				= SVM
-	settingFile['bestAction'] 		= bestAction
-	settingFile['feedback'] 		= feedback
-	settingFile['seed'] 			= seed
+	settingFile.filename 			= 'output/' + args['runName'] + '/settings.txt'
+	for k in sorted(args.keys()):
+		if type(args[k]) == type(np.array(0)): #convert numpy array to list
+			args[k] = list(args[k])
+		settingFile[k] = args[k]
 	
 	settingFile.write()
 
