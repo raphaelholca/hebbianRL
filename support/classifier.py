@@ -6,29 +6,31 @@ import support.mnist as mnist
 import support.external as ex
 import support.plots as pl
 import pickle
+import re
 from sklearn.svm import SVC
 ex = reload(ex)
 pl = reload(pl)
 
-def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDimStates, A, train_dataset, show=True):
+def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, train_dataset, actions=False, show=True):
 	"""
-	evaluates the quality of a representation using a neural classifier
+	evaluates the quality of a representation using the action neurons of the network.
 
 	Args:
 		runName (str) : name of the folder where to save results
 		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
-		W_class_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
+		W_act_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		images (numpy array): image to normalize
-		rActions (numpy array of str): reward actions associated with each of the classes of MNIST
+		rActions_z (numpy array of str): reward actions associated with each of the classes of MNIST ('z' for '0')
 		nHidNeurons (int): number of hidden neurons
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
+		actions (bool, optional): whether to display actions (True) of labels (False) on the plot of the classification matrix 
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
 	""" load and pre-process images """
-	print "assessing performance with neural classifier..."
+	print "assessing performance with action neurons..."
 	if  train_dataset=='train': test_dataset='test'
 	else: test_dataset='train'
 	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
@@ -39,23 +41,37 @@ def neural(runName, W_in_save, W_class_save, classes, rActions, nHidNeurons, nDi
 	allCMs = []
 	allPerf = []
 
+	""" process labels for plot """
+	rActions_uni, idx = np.unique(rActions_z, return_index=True)
+	sorter = idx.argsort()
+	rActions_uni = rActions_uni[sorter]
+	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions_z)
+	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
+	labels_print = np.array(labels_print)
+	labels_print[rActions_uni=='z'] = 'z'
+
 	for iw in sorted(W_in_save.keys()):
 		print 'run: ' + str(int(iw)+1)
-		W_in = W_in_save[iw][0:nDimStates,:]
-		W_class = W_class_save[iw]
+		W_in = W_in_save[iw]
+		W_act = W_act_save[iw]
 
 		""" testing of the classifier """
 		hidNeurons = ex.propL1(images, W_in)
-		classNeurons = ex.propL2_class(hidNeurons, W_class)
-		classIdx = np.argmax(classNeurons, 1)
-		classResults = classes[classIdx]
+		actNeurons = ex.propL1(hidNeurons, W_act)
+		classIdx = np.argmax(actNeurons, 1)
+		classResults = rActions_z[classIdx]
 		
 		""" compute classification performance """
-		allPerf.append(float(np.sum(classResults==labels))/len(labels))
-		allCMs.append(ex.computeCM(classResults, labels, classes))
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels, classes, rActions_z)))
+		allPerf.append(correct_classif/len(labels))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels, classes, rActions_z), np.unique(rActions_z))
+		CM = CM[sorter,:]
+		CM = CM[:,sorter]
+		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, runName, show)
+	print_save(allCMs, allPerf, rActions_uni, runName, show)
+	return allCMs, allPerf
 
 def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=True):
 	"""
@@ -106,8 +122,9 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
+	return allCMs, allPerf
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, vote=False, show=True):
+def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, show=True):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
@@ -124,8 +141,10 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, vote=False,
 
 	""" load and pre-process images """
 	print "assessing performance with neuron class..."
+	if  train_dataset=='train': test_dataset='test'
+	else: test_dataset='train'
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
-	images, labels = mnist.read_images_from_mnist(classes=classes, dataset='test', path=imPath)
+	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
 	images = ex.normalize(images, A*nDimStates)
 	images, labels = ex.evenLabels(images, labels, classes)
 
@@ -139,16 +158,8 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, vote=False,
 		print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
 		neuronC = np.argmax(RFproba[i],1) #class of each neuron
-		# if vote==True:
-		# 	activ = ex.propL1(images, W_in, SM=False)
-		# 	votes = np.zeros((len(labels), len(classes)))
-		# 	for ic, c in enumerate(classes):
-		# 		votes[:,ic] = np.sum(RFproba[i][:,c]*activ,1)/np.sum(RFproba[i][:,c])
-		# 	argmaxActiv = np.argmax(votes,1)
-		# 	classResults = classes[argmaxActiv]
-		if vote==False:
-			argmaxActiv = np.argmax(ex.propL1(images, W_in, SM=False),1)
-			classResults = neuronC[argmaxActiv]
+		argmaxActiv = np.argmax(ex.propL1(images, W_in, SM=False),1)
+		classResults = neuronC[argmaxActiv]
 
 		""" compute classification performance """
 		allPerf.append(float(np.sum(classResults==labels))/len(labels))
@@ -156,6 +167,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, vote=False,
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, classes, runName, show)
+	return allCMs, allPerf
 
 def print_save(allCMs, allPerf, classes, runName, show):
 	""" print and save performance measures """
@@ -171,7 +183,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 
 	print '\naverage confusion matrix:'
 	c_str = ''
-	for c in classes: c_str += ' '*5 + str(c)
+	for c in classes: c_str += str(c).rjust(6)
 	print c_str
 	print '-'*(len(c_str)+3)
 	print np.round(avgCM,2)
