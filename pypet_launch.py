@@ -1,5 +1,6 @@
 import pypet
 import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,24 +24,45 @@ def add_parameters(traj, kwargs):
 	for k in kwargs.keys():
 		traj.f_add_parameter(k, kwargs[k])
 
-def add_exploration(traj):
+def add_exploration(traj, runName):
 	explore_dict = {
-	'dMid'			:	[-0.3, 0.6], #np.arange(0.6, 0.61, 0.1).tolist(),
-	'dLow'			:	[-0.3, 0.6]  #np.arange(0.5, 0.61, 0.1).tolist(),
+	'dMid'			:	[-1., 0.0, 0.3, 0.6, 1.0, 2.0],  #np.arange(0.6, 0.61, 0.1).tolist(),
+	'dHigh'			:	[-1., 0.0, 0.3, 0.6, 1.0, 2.0],  #np.arange(0.6, 0.61, 0.1).tolist(),
+	'dNeut'			:	[-1., 0.0, 0.3, 0.6, 1.0, 2.0],  #np.arange(0.6, 0.61, 0.1).tolist(),
+	'dLow'			:	[-2.0, -1., -0.6, -0.3, 0.0, 1.0]  #np.arange(0.5, 0.61, 0.1).tolist(),
 	}
+
 	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dLow'))
+	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
+
+def set_run_names(explore_dict, runName):
+	nXplr = len(explore_dict[explore_dict.keys()[0]])
+	runName_list = [runName for _ in range(nXplr)]
+	for n in range(nXplr):
+		for k in explore_dict.keys():
+			runName_list[n] += '_'
+			runName_list[n] += k
+			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
+	return runName_list
+
 
 def pypet_RLnetwork(traj):
 	images, labels = get_images()
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
-	allCMs, allPerf = rl.RLnetwork(images=images, labels=labels, kwargs=parameter_dict, **parameter_dict)
+
+	try:
+		allCMs, allPerf, perc_correct_W_act = rl.RLnetwork(images=images, labels=labels, kwargs=parameter_dict, **parameter_dict)
+	except ValueError:
+		print "----- NaN in computations -----"
+		allCMs, allPerf, perc_correct_W_act = -np.inf, -np.inf, -np.inf
 	
 	traj.f_add_result('RLnetwork.$', 
+					perc_W_act=np.round(perc_correct_W_act,3), 
 					perf=np.round(np.mean(allPerf),2), 
-					comment='exploring dMid')
+					comment='exploring dopa for action weights')
 
-	return np.round(np.mean(allPerf),2)
+	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
 
 def postproc(traj, result_list):
 	""" TODO? """
@@ -59,9 +81,9 @@ kwargs = {
 'nEpiCrit'		: 0				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiAch'		: 8				,# number of ACh episodes in each run (episodes when ACh only is active)
 'nEpiProc'		: 3				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-'nEpiDopa'		: 0				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 3				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 'A' 			: 1.2			,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'pypet_2'		,# name of the folder where to save results
+'runName' 		: 'pypet'		,# name of the folder where to save results
 'dataset'		: 'test'		,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49			,# number of hidden neurons
 'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -73,7 +95,7 @@ kwargs = {
 'dNeut' 		: 0.0			,# learning rate increase for no reward, when none predicted
 'dLow' 			: -0.6*0.5		,# learning rate increase for incorrect reward prediction (low dopamine)
 'nBatch' 		: 20 			,# mini-batch size
-'classifier'	: 'neuronClass'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
+'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: True			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: True			,# whether to take predicted best action (True) or take random actions (False)
 'feedback'		: False			,# whether to feedback activation of classification neurons to hidden neurons
@@ -103,25 +125,24 @@ kwargs['classes'] 	= classes
 kwargs['rActions'] 	= rActions
 
 ex.checkClassifier(kwargs['classifier'])
-kwargs['runName'] = ex.checkdir(kwargs['runName'], OW_bool=True)
 print 'seed: ' + str(kwargs['seed']) + '\n'
 print 'loading data...'
 imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 
 """ launch simulation with pypet """
-filename = os.path.join('pypet_test', 'perf.hdf5')
+filename = os.path.join('output/' + kwargs['runName'], 'perf.hdf5')
 env = pypet.Environment(trajectory = 'dMid',
 						comment = 'testing pypet...',
-						log_stdout=False, #not sure what this does...
+						log_stdout=False,
 						add_time = False,
-						multiproc = False,
-						# ncores = 2,
+						multiproc = True,
+						ncores = 4,
 						filename=filename,
 						overwrite_file=True)
 
 traj = env.v_trajectory
 add_parameters(traj, kwargs)
-add_exploration(traj)
+add_exploration(traj, kwargs['runName'])
 
 #run the simuation
 env.f_run(pypet_RLnetwork)

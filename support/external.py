@@ -345,7 +345,6 @@ def val2idx(actionVal, lActions):
 	for i,v in enumerate(lActions):
 		actionIdx[actionVal==v] = i
 
-	import pdb; pdb.set_trace()###
 	return actionIdx
 
 def labels2actionVal(labels, classes, rActions):

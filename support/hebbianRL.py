@@ -22,6 +22,7 @@ su = reload(su)
 def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
+	runName = ex.checkdir(runName, OW_bool=True) #create saving directory
 	images = ex.normalize(images, A*np.size(images,1)) #normalize input images
 	W_in_save = {}
 	W_act_save = {}
@@ -43,7 +44,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 		print 'run: ' + str(r+1)
 
 		#randommly assigns a class with ACh release (used to run multiple runs of ACh)
-		# if True: target, rActions, rActions_z, lActions = ex.rand_ACh(nClasses)
+		# if True: target, rActions, rActions_z, lActions = ex.rand_ACh(nClasses) ##
 
 		#initialize network variables
 		ach = np.zeros(nBatch)
@@ -203,7 +204,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 
 	print '\nrun: '+runName
 
-	return allCMs, allPerf
+	return allCMs, allPerf, correct_W_act/nHidNeurons
 
 
 

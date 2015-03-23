@@ -90,7 +90,7 @@ def plotCM(confusMatrix, classes):
 	ax.set_xlabel('prediction', fontsize=17)
 	ax.set_ylabel('label', fontsize=18)
 	plt.tight_layout()
-	# fig.subplots_adjust(top=1, right=1)
+	# fig.subplots_adjust(top=0, bottom=0, right=1, left=0)
 
 	return fig
 
