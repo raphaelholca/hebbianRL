@@ -9,7 +9,7 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
+def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False, output=True, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -70,19 +70,17 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 
 	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
-	pfile = open('output/'+runName+'/RFclass', 'w')
-	pickle.dump(pRFclass, pfile)
-	pfile.close()
+	if output:
+		pfile = open('output/'+runName+'/RFclass', 'w')
+		pickle.dump(pRFclass, pfile)
+		pfile.close()
 
-	fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste[classes])
-	pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
-	if show:
-		pyplot.show(block=False)
-	else:
-		pyplot.close(fig)
-
-	""" compute selectivity index """
-
+		fig = pl.plotHist(RFclass_mean[classes], classes, h_err=RFclass_ste[classes])
+		pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
+		if show:
+			pyplot.show(block=False)
+		else:
+			pyplot.close(fig)
 
 	return RFproba, RFclass, RFselec
 

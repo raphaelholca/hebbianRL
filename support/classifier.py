@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 ex = reload(ex)
 pl = reload(pl)
 
-def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, train_dataset, actions=False, show=True):
+def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, train_dataset, actions=False, output=True, show=True):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -70,7 +70,8 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, rActions_uni, runName, show)
+	if output:
+		print_save(allCMs, allPerf, rActions_uni, runName, show)
 	return allCMs, allPerf
 
 def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=True):
@@ -121,7 +122,8 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, runName, show)
+	if output:
+		print_save(allCMs, allPerf, classes, runName, show)
 	return allCMs, allPerf
 
 def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, show=True):
@@ -166,7 +168,8 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_datas
 		allCMs.append(ex.computeCM(classResults, labels, classes))
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, runName, show)
+	if output:
+		print_save(allCMs, allPerf, classes, runName, show)
 	return allCMs, allPerf
 
 def print_save(allCMs, allPerf, classes, runName, show):
