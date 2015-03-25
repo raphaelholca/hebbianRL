@@ -26,13 +26,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dMid'			:	np.arange(-0.0, 4.1, 1.0).tolist(), #[-1.0, 0.75],
-	'dHigh'			:	np.arange(2.0, 6.1, 1.0).tolist() #[0.1, 0.2, 0.3],
+	'dMid'			:	np.arange(-1.0, 3.1, 1.0).tolist(), #[-1.0, 0.75],
+	'dHigh'			:	np.arange(-1.0, 3.1, 1.0).tolist(), #[0.1, 0.2, 0.3],
 	# 'dNeut'			:	[-0.1, 0.0, 0.1],
-	# 'dLow'			:	np.arange(-3.0, 1.1, 1.0).tolist() #[-0.75, -0.5, -0.25]
+	'dLow'			:	np.arange(-3.0, 1.1, 1.0).tolist() #[-0.75, -0.5, -0.25]
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dHigh'))#, 'dLow', 'dNeut'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dHigh', 'dLow'))#, 'dNeut'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -88,17 +88,17 @@ kwargs = {
 'nHidNeurons'	: 49			,# number of hidden neurons
 'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005			,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-'aHigh' 		: 6. 		,#<--# learning rate increase for relevance signal (high ACh) outside of critical period
+'aHigh' 		: 6. 			,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aLow'			: 1. 			,# learning rate increase without relevant signal (no ACh)
-'dMid' 			: 0.75 		,#<--# learning rate increase for correct reward prediction
-'dHigh' 		: 0.25		,# learning rate increase for unexpected reward (high dopamine) outside of critical period
+'dMid' 			: 0.75 			,# learning rate increase for correct reward prediction
+'dHigh' 		: 0.25			,# learning rate increase for unexpected reward (high dopamine) outside of critical period
 'dNeut' 		: 0.0			,# learning rate increase for no reward, when none predicted
-'dLow' 			: -0.5		,# learning rate increase for incorrect reward prediction (low dopamine)
+'dLow' 			: -3.			,# learning rate increase for incorrect reward prediction (low dopamine)
 'nBatch' 		: 20 			,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: True			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False			,# whether to take predicted best action (True) or take random actions (False)
-'feedback'		: False			,# whether to feedback activation of classification neurons to hidden neurons
+'feedback'		: True			,# whether to feedback activation of classification neurons to hidden neurons
 'balReward'		: False			,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 'createOutput'	: False			,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False			,# whether to display plots
