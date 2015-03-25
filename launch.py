@@ -51,7 +51,7 @@ kwargs = {
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: True				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
-'feedback'		: False				,# whether to feedback activation of classification neurons to hidden neurons
+'feedback'		: True				,# whether to feedback activation of classification neurons to hidden neurons
 'balReward'		: False				,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
