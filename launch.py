@@ -30,14 +30,14 @@ rActions 	= np.array(['a','b'], dtype='|S1')
 
 """ parameters """
 kwargs = {
-'nRun' 			: 2					,# number of runs
+'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiAch'		: 8					,# number of ACh episodes in each run (episodes when ACh only is active)
-'nEpiProc'		: 3					,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiAch'		: 2					,# number of ACh episodes in each run (episodes when ACh only is active)
+'nEpiProc'		: 2					,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
+'nEpiDopa'		: 2					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'pypet__'			,# name of the folder where to save results
-'dataset'		: 'test'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
+'runName' 		: 'fb_1'			,# name of the folder where to save results
+'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lrCrit'		: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005				,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
@@ -53,7 +53,7 @@ kwargs = {
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
 'feedback'		: False				,# whether to feedback activation of classification neurons to hidden neurons
 'balReward'		: False				,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
-'createOutput'	: False			,# whether to create plots, save data, etc. (set to False when using pypet)
+'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: False				,# whether to sort weights by their class when displaying
