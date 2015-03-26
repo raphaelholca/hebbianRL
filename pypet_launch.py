@@ -26,13 +26,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dMid'			:	np.arange(-1.0, 3.1, 1.0).tolist(), #[-1.0, 0.75],
-	'dHigh'			:	np.arange(-1.0, 3.1, 1.0).tolist(), #[0.1, 0.2, 0.3],
-	# 'dNeut'			:	[-0.1, 0.0, 0.1],
-	'dLow'			:	np.arange(-3.0, 1.1, 1.0).tolist() #[-0.75, -0.5, -0.25]
+	'dMid'			:	np.arange(-2.0, 9.1, 1.0).tolist(),
+	# 'dHigh'			:	np.arange(-2.0, 20.1, 2.0).tolist(),
+	'dNeut'			:	np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
+	# 'dLow'			:	np.arange(-22.0,0.1, 2.0).tolist()
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dHigh', 'dLow'))#, 'dNeut'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dNeut'))#'dHigh', 'dLow' 
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -77,23 +77,23 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 3				,# number of runs
-'nEpiCrit'		: 0				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiAch'		: 2				,# number of ACh episodes in each run (episodes when ACh only is active)
+'nRun' 			: 4				,# number of runs
+'nEpiCrit'		: 2				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiAch'		: 0				,# number of ACh episodes in each run (episodes when ACh only is active)
 'nEpiProc'		: 2				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 'nEpiDopa'		: 2				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 'A' 			: 1.2			,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'pypet'		,# name of the folder where to save results
+'runName' 		: 'dMid_dNeut_8',# name of the folder where to save results
 'dataset'		: 'train'		,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49			,# number of hidden neurons
 'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005			,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 'aHigh' 		: 6. 			,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aLow'			: 1. 			,# learning rate increase without relevant signal (no ACh)
-'dMid' 			: 0.75 			,# learning rate increase for correct reward prediction
-'dHigh' 		: 0.25			,# learning rate increase for unexpected reward (high dopamine) outside of critical period
+'dMid' 			: 0.0 			,# learning rate increase for correct reward prediction
+'dHigh' 		: 5.0			,# learning rate increase for unexpected reward (high dopamine) outside of critical period
 'dNeut' 		: 0.0			,# learning rate increase for no reward, when none predicted
-'dLow' 			: -3.			,# learning rate increase for incorrect reward prediction (low dopamine)
+'dLow' 			: -8.			,# learning rate increase for incorrect reward prediction (low dopamine)
 'nBatch' 		: 20 			,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: True			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -133,13 +133,13 @@ imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 """ launch simulation with pypet """
 filename = os.path.join('output/' + kwargs['runName'], 'perf.hdf5')
 env = pypet.Environment(trajectory = 'dMid',
-						comment = 'testing pypet...',
+						comment = 'testing with pypet...',
 						log_stdout=False,
 						add_time = False,
 						multiproc = True,
-						ncores = 12,
+						ncores = 8,
 						filename=filename,
-						overwrite_file=True)
+						overwrite_file=False)
 
 traj = env.v_trajectory
 add_parameters(traj, kwargs)

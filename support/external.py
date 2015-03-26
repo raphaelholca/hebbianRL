@@ -165,6 +165,7 @@ def compute_reward(labels, classes, actions, rActions):
 	returns:
 		numpy array: reward for the label and action pair
 	"""
+
 	reward = np.zeros(len(labels), dtype=int)
 	for i in range(len(classes)):
 		reward[np.logical_and(labels==classes[i], actions==rActions[i])] = 1 #reward correct state-action pairs
@@ -172,6 +173,33 @@ def compute_reward(labels, classes, actions, rActions):
 		reward[np.logical_and(labels==classes[i], '0'==rActions[i])] = -1 #do not reward states that are never rewarded
 
 	return reward
+
+def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
+	"""
+	Computes the reward based on the action taken and the label of the current input
+
+	Args:
+		dopa (numpy array): array of dopamine release value
+		bPredictActions (numpy array): predicted best action
+		bActions (numpy array): action taken
+		bReward (numpy array): reward received
+		dHigh (numpy array): dopa value for incorrect no reward prediction
+		dMid (numpy array): dopa value for correct reward prediction
+		dNeut (numpy array): dopa value for correct no reward prediction
+		dLow (numpy array): dopa value for incorrect reward prediction
+
+	returns:
+		numpy array: array of dopamine release value
+	"""
+
+	dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
+	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
+	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[bReward==-1]											= dNeut			#never rewarded
+	dopa[bReward== 2]											= dNeut			#always rewarded
+
+	return dopa
 
 def save_data(W_in, W_act, args):
 	"""

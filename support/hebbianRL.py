@@ -83,10 +83,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 				disinhib_Act = np.zeros(nBatch)
 
 				#compute reward, ach, and dopa based on learning period
-				if e < nEpiCrit: #critical period
+				if e < nEpiCrit:
+					""" critical period """
 					lr_current = lrCrit 
+
+					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
+					dopa = ex.compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					
 					disinhib_Hid = np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
-					disinhib_Act = np.zeros(nBatch) #no learning in L1 during crit.
+					disinhib_Act = dopa
+
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: #ACh - perceptual learning
 					#determine acetylcholine strength based on task involvement
@@ -103,13 +109,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					#compute reward, and ach and dopa signals for procedural learning
 					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
-					#determine dopamine signal strength based on reward
-					dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = 0.75			#correct reward prediction
-					dopa[np.logical_and(bPredictActions==bActions, bReward==0)] =-0.5			#incorrect reward prediction
-					dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = 0.0			#correct no reward prediction
-					dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = 0.25			#incorrect no reward prediction
-					dopa[bReward==-1]											= 0.0			#never rewarded
-					dopa[bReward== 2]											= 0.0			#always rewarded
+					dopa = ex.compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
 					lr_current = lrAdlt
 					disinhib_Hid = np.zeros(nBatch) #no learning in L1 during proc.
@@ -156,11 +156,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 				dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 				###
 
-				# W_in += dW_in
 				W_in += dW_in
 				W_act += dW_act
 
-				# W_in = np.clip(W_in, 1e-10, np.inf)
+				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
 		#save weights
