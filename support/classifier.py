@@ -74,7 +74,7 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		print_save(allCMs, allPerf, rActions_uni, runName, show)
 	return allCMs, allPerf
 
-def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, show=True, SM=True):
+def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, output=True, show=True, SM=True):
 	"""
 	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
 
@@ -126,7 +126,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		print_save(allCMs, allPerf, classes, runName, show)
 	return allCMs, allPerf
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, show=True):
+def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, output=True, show=True):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
