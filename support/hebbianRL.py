@@ -39,6 +39,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
 
+
+	###
+	ach_label = 100 - np.array([96, 95, 87, 75, 73, 85, 96, 76, 74, 75]) 
+	###
+
+
 	""" training of the network """
 	print 'training network...'
 	for r in range(nRun):
@@ -90,13 +96,19 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 					dopa = ex.compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
 					
-					disinhib_Hid = np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
+					
+					ach = ach_label[bLabels]/5.
+
+					disinhib_Hid = ach #np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
 					disinhib_Act = dopa
 
 
-				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: #ACh - perceptual learning
-					#determine acetylcholine strength based on task involvement
-					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
+				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
+					""" perceptual learning - ACh """
+					# ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
+					
+					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
+					ach = ex.compute_ach(ach, bPredictActions, bActions, bReward, aHigh=aHigh, aLow=aLow)
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach

@@ -163,16 +163,20 @@ def compute_reward(labels, classes, actions, rActions):
 		rActions (numpy array): rewarded action
 
 	returns:
-		numpy array: reward for the label and action pair
+		numpy array: 1 (reward) for correct label-action pair, otherwise 0
 	"""
 
 	reward = np.zeros(len(labels), dtype=int)
 	for i in range(len(classes)):
 		reward[np.logical_and(labels==classes[i], actions==rActions[i])] = 1 #reward correct state-action pairs
-		reward[np.logical_and(labels==classes[i], '1'==rActions[i])] = 2 #reward states that are always rewarded
-		reward[np.logical_and(labels==classes[i], '0'==rActions[i])] = -1 #do not reward states that are never rewarded
 
 	return reward
+
+def compute_difficulty(difficulty, bActions, dopa):
+
+
+
+	return difficulty
 
 def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 	"""
@@ -196,10 +200,31 @@ def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, d
 	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
 	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
 	dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
-	dopa[bReward==-1]											= dNeut			#never rewarded
-	dopa[bReward== 2]											= dNeut			#always rewarded
 
 	return dopa
+
+def compute_ach(ach, bPredictActions, bActions, bReward, aHigh, aLow):
+	"""
+	Computes the reward based on the action taken and the label of the current input
+
+	Args:
+		ach (numpy array): array of ach release value
+		bPredictActions (numpy array): predicted best action
+		bActions (numpy array): action taken
+		bReward (numpy array): reward received
+		aHigh (numpy array): ach value for unrewarded action (difficult stimulus)
+		aLow (numpy array): ach value for rewarded action (easy stimulus)
+
+	returns:
+		numpy array: array of acetylcholine release value (high for incorrect decisions, i.e., difficult stimuli)
+	"""
+
+	ach[np.logical_and(bPredictActions!=bActions, bReward==1)] = aHigh			#incorrect no reward prediction
+	ach[np.logical_and(bPredictActions==bActions, bReward==1)] = aLow			#correct reward prediction
+	ach[np.logical_and(bPredictActions!=bActions, bReward==0)] = aLow			#correct no reward prediction
+	ach[np.logical_and(bPredictActions==bActions, bReward==0)] = aHigh			#incorrect reward prediction
+	
+	return ach
 
 def save_data(W_in, W_act, args):
 	"""
