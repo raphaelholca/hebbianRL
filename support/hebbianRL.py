@@ -39,12 +39,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
 
-
-	###
-	ach_label = 100 - np.array([96, 95, 87, 75, 73, 85, 96, 76, 74, 75]) 
-	###
-
-
 	""" training of the network """
 	print 'training network...'
 	for r in range(nRun):
@@ -59,6 +53,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		W_act_init = np.copy(W_act)
+		perf = np.zeros((nClasses, 500))
 
 		for e in range(nEpiTot):
 			#shuffle input
@@ -94,13 +89,15 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					lr_current = lrCrit 
 
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					dopa = ex.compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					
-					
-					ach = ach_label[bLabels]/5.
+					pred_bLabels = ex.val2idx(bPredictActions, lActions)
+					perf = ex.track_perf(perf, classes, bLabels, pred_bLabels)
+					if e >= 1: ach = ex.compute_ach(perf, pred_bLabels, aHigh=2.0)
 
-					disinhib_Hid = ach #np.ones(nBatch) #learning in L1 during crit. is w/o neuromodulation
-					disinhib_Act = dopa
+
+					disinhib_Hid = ach
+					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
@@ -142,6 +139,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					dopa[bReward==-1]											= dNeut			#never rewarded
 					dopa[bReward== 2]											= dNeut			#always rewarded
 
+					lr_current = lrAdlt
+					disinhib_Hid = ach*dopa
+					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa. #dopa
 
 					#feedback from classification layer
 					if feedback: 
@@ -151,12 +151,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 						# bFeedback = np.log(np.dot(bActNeurons, W_act.T)*1e1)*10
 						bHidNeurons += bFeedback
 
-					lr_current = lrAdlt
-					disinhib_Hid = ach*dopa
-					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa. #dopa
 
 				# lateral inhibition
-				bHidNeurons = ex.softmax(bHidNeurons, t=0.001) #activation must be done after feedback is added to activity
+				bHidNeurons = ex.softmax(bHidNeurons, t=0.1 )#0.001) #activation must be done after feedback is added to activity
 				bActNeurons = ex.softmax(bActNeurons, t=0.001)
 				
 				#compute weight updates
@@ -165,7 +162,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 			
 				###
 				postNeurons_lr = bActNeurons * (lr_current * disinhib_Act[:,np.newaxis])
-				dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
+				# dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
+				dW_act = (np.dot((bHidNeurons * (0.75+ach[:,np.newaxis]*0.25)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 				###
 
 				W_in += dW_in
@@ -184,7 +182,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 	#compute histogram of RF classes
 	if nEpiAch>0: lr_ratio=aHigh/aLow
 	else: lr_ratio=1.0
-	RFproba, _, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=lr_ratio, rel_classes=classes[rActions!='0'])
+	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=lr_ratio, rel_classes=classes[rActions!='0'])
 	#compute the selectivity of RFs
 	_, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
 

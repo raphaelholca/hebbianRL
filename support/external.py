@@ -152,6 +152,26 @@ def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
+def track_perf(perf, classes, bLabels, pred_bLabels):
+	"""
+	Tracks performance for all classes over n batches
+
+	Args:
+		perf (numpy array): matrix of performances. Shape: nClasses x n batches
+		classes (numpy array): all classes of the MNIST dataset used in the current run
+		bLabels (numpy array): image labels
+		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
+
+	returns:
+		numpy array: updated matrix of performances (rolled by 1 in axis 1, with new values at [:,0])
+	"""
+
+	perf = np.roll(perf, 1, 1)
+	for c in classes:
+		if len(bLabels[bLabels==c]) != 0:
+			perf[c,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])/float(len(bLabels[bLabels==c]))
+	return perf
+
 def compute_reward(labels, classes, actions, rActions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
@@ -172,18 +192,11 @@ def compute_reward(labels, classes, actions, rActions):
 
 	return reward
 
-def compute_difficulty(difficulty, bActions, dopa):
-
-
-
-	return difficulty
-
-def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
+def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 	"""
-	Computes the reward based on the action taken and the label of the current input
+	Computes the dopa signal based on the actual and predicted rewards
 
 	Args:
-		dopa (numpy array): array of dopamine release value
 		bPredictActions (numpy array): predicted best action
 		bActions (numpy array): action taken
 		bReward (numpy array): reward received
@@ -196,6 +209,8 @@ def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, d
 		numpy array: array of dopamine release value
 	"""
 
+	dopa = np.zeros(len(bActions))
+
 	dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
 	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
 	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
@@ -203,28 +218,22 @@ def compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh, dMid, dNeut, d
 
 	return dopa
 
-def compute_ach(ach, bPredictActions, bActions, bReward, aHigh, aLow):
+def compute_ach(perf, pred_bLabels, aHigh):
 	"""
-	Computes the reward based on the action taken and the label of the current input
+	Computes the ach signal based on stimulus difficulty (average classification performance)
 
 	Args:
-		ach (numpy array): array of ach release value
-		bPredictActions (numpy array): predicted best action
-		bActions (numpy array): action taken
-		bReward (numpy array): reward received
-		aHigh (numpy array): ach value for unrewarded action (difficult stimulus)
-		aLow (numpy array): ach value for rewarded action (easy stimulus)
+		perf (numpy array): average performance over n batches
+		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
+		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
 
 	returns:
-		numpy array: array of acetylcholine release value (high for incorrect decisions, i.e., difficult stimuli)
+		numpy array: array of acetylcholine release value (high for 'difficult' stimuli)
 	"""
 
-	ach[np.logical_and(bPredictActions!=bActions, bReward==1)] = aHigh			#incorrect no reward prediction
-	ach[np.logical_and(bPredictActions==bActions, bReward==1)] = aLow			#correct reward prediction
-	ach[np.logical_and(bPredictActions!=bActions, bReward==0)] = aLow			#correct no reward prediction
-	ach[np.logical_and(bPredictActions==bActions, bReward==0)] = aHigh			#incorrect reward prediction
-	
-	return ach
+	perc_mean = np.mean(perf,1)/np.mean(perf)
+	ach_labels = np.exp(aHigh*(-perc_mean+1))
+	return ach_labels[pred_bLabels]
 
 def save_data(W_in, W_act, args):
 	"""
