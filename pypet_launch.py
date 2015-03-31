@@ -27,12 +27,14 @@ def add_parameters(traj, kwargs):
 def add_exploration(traj, runName):
 	explore_dict = {
 	# 'dMid'			:	np.arange(-0.25, 1.26, 0.25).tolist(),
-	'dHigh'			:	np.arange(-2.0, 20.1, 2.0).tolist(),
+	# 'dHigh'			:	np.arange(-2.0, 20.1, 2.0).tolist(),
 	# 'dNeut'			:	np.round(np.arange(-0.125, 0.026, 0.025),3).tolist()
-	'dLow'			:	np.arange(-22.0,0.1, 2.0).tolist()
+	# 'dLow'			:	np.arange(-22.0,0.1, 2.0).tolist()
+	'aHigh'				:	[0., 3.]
+	# 'aHigh'				:	[0., 0.1, 0.5, 1., 2., 3., 4.]
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dLow'))# 'dMid', 'dNeut'
+	# explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dLow'))# 'dMid', 'dNeut'
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -77,19 +79,18 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 5				,# number of runs
-'nEpiCrit'		: 2				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nRun' 			: 1				,# number of runs
+'nEpiCrit'		: 3				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiAch'		: 0				,# number of ACh episodes in each run (episodes when ACh only is active)
-'nEpiProc'		: 2				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-'nEpiDopa'		: 2				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiProc'		: 0				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
+'nEpiDopa'		: 0				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 'A' 			: 1.2			,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'dHigh_dLow_4',# name of the folder where to save results
+'runName' 		: 'ach'			,# name of the folder where to save results
 'dataset'		: 'train'		,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49			,# number of hidden neurons
 'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005			,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-'aHigh' 		: 6. 			,# learning rate increase for relevance signal (high ACh) outside of critical period
-'aLow'			: 1. 			,# learning rate increase without relevant signal (no ACh)
+'aHigh' 		: 3. 			,# learning rate increase for relevance signal (high ACh) outside of critical period
 'dMid' 			: 0.0 			,# learning rate increase for correct reward prediction
 'dHigh' 		: 5.0			,# learning rate increase for unexpected reward (high dopamine) outside of critical period
 'dNeut' 		: 0.0			,# learning rate increase for no reward, when none predicted
@@ -97,10 +98,10 @@ kwargs = {
 'nBatch' 		: 20 			,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: True			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'bestAction' 	: False			,# whether to take predicted best action (True) or take random actions (False)
-'feedback'		: True			,# whether to feedback activation of classification neurons to hidden neurons
+'bestAction' 	: True			,# whether to take predicted best action (True) or take random actions (False)
+'feedback'		: False			,# whether to feedback activation of classification neurons to hidden neurons
 'balReward'		: False			,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
-'createOutput'	: False			,# whether to create plots, save data, etc. (set to False when using pypet)
+'createOutput'	: True			,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False			,# whether to display plots
 'show_W_act'	: True			,# whether to display W_act weights on the weight plots
 'sort' 			: False			,# whether to sort weights by their class when displaying
@@ -115,6 +116,9 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 # rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
 # rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
 # rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
+
+# classes 	= np.array([ 1 , 4 , 9 ], dtype=int)
+# rActions 	= np.array(['a','b','c'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','c','a'], dtype='|S1')
@@ -132,14 +136,14 @@ imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 
 """ launch simulation with pypet """
 filename = os.path.join('output/' + kwargs['runName'], 'perf.hdf5')
-env = pypet.Environment(trajectory = 'dMid',
+env = pypet.Environment(trajectory = 'ach',
 						comment = 'testing with pypet...',
 						log_stdout=False,
 						add_time = False,
 						multiproc = True,
-						ncores = 8,
+						ncores = 2,
 						filename=filename,
-						overwrite_file=False)
+						overwrite_file=True)
 
 traj = env.v_trajectory
 add_parameters(traj, kwargs)

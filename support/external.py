@@ -167,9 +167,9 @@ def track_perf(perf, classes, bLabels, pred_bLabels):
 	"""
 
 	perf = np.roll(perf, 1, 1)
-	for c in classes:
+	for ic, c in enumerate(classes):
 		if len(bLabels[bLabels==c]) != 0:
-			perf[c,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])/float(len(bLabels[bLabels==c]))
+			perf[ic,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])/float(len(bLabels[bLabels==c]))
 	return perf
 
 def compute_reward(labels, classes, actions, rActions):
@@ -218,13 +218,13 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_ach(perf, pred_bLabels, aHigh):
+def compute_ach(perf, pred_bLabels_idx, aHigh):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)
 
 	Args:
 		perf (numpy array): average performance over n batches
-		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
+		pred_bLabels_idx (numpy array): index of predictated stimulus class (i.e., index of the predicted digit label)
 		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
 
 	returns:
@@ -233,7 +233,7 @@ def compute_ach(perf, pred_bLabels, aHigh):
 
 	perc_mean = np.mean(perf,1)/np.mean(perf)
 	ach_labels = np.exp(aHigh*(-perc_mean+1))
-	return ach_labels[pred_bLabels]
+	return ach_labels[pred_bLabels_idx]
 
 def save_data(W_in, W_act, args):
 	"""
@@ -393,7 +393,7 @@ def shuffle(arrays):
 
 def val2idx(actionVal, lActions):
 	"""
-	Creates a vector of length identical to actionVal but with the index of the action (int) rather than their value (str)
+	Retruns the index of the action (int) for each provided value (str)
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
@@ -411,7 +411,7 @@ def val2idx(actionVal, lActions):
 
 def labels2actionVal(labels, classes, rActions):
 	"""
-	Creates a new vector of length identical to labels but with the correct action value (str) rather than the label (int)
+	returns the the correct action value (str) for each provided label (int)
 
 	Args:
 		labels (numpy array): labels of the input images
@@ -430,7 +430,7 @@ def labels2actionVal(labels, classes, rActions):
 
 def actionVal2labels(actionVal, classes, rActions):
 	"""
-	returns a list of length identical to actionVal but with class labels (int) rather than action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
+	returns the class labels (int) for each action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 

@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, aLow, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -76,8 +76,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					bActNeurons = np.ones_like(bActNeurons)*1e-4 #reset neuron activation
 					bActNeurons[np.arange(nBatch), ex.val2idx(bActions, lActions)]=1. #activate the action neuron corresponding to the action taken
 
-				ach = np.ones(nBatch)*aLow
-				dopa = np.ones(nBatch)*dNeut
+				ach = np.ones(nBatch)
+				dopa = np.ones(nBatch)
 				dW_in = 0.
 				dW_act = 0.
 				disinhib_Hid = np.zeros(nBatch)
@@ -91,10 +91,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					
-					pred_bLabels = ex.val2idx(bPredictActions, lActions)
-					perf = ex.track_perf(perf, classes, bLabels, pred_bLabels)
-					if e >= 1: ach = ex.compute_ach(perf, pred_bLabels, aHigh=2.0)
+					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions)
+					perf = ex.track_perf(perf, classes, bLabels, classes[pred_bLabels_idx])
+					if e >= 0: ach = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh)
 
+					if b in [200, 875]:
+						print ach
+						print np.mean(perf, 1)
+						print
 
 					disinhib_Hid = ach
 					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
@@ -105,7 +109,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 					# ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
 					
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					ach = ex.compute_ach(ach, bPredictActions, bActions, bReward, aHigh=aHigh, aLow=aLow)
+					# ach = ex.compute_ach(ach, bPredictActions, bActions, bReward, aHigh=aHigh, aLow=aLow)
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach
@@ -153,7 +157,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 
 
 				# lateral inhibition
-				bHidNeurons = ex.softmax(bHidNeurons, t=0.1 )#0.001) #activation must be done after feedback is added to activity
+				bHidNeurons = ex.softmax(bHidNeurons, t=1. )#0.001) #activation must be done after feedback is added to activity
 				bActNeurons = ex.softmax(bActNeurons, t=0.001)
 				
 				#compute weight updates
@@ -180,9 +184,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, A,
 	""" compute network statistics and performance """
 
 	#compute histogram of RF classes
-	if nEpiAch>0: lr_ratio=aHigh/aLow
-	else: lr_ratio=1.0
-	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=lr_ratio, rel_classes=classes[rActions!='0'])
+	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 	#compute the selectivity of RFs
 	_, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
 
