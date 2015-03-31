@@ -84,6 +84,7 @@ kwargs = {
 'nEpiAch'		: 0				,# number of ACh episodes in each run (episodes when ACh only is active)
 'nEpiProc'		: 0				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 'nEpiDopa'		: 0				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'t'				: 1.0 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2			,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'ach'			,# name of the folder where to save results
 'dataset'		: 'train'		,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
