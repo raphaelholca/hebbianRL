@@ -102,7 +102,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					
 					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions)
 					perf = ex.track_perf(perf, classes, bLabels, classes[pred_bLabels_idx])
-					if e >= 0: ach, ach_labels = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh)
+					ach, ach_labels = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 					# ach_track += ach_labels
 

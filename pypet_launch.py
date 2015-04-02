@@ -26,10 +26,10 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dMid'			:	[ 0., 0.1,  0.2,  0.3,  0.4,  0.5], #np.arange(-0.25, 1.26, 0.25).tolist(),
-	'dHigh'			:	[ 0., 1.1,  2.2,  3.3,  4.4,  5.5], #np.arange(-2.0, 20.1, 2.0).tolist(),
-	'dNeut'			:	[ 0., -0.01, -0.02, -0.03, -0.04, -0.05], #np.round(np.arange(-0.125, 0.026, 0.025),3).tolist()
-	'dLow'			:	[ 0., -1.9, -3.8, -5.7, -7.6, -9.5] #np.arange(-22.0,0.1, 2.0).tolist()
+	# 'dMid'			:	[ 0., 0.1,  0.2,  0.3,  0.4,  0.5], #np.arange(-0.25, 1.26, 0.25).tolist(),
+	# 'dHigh'			:	[ 0., 1.1,  2.2,  3.3,  4.4,  5.5], #np.arange(-2.0, 20.1, 2.0).tolist(),
+	# 'dNeut'			:	[ 0., -0.01, -0.02, -0.03, -0.04, -0.05], #np.round(np.arange(-0.125, 0.026, 0.025),3).tolist()
+	# 'dLow'			:	[ 0., -1.9, -3.8, -5.7, -7.6, -9.5] #np.arange(-22.0,0.1, 2.0).tolist()
 	# 'aHigh'				:	[0., 0.1, 0.5, 1., 2., 3., 4., 5., 6., 7.]
 	}
 
