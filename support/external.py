@@ -232,8 +232,11 @@ def compute_ach(perf, pred_bLabels_idx, aHigh):
 		numpy array: array of acetylcholine release value for each of the digit label
 	"""
 
-	perc_mean = np.mean(perf,1)/np.mean(perf)
-	ach_labels = np.exp(aHigh*(-perc_mean+1))
+	if np.mean(perf)==0:  #avoid divide by zero
+		ach_labels = np.ones(np.size(perf,0))
+	else: 
+		perc_mean = np.mean(perf,1)/np.mean(perf)
+		ach_labels = np.exp(aHigh*(-perc_mean+1))
 	return ach_labels[pred_bLabels_idx], ach_labels
 
 def save_data(W_in, W_act, args):

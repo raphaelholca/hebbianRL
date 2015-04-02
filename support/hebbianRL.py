@@ -38,8 +38,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
+	ach_bal = 0.25
 
-	ach_track = np.zeros(nClasses)
+	# ach_track = np.zeros(nClasses)
 
 
 
@@ -61,8 +62,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 		for e in range(nEpiTot):
 
-			print np.round(ach_track)
-			ach_track = np.zeros(nClasses)
+			# print np.round(ach_track)
+			# ach_track = np.zeros(nClasses)
 
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
@@ -103,7 +104,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					perf = ex.track_perf(perf, classes, bLabels, classes[pred_bLabels_idx])
 					if e >= 0: ach, ach_labels = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh)
 
-					ach_track += ach_labels
+					# ach_track += ach_labels
 
 					# if b in [50]:
 					# 	print ach
@@ -177,7 +178,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				###
 				postNeurons_lr = bActNeurons * (lr_current * disinhib_Act[:,np.newaxis])
 				# dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				dW_act = (np.dot((bHidNeurons * (0.75+ach[:,np.newaxis]*0.25)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
+				dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 				###
 
 				W_in += dW_in
@@ -185,6 +186,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
+
+				# import pdb; pdb.set_trace()
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
