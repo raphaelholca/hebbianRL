@@ -218,7 +218,7 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_ach(perf, pred_bLabels_idx, aHigh):
+def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)
 
@@ -226,6 +226,8 @@ def compute_ach(perf, pred_bLabels_idx, aHigh):
 		perf (numpy array): average performance over n batches
 		pred_bLabels_idx (numpy array): index of predictated stimulus class (i.e., index of the predicted digit label)
 		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
+		rActions (numpy array): rewarded action
+		aPairing (float) : strength of ACh release for stimulus pairing protocol; ach_labels is set to aPairing for capital letters in rActions
 
 	returns:
 		numpy array: array of acetylcholine release value for each training example of the current batch
@@ -237,6 +239,7 @@ def compute_ach(perf, pred_bLabels_idx, aHigh):
 	else: 
 		perc_mean = np.mean(perf,1)/np.mean(perf)
 		ach_labels = np.exp(aHigh*(-perc_mean+1))
+	if rActions!=None and aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
 	return ach_labels[pred_bLabels_idx], ach_labels
 
 def save_data(W_in, W_act, args):
