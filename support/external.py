@@ -316,12 +316,8 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['lrCrit'] 			= float(settingFile['lrCrit'])
 		runs[k]['lrAdlt'] 			= float(settingFile['lrAdlt'])
 		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
-		runs[k]['aLow']				= float(settingFile['aLow'])
 		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
-		try:
-			runs[k]['dMid'] 		= float(settingFile['dMid'])
-		except KeyError:
-			pass#print 'while loading data: no dMid provided'
+		runs[k]['dMid'] 		= float(settingFile['dMid'])
 		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
 		runs[k]['dLow'] 			= float(settingFile['dLow'])
 		runs[k]['classifier'] 		= settingFile['classifier']
