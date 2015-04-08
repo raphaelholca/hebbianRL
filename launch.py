@@ -33,7 +33,7 @@ rActions 	= np.array(['a','b','c','d','e','F','g','h','i','j'], dtype='|S1')
 
 """ parameters """
 kwargs = {
-'nRun' 			: 10 				,# number of runs
+'nRun' 			: 1 				,# number of runs
 'nEpiCrit'		: 4					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiAch'		: 0					,# number of ACh episodes in each run (episodes when ACh only is active)
 'nEpiProc'		: 0					,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
@@ -42,7 +42,7 @@ kwargs = {
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'ctrl'			,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
-'nHidNeurons'	: 49				,# number of hidden neurons
+'nHidNeurons'	: 25				,# number of hidden neurons
 'lrCrit'		: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005				,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 'aHigh' 		: 0. 				,# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -59,8 +59,8 @@ kwargs = {
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
-'sort' 			: False				,# whether to sort weights by their class when displaying
-'target'		: 4 				,# target digit (to be used to color plots). Use None if not desired
+'sort' 			: True				,# whether to sort weights by their class when displaying
+'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 993#np.random.randint(1000) 	# seed of the random number generator
 }
 
