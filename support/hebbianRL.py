@@ -39,10 +39,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
 	ach_bal = 0.25
-
-	# ach_track = np.zeros(nClasses)
-
-
+	reward_window = int(nImages/nBatch)*nEpiTot #1000
 
 	""" training of the network """
 	print 'training network...'
@@ -59,12 +56,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		W_act_init = np.copy(W_act)
 		perf = np.zeros((nClasses, 500))
+		all_rewards = np.zeros((nActNeurons, reward_window))
 
 		for e in range(nEpiTot):
-
-			# print np.round(ach_track)
-			# ach_track = np.zeros(nClasses)
-
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
@@ -104,16 +98,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					perf = ex.track_perf(perf, classes, bLabels, classes[pred_bLabels_idx])
 					ach, ach_labels = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
-					# ach_track += ach_labels
-
-					# if b in [50]:
-					# 	print ach
-					# 	print np.mean(perf, 1)
-					# 	print
-
 					disinhib_Hid = ach
 					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
 					""" perceptual learning - ACh """
@@ -186,6 +172,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
+
+				all_rewards = ex.track_reward(all_rewards, bReward, bActions, lActions)
 
 				# import pdb; pdb.set_trace()
 

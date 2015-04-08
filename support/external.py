@@ -101,39 +101,6 @@ def propL1(bInput, W_in, SM=True, t=1.):
 	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 
-###deprecated?###
-# def propL2_learn(classes, labels):
-# 	"""
-# 	One propagation step from hidden to classification layer, during learning (activation determined by the labels)
-
-# 	Args:
-# 		classes (numpy array): all classes of the MNIST dataset used in the current run
-# 		labels (numpy matrix): labels associated with the input
-
-# 	returns:
-# 		numpy array: the activation of the classification neurons
-# 	"""
-
-# 	classNeurons = np.zeros((len(labels), len(classes)))
-# 	labelsIdx = label2idx(classes, labels)
-# 	classNeurons[np.arange(len(labels)),labelsIdx] = 1.0
-# 	return classNeurons
-
-###deprecated?###
-# def propL2_class(hidNeurons, W_class):
-# 	"""
-# 	One propagation step from hidden to classification layer, during classification (activation determined by the feedforward input)
-
-# 	Args:
-# 		hidNeurons (numpy array): activation of the hidden neurons, i.e., the input to the classification layer
-# 		W_class (numpy matrix): weight matrix; shape: (hidden neurons x classification neurons)
-
-# 	returns:
-# 		numpy array: the activation of the classification neurons
-# 	"""
-
-# 	return	np.dot(hidNeurons, W_class)
-
 def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	"""
 	One learning step for the hebbian network
@@ -171,6 +138,43 @@ def track_perf(perf, classes, bLabels, pred_bLabels):
 		if len(bLabels[bLabels==c]) != 0:
 			perf[ic,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])/float(len(bLabels[bLabels==c]))
 	return perf
+
+def track_reward(all_rewards, bReward, bActions, lActions):
+	"""
+	Keeps tracks of the reward received for all actions in a rolling numpy matrix
+	Args:
+		all_rewards (numpy array): matrix of rewards obtained for all actions; shape: (nActNeurons x reward_window), with the most recent rewards at column 0
+		bReward (numpy array): rewards obtained during the current batch
+		bActions (numpy array): actions chosen during the current batch
+
+	returns:
+		numpy array: rolled and filled numpy matrix
+	"""
+
+	bActions_idx = val2idx(bActions, lActions)
+
+	all_rewards = np.roll(all_rewards, 1, 1)
+	for a in np.unique(bActions_idx):
+		all_rewards[a,0] = np.mean(bReward[bActions_idx==a])
+
+	return all_rewards
+
+def reward_EMA(all_rewards, decay_param=4.):
+	"""
+	Computes an exponential moving average of the reward.
+
+	Args:
+		all_rewards (numpy array): matrix of rewards obtained for all actions; shape: (nActNeurons x reward_window), with the most recent rewards at column 0
+		decay_param (float): decay parameter of the exponential function (==0: simple moving average; >>0: only last value makes up the averag)
+
+	returns:
+		numpy array: exponential average of the reward
+	"""
+	window = np.size(all_rewards,1)
+	weights = np.exp(np.linspace(0., -1., window)*decay_param)
+	weights /= weights.sum()
+
+	return np.sum(all_rewards*weights,1)
 
 def compute_reward(labels, classes, actions, rActions):
 	"""
@@ -396,7 +400,7 @@ def shuffle(arrays):
 
 def val2idx(actionVal, lActions):
 	"""
-	Retruns the index of the action (int) for each provided value (str)
+	Returns the index of the action (int) for each provided value (str)
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 

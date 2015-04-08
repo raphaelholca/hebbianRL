@@ -15,7 +15,7 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 """
 
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-rActions 	= np.array(['a','b','c','d','e','F','g','h','i','j'], dtype='|S1')
+rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
 # classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
