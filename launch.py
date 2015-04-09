@@ -59,9 +59,9 @@ kwargs = {
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
-'sort' 			: True				,# whether to sort weights by their class when displaying
+'sort' 			: False				,# whether to sort weights by their class when displaying
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 993#np.random.randint(1000) 	# seed of the random number generator
+'seed' 			: np.random.randint(1000) 	# seed of the random number generator
 }
 
 kwargs['classes'] 	= classes

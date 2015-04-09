@@ -119,62 +119,54 @@ def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
-def track_perf(perf, classes, bLabels, pred_bLabels):
+def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 	"""
-	Tracks performance for all classes over n batches
+	Tracks performance for all classes using a weighted average
 
 	Args:
-		perf (numpy array): matrix of performances. Shape: nClasses x n batches
+		perf (numpy array): matrix of performances of shape (nClasses x 2), containing in perf[:,0] the number of correct trials and in perf[:,1] the number of all trials
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		bLabels (numpy array): image labels
 		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
+		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
 
 	returns:
-		numpy array: updated matrix of performances (rolled by 1 in axis 1, with new values at [:,0])
+		numpy array: updated performances (i.e., count of correct and total trials)
 	"""
 
-	perf = np.roll(perf, 1, 1)
+	#commented out code doesn't require label knowledge
+
 	for ic, c in enumerate(classes):
-		if len(bLabels[bLabels==c]) != 0:
-			perf[ic,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])/float(len(bLabels[bLabels==c]))
+		# if sum(pred_bLabels==c) != 0:
+		if sum(bLabels==c) != 0:
+			# perf[ic,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])*decay_param + perf[ic,0]*(1-decay_param)
+			# perf[ic,1] = np.sum(pred_bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
+
+			perf[ic,0] = np.sum(bLabels[bLabels==c] == pred_bLabels[bLabels==c])*decay_param + perf[ic,0]*(1-decay_param)
+			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def track_reward(all_rewards, bReward, bActions, lActions):
+def track_reward(reward_track, bReward, bActions, lActions, decay_param=0.01):
+	## redundant for track_perf()??
 	"""
-	Keeps tracks of the reward received for all actions in a rolling numpy matrix
+	Keeps tracks of the reward received for actions using a weighted average
 	Args:
-		all_rewards (numpy array): matrix of rewards obtained for all actions; shape: (nActNeurons x reward_window), with the most recent rewards at column 0
+		reward_track (numpy array): array of weighted rewards received over the trials for each actions
 		bReward (numpy array): rewards obtained during the current batch
 		bActions (numpy array): actions chosen during the current batch
+		lActions (numpy array): allowed legal actions
+		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
 
 	returns:
-		numpy array: rolled and filled numpy matrix
+		numpy array: weighted reward expectation
 	"""
 
 	bActions_idx = val2idx(bActions, lActions)
 
-	all_rewards = np.roll(all_rewards, 1, 1)
-	for a in np.unique(bActions_idx):
-		all_rewards[a,0] = np.mean(bReward[bActions_idx==a])
+	for i_bA, bA in enumerate(bActions_idx):
+		reward_track[bA] = bReward[i_bA]*decay_param + reward_track[bA]*(1-decay_param)
 
-	return all_rewards
-
-def reward_EMA(all_rewards, decay_param=4.):
-	"""
-	Computes an exponential moving average of the reward.
-
-	Args:
-		all_rewards (numpy array): matrix of rewards obtained for all actions; shape: (nActNeurons x reward_window), with the most recent rewards at column 0
-		decay_param (float): decay parameter of the exponential function (==0: simple moving average; >>0: only last value makes up the averag)
-
-	returns:
-		numpy array: exponential average of the reward
-	"""
-	window = np.size(all_rewards,1)
-	weights = np.exp(np.linspace(0., -1., window)*decay_param)
-	weights /= weights.sum()
-
-	return np.sum(all_rewards*weights,1)
+	return reward_track
 
 def compute_reward(labels, classes, actions, rActions):
 	"""
@@ -238,10 +230,13 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 		numpy array: array of acetylcholine release value for each of the digit label
 	"""
 
-	if np.mean(perf)==0:  #avoid divide by zero
+	perf_ratio = np.zeros(np.size(perf,0))
+	mask = perf[:,1]!=0 #avoid division by zero
+	perf_ratio[mask] = perf[mask,0]/perf[mask,1]
+	if np.mean(perf_ratio)==0:  #avoid division by zero
 		ach_labels = np.ones(np.size(perf,0))
 	else: 
-		perc_mean = np.mean(perf,1)/np.mean(perf)
+		perc_mean =  perf_ratio/np.mean(perf_ratio)
 		ach_labels = np.exp(aHigh*(-perc_mean+1))
 	if rActions!=None and aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
 	return ach_labels[pred_bLabels_idx], ach_labels

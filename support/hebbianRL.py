@@ -55,8 +55,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		W_act_init = np.copy(W_act)
-		perf = np.zeros((nClasses, 500))
-		all_rewards = np.zeros((nActNeurons, reward_window))
+		perf_track = np.zeros((nActNeurons, 2))
+		reward_track = np.zeros(nActNeurons)
 
 		for e in range(nEpiTot):
 			#shuffle input
@@ -95,8 +95,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					
 					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions)
-					perf = ex.track_perf(perf, classes, bLabels, classes[pred_bLabels_idx])
-					ach, ach_labels = ex.compute_ach(perf, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+					perf_track = ex.track_perf(perf_track, classes, bLabels, classes[pred_bLabels_idx])
+					ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 					disinhib_Hid = ach
 					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
@@ -173,7 +173,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
-				all_rewards = ex.track_reward(all_rewards, bReward, bActions, lActions)
+				reward_track = ex.track_reward(reward_track, bReward, bActions, lActions)
 
 				# import pdb; pdb.set_trace()
 
@@ -203,7 +203,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
 		rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
-		# rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=False, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
@@ -220,7 +219,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 	print '\nrun: '+runName
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
 
