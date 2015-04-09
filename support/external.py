@@ -146,22 +146,19 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def track_reward(reward_track, bReward, bActions, lActions, decay_param=0.01):
+def track_reward(reward_track, bReward, bActions_idx, decay_param=0.01):
 	## redundant for track_perf()??
 	"""
 	Keeps tracks of the reward received for actions using a weighted average
 	Args:
 		reward_track (numpy array): array of weighted rewards received over the trials for each actions
 		bReward (numpy array): rewards obtained during the current batch
-		bActions (numpy array): actions chosen during the current batch
-		lActions (numpy array): allowed legal actions
+		bActions_idx (numpy array): *index* of actions chosen during the current batch
 		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
 
 	returns:
 		numpy array: weighted reward expectation
 	"""
-
-	bActions_idx = val2idx(bActions, lActions)
 
 	for i_bA, bA in enumerate(bActions_idx):
 		reward_track[bA] = bReward[i_bA]*decay_param + reward_track[bA]*(1-decay_param)
@@ -211,6 +208,34 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
 	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
 	dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+
+	return dopa
+
+def compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow):
+	"""
+	Computes the dopa signal based on the actual and predicted rewards
+
+	Args:
+		bPredictActions (numpy array): predicted best action
+		bActions (numpy array): *index* of actions taken
+		bReward (numpy array): reward received
+		dHigh (numpy array): dopa value for incorrect no reward prediction
+		dMid (numpy array): dopa value for correct reward prediction
+		dNeut (numpy array): dopa value for correct no reward prediction
+		dLow (numpy array): dopa value for incorrect reward prediction
+
+	returns:
+		numpy array: array of dopamine release value
+	"""
+
+	dopa = np.zeros(len(bActions_idx))
+	exp_reward_r = np.round(reward_track[bActions_idx],1)
+	bReward_r = np.round(bReward,1)
+
+	dopa[bReward_r > exp_reward_r] = dHigh			#incorrect no reward prediction
+	dopa[bReward_r == exp_reward_r] = dMid			#correct reward prediction
+	# dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[bReward_r < exp_reward_r] = dLow			#incorrect reward prediction
 
 	return dopa
 

@@ -78,6 +78,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					bActions = np.random.choice(lActions, size=nBatch) 
 					bActNeurons = np.ones_like(bActNeurons)*1e-4 #reset neuron activation
 					bActNeurons[np.arange(nBatch), ex.val2idx(bActions, lActions)]=1. #activate the action neuron corresponding to the action taken
+				bActions_idx = ex.val2idx(bActions, lActions)
 
 				ach = np.ones(nBatch)
 				dopa = np.ones(nBatch)
@@ -92,14 +93,15 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					lr_current = lrCrit 
 
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow)
 					
 					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions)
-					perf_track = ex.track_perf(perf_track, classes, bLabels, classes[pred_bLabels_idx])
 					ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 					disinhib_Hid = ach
 					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					# disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
 					""" perceptual learning - ACh """
@@ -133,12 +135,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
 					#determine dopamine signal strength based on reward
-					dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
-					dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
-					dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-					dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
-					dopa[bReward==-1]											= dNeut			#never rewarded
-					dopa[bReward== 2]											= dNeut			#always rewarded
+					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
+					# dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa
@@ -173,9 +171,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
-				reward_track = ex.track_reward(reward_track, bReward, bActions, lActions)
+				reward_track = ex.track_reward(reward_track, bReward, bActions_idx, decay_param=0.01)
+				perf_track = ex.track_perf(perf_track, classes, bLabels, classes[pred_bLabels_idx])
 
-				# import pdb; pdb.set_trace()
+				if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
