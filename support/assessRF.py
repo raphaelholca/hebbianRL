@@ -87,16 +87,17 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=None):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
+		W_sort = np.copy(W[r])
 		print 'run: ' + str(i+1)
 		if sort: #sort weights according to their class
 			RFclass = np.argmax(RFproba[i],1)
 			sort_idx = np.array([x for (y,x) in sorted(zip(RFclass, np.arange(len(RFclass))), key=lambda pair: pair[0])])
-			W[r] = W[r][:,sort_idx] 
-			RFproba[i] 	= np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
+			W_sort = W[r][:,sort_idx] 
+			RFproba[i] = np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
 		target_pass=None
 		if target:
 			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target[r])
-			target_pass = np.zeros((np.size(W[r],0),1,1))
+			target_pass = np.zeros((np.size(W_sort,0),1,1))
 			target_pass[T_idx,:,:]=1.0
 		W_act_pass=None
 		if W_act:
@@ -105,7 +106,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=None)
 			notsame_pass = notsame[r]
 		else: 
 			notsame_pass = np.array([])
-		fig = pl.plotRF(W[r], target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
+		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
 

@@ -203,6 +203,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
 		rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
+		# rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=False, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
@@ -218,6 +219,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		ex.save_data(W_in_save, W_act_save, kwargs)
 
 	print '\nrun: '+runName
+
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
 
