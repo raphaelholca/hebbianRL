@@ -100,8 +100,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 					disinhib_Hid = ach
-					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-					# disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
+					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
 					""" perceptual learning - ACh """
@@ -135,8 +135,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
 					#determine dopamine signal strength based on reward
-					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
-					# dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
+					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow)
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa
