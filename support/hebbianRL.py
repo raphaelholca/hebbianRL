@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, dMid, dHigh, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, d_1, d_2, d_3, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -87,21 +87,21 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				disinhib_Hid = np.zeros(nBatch)
 				disinhib_Act = np.zeros(nBatch)
 
+				# if e==0 and b==1458: import pdb; pdb.set_trace()
 				#compute reward, ach, and dopa based on learning period
 				if e < nEpiCrit:
 					""" critical period """
 					lr_current = lrCrit 
 
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow)
 					
-					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions)
-					ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
-					disinhib_Hid = ach
+					disinhib_Hid = ach#*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-					disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh=0.5, dMid=0.0, dNeut=0.0, dLow=-0.25)
+					if e>2: disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=1.0, d_2=1.0, d_3=-0.5, relation="step")
+					# if np.mod(b,100)==0: print reward_track
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
 					""" perceptual learning - ACh """
@@ -128,7 +128,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					disinhib_Act = dopa
 
 				elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
-					#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
+					#assign reward according to state-action pair, after the end of the critical period. In bReward: 0=incorrect, 1=correct
 					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
 				
 					#determine acetylcholine strength based on task involvement
@@ -136,7 +136,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 					#determine dopamine signal strength based on reward
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
-					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow)
+					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=d_1, d_2=d_2, d_3=d_3, relation='step')
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa
@@ -171,10 +171,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
-				reward_track = ex.track_reward(reward_track, bReward, bActions_idx, decay_param=0.01)
+				reward_track = ex.track_reward(reward_track, bReward, bActions_idx, decay_param=0.001)
 				perf_track = ex.track_perf(perf_track, classes, bLabels, classes[pred_bLabels_idx])
 
-				if np.isnan(W_in).any(): import pdb; pdb.set_trace()
+				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -218,7 +218,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 	print '\nrun: '+runName
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
 

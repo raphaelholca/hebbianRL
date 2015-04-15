@@ -211,7 +211,7 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow):
+def compute_dopa_2(bActions_idx, bReward, reward_track, d_1=0.5, d_2=0., d_3=-0.25, relation='step'):
 	"""
 	Computes the dopa signal based on the actual and predicted rewards
 
@@ -221,7 +221,6 @@ def compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow
 		bReward (numpy array): reward received
 		dHigh (numpy array): dopa value for incorrect no reward prediction
 		dMid (numpy array): dopa value for correct reward prediction
-		dNeut (numpy array): dopa value for correct no reward prediction
 		dLow (numpy array): dopa value for incorrect reward prediction
 
 	returns:
@@ -229,13 +228,20 @@ def compute_dopa_2(bActions_idx, bReward, reward_track, dHigh, dMid, dNeut, dLow
 	"""
 
 	dopa = np.zeros(len(bActions_idx))
-	exp_reward_r = np.round(reward_track[bActions_idx],1)
-	bReward_r = np.round(bReward,1)
+	exp_reward = reward_track[bActions_idx]
+	reward_diff = bReward - exp_reward #reward difference = actual reward - expected reward
 
-	dopa[bReward_r > exp_reward_r] = dHigh			#incorrect no reward prediction
-	dopa[bReward_r == exp_reward_r] = dMid			#correct reward prediction
-	# dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[bReward_r < exp_reward_r] = dLow			#incorrect reward prediction
+	if relation=='linear':
+		dopa = d_1*reward_diff+d_2
+
+	elif relation=='step':
+		margin = 0.3
+		dopa[reward_diff >= margin] 										= d_1			#unexpected reward
+		dopa[np.logical_and(reward_diff > -margin, reward_diff < margin)] 	= d_2			#expected reward
+		dopa[reward_diff <= -margin] 										= d_3			#unexpected no reward
+
+	else:
+		raise ValueError('relation for error size to dopa incorrect')
 
 	return dopa
 
@@ -344,7 +350,7 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['lrAdlt'] 			= float(settingFile['lrAdlt'])
 		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
 		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
-		runs[k]['dMid'] 		= float(settingFile['dMid'])
+		runs[k]['dMid'] 			= float(settingFile['dMid'])
 		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
 		runs[k]['dLow'] 			= float(settingFile['dLow'])
 		runs[k]['classifier'] 		= settingFile['classifier']
