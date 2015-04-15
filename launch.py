@@ -14,19 +14,16 @@ classes (int) 	: class of the MNIST dataset to use to train the network
 rActions (str)	: for each class of MNIST, the action that is rewarded. Capital letters indicates a class that is paired with ACh release.
 """
 
-# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
 # classes 	= np.array([ 3,  4 , 5 , 7 , 8 , 9 ], dtype=int)
 # rActions 	= np.array(['0','B','0','0','0','0'], dtype='|S1')
 # rActions 	= np.array(['a','B','c','d','e','f'], dtype='|S1')
 # rActions 	= np.array(['a','b','c','d','e','f'], dtype='|S1')
 
-# classes 	= np.array([ 1 , 4 , 9 ], dtype=int)
+# classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b','c'], dtype='|S1')
-
-classes 	= np.array([ 4 , 7 , 9 ], dtype=int)
-rActions 	= np.array(['a','b','c'], dtype='|S1')
 
 # classes 	= np.array([ 4 , 9 ], dtype=int)
 # rActions 	= np.array(['a','b'], dtype='|S1')
@@ -37,7 +34,7 @@ kwargs = {
 'nEpiCrit'		: 5					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiAch'		: 0					,# number of ACh episodes in each run (episodes when ACh only is active)
 'nEpiProc'		: 0					,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'dopa'		,# name of the folder where to save results

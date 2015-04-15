@@ -211,40 +211,6 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_2(bActions_idx, bReward, reward_track, d_1=0.5, d_2=0., d_3=-0.25, relation='step'):
-	"""
-	Computes the dopa signal based on the actual and predicted rewards
-
-	Args:
-		bPredictActions (numpy array): predicted best action
-		bActions (numpy array): *index* of actions taken
-		bReward (numpy array): reward received
-		dHigh (numpy array): dopa value for incorrect no reward prediction
-		dMid (numpy array): dopa value for correct reward prediction
-		dLow (numpy array): dopa value for incorrect reward prediction
-
-	returns:
-		numpy array: array of dopamine release value
-	"""
-
-	dopa = np.zeros(len(bActions_idx))
-	exp_reward = reward_track[bActions_idx]
-	reward_diff = bReward - exp_reward #reward difference = actual reward - expected reward
-
-	if relation=='linear':
-		dopa = d_1*reward_diff+d_2
-
-	elif relation=='step':
-		margin = 0.3
-		dopa[reward_diff >= margin] 										= d_1			#unexpected reward
-		dopa[np.logical_and(reward_diff > -margin, reward_diff < margin)] 	= d_2			#expected reward
-		dopa[reward_diff <= -margin] 										= d_3			#unexpected no reward
-
-	else:
-		raise ValueError('relation for error size to dopa incorrect')
-
-	return dopa
-
 def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)

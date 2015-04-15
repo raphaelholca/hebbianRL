@@ -73,11 +73,17 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 				#take action - either random or predicted best
 				bPredictActions = rActions_z[np.argmax(bActNeurons,1)] #predicted best action
-				if bestAction: bActions = np.copy(bPredictActions) #predicted best action taken
-				else: #random action taken
-					bActions = np.random.choice(lActions, size=nBatch) 
-					bActNeurons = np.ones_like(bActNeurons)*1e-4 #reset neuron activation
-					bActNeurons[np.arange(nBatch), ex.val2idx(bActions, lActions)]=1. #activate the action neuron corresponding to the action taken
+				if bestAction: bActions = np.copy(bPredictActions) #takes best predicted action
+				# else: 
+				# if e>3: import pdb; pdb.set_trace()
+
+				##old function for random actions
+				# if bestAction: bActions = np.copy(bPredictActions) #predicted best action taken
+				# else: #random action taken
+				# 	bActions = np.random.choice(lActions, size=nBatch) 
+				# 	bActNeurons = np.ones_like(bActNeurons)*1e-4 #reset neuron activation
+				# 	bActNeurons[np.arange(nBatch), ex.val2idx(bActions, lActions)]=1. #activate the action neuron corresponding to the action taken
+				
 				bActions_idx = ex.val2idx(bActions, lActions)
 
 				ach = np.ones(nBatch)
@@ -99,8 +105,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 					disinhib_Hid = ach#*dopa
-					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-					if e>2: disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=1.0, d_2=1.0, d_3=-0.5, relation="step")
+					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					# if e>2: disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=1.0, d_2=1.0, d_3=-0.5, relation="step")
 					# if np.mod(b,100)==0: print reward_track
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
@@ -135,8 +141,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
 					#determine dopamine signal strength based on reward
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
-					dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=d_1, d_2=d_2, d_3=d_3, relation='step')
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
+					# dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=d_1, d_2=d_2, d_3=d_3, relation='step')
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa
@@ -170,9 +176,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
-
-				reward_track = ex.track_reward(reward_track, bReward, bActions_idx, decay_param=0.001)
-				perf_track = ex.track_perf(perf_track, classes, bLabels, classes[pred_bLabels_idx])
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
