@@ -73,16 +73,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 				#take action - either random or predicted best
 				bPredictActions = rActions_z[np.argmax(bActNeurons,1)] #predicted best action
-				if bestAction: bActions = np.copy(bPredictActions) #takes best predicted action
-				# else: 
-				# if e>3: import pdb; pdb.set_trace()
-
-				##old function for random actions
-				# if bestAction: bActions = np.copy(bPredictActions) #predicted best action taken
-				# else: #random action taken
-				# 	bActions = np.random.choice(lActions, size=nBatch) 
-				# 	bActNeurons = np.ones_like(bActNeurons)*1e-4 #reset neuron activation
-				# 	bActNeurons[np.arange(nBatch), ex.val2idx(bActions, lActions)]=1. #activate the action neuron corresponding to the action taken
+				if bestAction or (e < nEpiCrit + nEpiAch + nEpiProc): 
+					bActions = np.copy(bPredictActions) #takes best predicted action
+					noise = np.zeros_like(bHidNeurons)
+				else:
+					noise = np.random.uniform(0, 50, np.shape(bHidNeurons)) 
+					bActNeurons_noisy = ex.propL1(ex.softmax(bHidNeurons + noise, t=t), W_act, SM=False)
+					bActions = rActions_z[np.argmax(bActNeurons_noisy,1)]
 				
 				bActions_idx = ex.val2idx(bActions, lActions)
 
@@ -93,7 +90,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 				disinhib_Hid = np.zeros(nBatch)
 				disinhib_Act = np.zeros(nBatch)
 
-				# if e==0 and b==1458: import pdb; pdb.set_trace()
 				#compute reward, ach, and dopa based on learning period
 				if e < nEpiCrit:
 					""" critical period """
@@ -155,7 +151,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 
 				# lateral inhibition
-				bHidNeurons = ex.softmax(bHidNeurons, t=t )#0.001) #activation must be done after feedback is added to activity
+				bHidNeurons = ex.softmax(bHidNeurons + noise, t=t )#0.001) #activation must be done after feedback is added to activity
 				bActNeurons = ex.softmax(bActNeurons, t=0.001)
 				
 				#compute weight updates
