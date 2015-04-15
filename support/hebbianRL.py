@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, d_1, d_2, d_3, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -106,8 +106,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 					disinhib_Hid = ach#*dopa
 					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-					# if e>2: disinhib_Act = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=1.0, d_2=1.0, d_3=-0.5, relation="step")
-					# if np.mod(b,100)==0: print reward_track
 
 				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
 					""" perceptual learning - ACh """
@@ -142,7 +140,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 
 					#determine dopamine signal strength based on reward
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
-					# dopa = ex.compute_dopa_2(bActions_idx, bReward, reward_track, d_1=d_1, d_2=d_2, d_3=d_3, relation='step')
 
 					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa

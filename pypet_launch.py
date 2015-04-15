@@ -26,12 +26,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	# 'd_1'			:	[0.125, 0.25, 0.5], #np.arange(0.25, 0.76, 0.25).tolist(),
-	'd_2'			:	np.round(np.arange(-0.2, 0.41, 0.1),1).tolist(),
-	'd_3'			:	np.arange(-5.0,1.1, 1.0).tolist()
+	# 'dHigh'			:	[0.125, 0.25, 0.5], #np.arange(0.25, 0.76, 0.25).tolist(),
+	'dMid'			:	np.round(np.arange(-0.2, 0.41, 0.1),1).tolist(),
+	# 'dNeut'			:	np.arange(-5.0,1.1, 1.0).tolist()
+	'dLow'			:	np.arange(-5.0,1.1, 1.0).tolist()
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('d_2', 'd_3'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dLow'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -89,9 +90,10 @@ kwargs = {
 'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'lrAdlt'		: 0.005			,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
 'aHigh' 		: 0.0 			,# learning rate increase for relevance signal (high ACh) outside of critical period
-'d_1' 			: 0.0 			,# learning rate increase for correct reward prediction
-'d_2' 			: 0.0			,# learning rate increase for unexpected reward (high dopamine) outside of critical period
-'d_3' 			: -0.25			,# learning rate increase for incorrect reward prediction (low dopamine)
+'dHigh' 		: 1.0 			,# learning rate increase for unexpected reward
+'dMid' 			: 0.1 			,# learning rate increase for correct reward prediction
+'dNeut' 		: 0.0			,# learning rate increase for correct no reward prediction
+'dLow' 			: -2.0			,# learning rate increase for incorrect reward prediction
 'nBatch' 		: 20 			,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
