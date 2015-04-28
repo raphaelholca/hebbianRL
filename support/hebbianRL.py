@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t, A, runName, dataset, nHidNeurons, lrCrit, lrAdlt, aHigh, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, feedback, balReward, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, dataset, nHidNeurons, lr, aHigh, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -29,17 +29,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 	W_act_save = {}
 	target_save = {}
 	nClasses = len(classes)
-	rActions_z = np.copy(rActions)
-	rActions_z[np.logical_or(rActions=='0', rActions=='1')] = 'z'
-	_, idx = np.unique(rActions_z, return_index=True)
-	lActions = rActions_z[np.sort(idx)] #legal actions, with order maintained, with 'z' for all classes with '0' and '1'
-	nEpiTot = nEpiCrit + nEpiAch + nEpiProc + nEpiDopa
+	_, idx = np.unique(rActions, return_index=True)
+	lActions = rActions[np.sort(idx)]
+	nEpiTot = nEpiCrit + nEpiDopa
 	np.random.seed(seed)
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
-	ach_bal = 0.25
-	reward_window = int(nImages/nBatch)*nEpiTot #1000
+	ach_bal = 0.25 ##optimize
 
 	""" training of the network """
 	print 'training network...'
@@ -47,121 +44,87 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		print 'run: ' + str(r+1)
 
 		#randommly assigns a class with ACh release (used to run multiple runs of ACh)
-		# if True: target, rActions, rActions_z, lActions = ex.rand_ACh(nClasses) ##
+		# if True: target, rActions, rActions, lActions = ex.rand_ACh(nClasses) ##
 
 		#initialize network variables
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
-		W_act_init = np.copy(W_act)
+		# W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
-		reward_track = np.zeros(nActNeurons)
 
 		for e in range(nEpiTot):
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
 			#train network with mini-batches
-			for b in range(int(nImages/nBatch)): #may leave a few training examples out (< nBatch)
+			for b in range(int(nImages/nBatch)):
+				#select batch training images (may leave a few training examples out (< nBatch))
 				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
 				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
-				
-				#compute activation of hidden, action, and classification neurons
-				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
-				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t), W_act, SM=False)
 
-				#take action - either random or predicted best
-				bPredictActions = rActions_z[np.argmax(bActNeurons,1)] #predicted best action
-				if bestAction or (e < nEpiCrit + nEpiAch + nEpiProc): 
-					bActions = np.copy(bPredictActions) #takes best predicted action
-					noise = np.zeros_like(bHidNeurons)
-				else:
-					noise = np.random.uniform(0, 50, np.shape(bHidNeurons)) 
-					bActNeurons_noisy = ex.propL1(ex.softmax(bHidNeurons + noise, t=t), W_act, SM=False)
-					bActions = rActions_z[np.argmax(bActNeurons_noisy,1)]
-				
-				bActions_idx = ex.val2idx(bActions, lActions)
-
+				#initialize batch variables
 				ach = np.ones(nBatch)
 				dopa = np.ones(nBatch)
 				dW_in = 0.
 				dW_act = 0.
 				disinhib_Hid = np.zeros(nBatch)
 				disinhib_Act = np.zeros(nBatch)
+				
+				#compute activation of hidden and classification neurons
+				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
+				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t), W_act, SM=False)
+
+				#take action - either deterministically (predicted best) or stochastically (additive noise) 
+				bPredictActions = rActions[np.argmax(bActNeurons,1)] #predicted best action
+				# if bestAction or (e < nEpiCrit): ##crit period? param explore?
+				if bestAction:
+					bActions = np.copy(bPredictActions)
+					noise = np.zeros_like(bHidNeurons)
+				else:
+					noise = np.random.uniform(0, 50, np.shape(bHidNeurons)) ##param explore, optimize
+					bActNeurons_noisy = ex.propL1(ex.softmax(bHidNeurons + noise, t=t), W_act, SM=False)
+					bActions = rActions[np.argmax(bActNeurons_noisy,1)]	
+				bActions_idx = ex.val2idx(bActions, lActions)
 
 				#compute reward, ach, and dopa based on learning period
 				if e < nEpiCrit:
 					""" critical period """
-					lr_current = lrCrit 
-
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
+					bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
 					
-					pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
 					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
-					disinhib_Hid = ach#*dopa
-					disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-
-				elif e >= nEpiCrit and e < nEpiCrit + nEpiAch: 
-					""" perceptual learning - ACh """
-					# ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh			#stimulus involved in task
-					
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					# ach = ex.compute_ach(ach, bPredictActions, bActions, bReward, aHigh=aHigh, aLow=aLow)
-
-					lr_current = lrAdlt
 					disinhib_Hid = ach
-					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc.
+					disinhib_Act = dopa 
 
-				elif e >= nEpiCrit + nEpiAch and e < nEpiCrit + nEpiAch + nEpiProc: #procedural learning
-					#assign reward according to state-action pair, after the end of the critical period. In bReward, -1=never, 0=incorrect, 1=correct, 2=always
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
-					
-					#compute reward, and ach and dopa signals for procedural learning
-					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
 
-					dopa = ex.compute_dopa(dopa, bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
-
-					lr_current = lrAdlt
-					disinhib_Hid = np.zeros(nBatch) #no learning in L1 during proc.
-					disinhib_Act = dopa
-
-				elif e >= nEpiCrit + nEpiAch + nEpiProc: #Dopa - perceptual learning
-					#assign reward according to state-action pair, after the end of the critical period. In bReward: 0=incorrect, 1=correct
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions_z)
+				elif e >= nEpiCrit: 
+					""" Dopa - perceptual learning """
+					bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
 				
-					#determine acetylcholine strength based on task involvement
-					ach[np.array([d.isupper() for d in ex.labels2actionVal(bLabels, classes, rActions)])] = aHigh
-
-					#determine dopamine signal strength based on reward
+					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0)
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
 
-					lr_current = lrAdlt
 					disinhib_Hid = ach*dopa
-					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa. #dopa
-
-					#feedback from classification layer
-					if feedback: 
-						bFeedback = np.log(np.dot(bActNeurons, ex.softmax(W_act, t=0.001).T)*100+1)*10
-						# bFeedback = np.dot(bActNeurons, ex.softmax(W_act, t=0.001).T)*100
-						# bFeedback = np.log(np.dot(bActNeurons, W_act.T)*100+1)*10
-						# bFeedback = np.log(np.dot(bActNeurons, W_act.T)*1e1)*10
-						bHidNeurons += bFeedback
-
+					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 
 				# lateral inhibition
-				bHidNeurons = ex.softmax(bHidNeurons + noise, t=t )#0.001) #activation must be done after feedback is added to activity
+				bHidNeurons = ex.softmax(bHidNeurons + noise, t=t )
 				bActNeurons = ex.softmax(bActNeurons, t=0.001)
 				
 				#compute weight updates
-				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr_current, disinhib=disinhib_Hid)
-				# dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr_current, disinhib=disinhib_Act)
+				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
+				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr, disinhib=disinhib_Act)
 			
-				###
-				postNeurons_lr = bActNeurons * (lr_current * disinhib_Act[:,np.newaxis])
-				# dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
+				### for ach?
+				# postNeurons_lr = bActNeurons * (lr * disinhib_Act[:,np.newaxis])
+				# # dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
+				# dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 				###
 
 				W_in += dW_in
@@ -182,13 +145,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 	#compute histogram of RF classes
 	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 	#compute the selectivity of RFs
-	_, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
+	# _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
 
 	#compute correct weight assignment in the action layer
 	correct_W_act = 0.
 	notsame = {}
 	for k in W_act_save.keys():
-		same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions_z) == rActions_z[np.argmax(W_act_save[k],1)]
+		same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
 		notsame[k] = np.argwhere(~same)
 		correct_W_act += np.sum(same)
 	correct_W_act/=len(RFproba)
@@ -200,11 +163,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiAch, nEpiProc, nEpiDopa, t,
 		rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', output=createOutput, show=showPlots)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-
-	# print '\nmean RF selectivity: \n' + str(np.round(RFselec[RFselec<np.inf],2))
 
 	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 

@@ -26,13 +26,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dHigh'			:	[ 0.,  1.6,  3.2,  4.8,  6.4,  8.] ,# np.arange(-2., 20.1, 2.0).tolist(),
-	'dMid'			:	[ 0.,  0.,  0.,  0.,  0.,  0.] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
-	'dNeut'			:	[ 0.,  -0.04, -0.08, -0.12, -0.16, -0.2] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
-	'dLow'			:	[ 0.,  -0.6, -1.2, -1.8, -2.4, -3.] # np.arange(-9.0,2.1, 1.0).tolist()
+	'dHigh'			:	[ 0.25,  0.5, 1.5] ,# np.arange(-2., 20.1, 2.0).tolist(),
+	'dMid'			:	[ 0.,  0.2,  0.5] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
+	# 'dNeut'			:	[ 0.,  -0.04, -0.08, -0.12, -0.16, -0.2] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
+	'dLow'			:	[ -0.25, -0.5, -1.5] # np.arange(-9.0,2.1, 1.0).tolist()
 	}
 
-	# explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dLow'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dMid', 'dLow'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -77,34 +77,29 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 10				,# number of runs
-'nEpiCrit'		: 4				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiAch'		: 0				,# number of ACh episodes in each run (episodes when ACh only is active)
-'nEpiProc'		: 0				,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
-'nEpiDopa'		: 4				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nRun' 			: 1					,# number of runs
+'nEpiCrit'		: 4					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
-'A' 			: 1.2			,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'trajectory'	,# name of the folder where to save results
-'dataset'		: 'train'		,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
-'nHidNeurons'	: 49			,# number of hidden neurons
-'lrCrit'		: 0.005 		,# learning rate during 'critica period' (pre-training, nEpiCrit)
-'lrAdlt'		: 0.005			,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
-'aHigh' 		: 0.0 			,# learning rate increase for relevance signal (high ACh) outside of critical period
-'dHigh' 		: 8.0 			,# learning rate increase for unexpected reward
-'dMid' 			: 0.0 			,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.2			,# learning rate increase for correct no reward prediction
-'dLow' 			: -3.0			,# learning rate increase for incorrect reward prediction
-'nBatch' 		: 20 			,# mini-batch size
+'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
+'runName' 		: 'dopa_l1'			,# name of the folder where to save results
+'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
+'nHidNeurons'	: 49				,# number of hidden neurons
+'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
+'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
+'dHigh' 		: 8.0 				,# learning rate increase for unexpected reward
+'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
+'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction
+'dLow' 			: -3.0				,# learning rate increase for incorrect reward prediction
+'nBatch' 		: 20 				,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'SVM'			: False			,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'bestAction' 	: False			,# whether to take predicted best action (True) or take random actions (False)
-'feedback'		: False			,# whether to feedback activation of classification neurons to hidden neurons
-'balReward'		: False			,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
-'createOutput'	: True			,# whether to create plots, save data, etc. (set to False when using pypet)
-'showPlots'		: False			,# whether to display plots
-'show_W_act'	: True			,# whether to display W_act weights on the weight plots
-'sort' 			: False			,# whether to sort weights by their class when displaying
-'target'		: None 			,# target digit (to be used to color plots). Use None if not desired
+'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
+'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
+'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
+'showPlots'		: False				,# whether to display plots
+'show_W_act'	: True				,# whether to display W_act weights on the weight plots
+'sort' 			: False				,# whether to sort weights by their class when displaying
+'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 992#np.random.randint(1000) 				# seed of the random number generator
 }
 

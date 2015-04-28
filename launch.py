@@ -32,16 +32,13 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 4					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiAch'		: 0					,# number of ACh episodes in each run (episodes when ACh only is active)
-'nEpiProc'		: 0					,# number of 'procedural learning' episodes (to initialize the action weights after critical period)
 'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'dopa_all_2'		,# name of the folder where to save results
+'runName' 		: 't_1'				,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
-'lrCrit'		: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
-'lrAdlt'		: 0.005				,# learning rate after the end of the 'critica period' (adult/training, nEpiAch and nEpiDopa)
+'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'dHigh' 		: 5.0 				,# learning rate increase for unexpected reward
 'dMid' 			: 0.2 				,# learning rate increase for correct reward prediction
@@ -51,8 +48,6 @@ kwargs = {
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
-'feedback'		: False				,# whether to feedback activation of classification neurons to hidden neurons
-'balReward'		: False				,# whether reward should sum to the same value for stim. that are always rewarded and stim. that are rewarded for specific actions
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
