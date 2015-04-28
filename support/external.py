@@ -85,7 +85,7 @@ def evenLabels(images, labels, classes):
 
 def propL1(bInput, W_in, SM=True, t=1.):
 	"""
-	One propagation step from input to hidden layer
+	One propagation step
 
 	Args:
 		bInput (numpy array): input vector to the neurons of layer 1
@@ -146,25 +146,6 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def track_reward(reward_track, bReward, bActions_idx, decay_param=0.01):
-	## redundant for track_perf()??
-	"""
-	Keeps tracks of the reward received for actions using a weighted average
-	Args:
-		reward_track (numpy array): array of weighted rewards received over the trials for each actions
-		bReward (numpy array): rewards obtained during the current batch
-		bActions_idx (numpy array): *index* of actions chosen during the current batch
-		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
-
-	returns:
-		numpy array: weighted reward expectation
-	"""
-
-	for i_bA, bA in enumerate(bActions_idx):
-		reward_track[bA] = bReward[i_bA]*decay_param + reward_track[bA]*(1-decay_param)
-
-	return reward_track
-
 def compute_reward(labels, classes, actions, rActions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
@@ -193,7 +174,7 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 		bPredictActions (numpy array): predicted best action
 		bActions (numpy array): action taken
 		bReward (numpy array): reward received
-		dHigh (numpy array): dopa value for incorrect no reward prediction
+		dHigh (numpy array): dopa value for unpredicted reward
 		dMid (numpy array): dopa value for correct reward prediction
 		dNeut (numpy array): dopa value for correct no reward prediction
 		dLow (numpy array): dopa value for incorrect reward prediction
@@ -204,7 +185,7 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	dopa = np.zeros(len(bActions))
 
-	dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#incorrect no reward prediction
+	dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#unpredicted reward
 	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
 	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
 	dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
@@ -305,15 +286,11 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
 		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
 		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
-		runs[k]['target'] 			= settingFile['target']
-		runs[k]['nEpiProc'] 		= int(settingFile['nEpiProc'])
-		runs[k]['nEpiAch'] 			= int(settingFile['nEpiAch'])
 		runs[k]['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
 		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
 		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
 		runs[k]['feedback'] 		= conv_bool(settingFile['feedback'])
-		runs[k]['lrCrit'] 			= float(settingFile['lrCrit'])
-		runs[k]['lrAdlt'] 			= float(settingFile['lrAdlt'])
+		runs[k]['lr'] 				= float(settingFile['lr'])
 		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
 		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
 		runs[k]['dMid'] 			= float(settingFile['dMid'])
@@ -324,6 +301,7 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['nRun'] 			= int(settingFile['nRun'])
 		runs[k]['nBatch'] 			= int(settingFile['nBatch'])
 		runs[k]['A'] 				= float(settingFile['A'])
+		runs[k]['target'] 			= settingFile['target']
 
 		runs[k]['nClasses'] = len(runs[k]['classes'])
 

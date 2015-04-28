@@ -60,6 +60,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 
 			#train network with mini-batches
 			for b in range(int(nImages/nBatch)):
+				
 				#select batch training images (may leave a few training examples out (< nBatch))
 				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
 				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
@@ -76,46 +77,41 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
 				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t), W_act, SM=False)
 
-				#take action - either deterministically (predicted best) or stochastically (additive noise) 
-				bPredictActions = rActions[np.argmax(bActNeurons,1)] #predicted best action
-				# if bestAction or (e < nEpiCrit): ##crit period? param explore?
-				if bestAction:
-					bActions = np.copy(bPredictActions)
-					noise = np.zeros_like(bHidNeurons)
+				#predicted best action
+				bPredictActions = rActions[np.argmax(bActNeurons,1)]
+
+				#add noise to activation of hidden neurons and compute lateral inhibition
+				if not bestAction and (e >= nEpiCrit):
+					bHidNeurons += np.random.uniform(0, 50, np.shape(bHidNeurons)) ##param explore, optimize
+					bHidNeurons = ex.softmax(bHidNeurons, t=t)
+					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
-					noise = np.random.uniform(0, 50, np.shape(bHidNeurons)) ##param explore, optimize
-					bActNeurons_noisy = ex.propL1(ex.softmax(bHidNeurons + noise, t=t), W_act, SM=False)
-					bActions = rActions[np.argmax(bActNeurons_noisy,1)]	
+					bHidNeurons = ex.softmax(bHidNeurons, t=t)
+				bActNeurons = ex.softmax(bActNeurons, t=0.001)
+					
+				#take action - either deterministically (predicted best) or stochastically (additive noise)			
+				bActions = rActions[np.argmax(bActNeurons,1)]	
 				bActions_idx = ex.val2idx(bActions, lActions)
 
-				#compute reward, ach, and dopa based on learning period
+				#compute reward and ach signal
+				bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
+				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+
+				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
 					""" critical period """
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
-					
-					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
-					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.25, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa 
 
-
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					bReward = ex.compute_reward(bLabels, classes, bActions, rActions)
-				
-					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
-					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0)
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
-
-				# lateral inhibition
-				bHidNeurons = ex.softmax(bHidNeurons + noise, t=t )
-				bActNeurons = ex.softmax(bActNeurons, t=0.001)
 				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
