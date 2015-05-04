@@ -36,10 +36,11 @@ kwargs = {
 't'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 't_1'				,# name of the folder where to save results
-'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
+'dataset'		: 'grating'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
+'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 5.0 				,# learning rate increase for unexpected reward
 'dMid' 			: 0.2 				,# learning rate increase for correct reward prediction
 'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction

@@ -87,6 +87,7 @@ kwargs = {
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
+'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 8.0 				,# learning rate increase for unexpected reward
 'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
 'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction

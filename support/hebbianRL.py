@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, dataset, nHidNeurons, lr, aHigh, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
