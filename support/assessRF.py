@@ -84,16 +84,18 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 
 	return RFproba, RFclass, RFselec
 
-def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=None):
+def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
 	print "ploting RFs..."
 	for i,r in enumerate(sorted(W.keys())):
 		W_sort = np.copy(W[r])
 		print 'run: ' + str(i+1)
-		if sort: #sort weights according to their class
+		if sort=='class': #sort weights according to their class
 			RFclass = np.argmax(RFproba[i],1)
 			sort_idx = np.array([x for (y,x) in sorted(zip(RFclass, np.arange(len(RFclass))), key=lambda pair: pair[0])])
 			W_sort = W[r][:,sort_idx] 
 			RFproba[i] = np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
+		elif sort=='tSNE':
+			W_sort = tSNE_sort(W_sort)
 		target_pass=None
 		if target:
 			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target[r])
@@ -109,6 +111,45 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=False, notsame=None)
 		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
+
+def clockwise(r):
+	return list(r[0]) + clockwise(list(reversed(zip(*r[1:])))) if r else []
+
+def tSNE_sort(W):
+	"""
+	sorts weight using t-Distributed Stochastic Neighbor Embedding (t-SNE)
+
+	Args:
+		W (numpy array) : weights from input to hidden neurons
+
+	returns:
+		(numpy array) : sorted weights
+	"""
+	import tsne
+	import numpy.ma as ma
+
+	Y = tsne.tsne(W.T, 2 , 50).T
+	side = int(np.sqrt(np.size(W,1)))
+	nHidNeurons = np.size(W,1)
+
+	n0_min, n1_min = np.min(Y,1)
+	n0_max, n1_max = np.max(Y,1)
+	n0_grid = np.hstack(np.linspace(n0_min, n0_max, side)[:,np.newaxis]*np.ones((side,side)))
+	n1_grid = np.hstack(np.linspace(n1_max, n1_min, side)[np.newaxis,:]*np.ones((side,side)))
+
+	sorted_idx = np.zeros(nHidNeurons, dtype=int)
+	mask = np.zeros(nHidNeurons, dtype=bool)
+
+	iterate_clockwise = map(int, clockwise(list(np.reshape(np.linspace(0,nHidNeurons-1,nHidNeurons),(side,side)))))
+
+	for i in iterate_clockwise:
+		c_point = np.array([n0_grid[i], n1_grid[i]])[:,np.newaxis]
+		dist = ma.array(np.sum((Y-c_point)**2,0), mask=mask)
+		min_idx = np.argmin(dist)
+		sorted_idx[i] = min_idx
+		mask[min_idx] = True
+
+	return W[:,sorted_idx]
 
 def selectivity(W, RFproba, images, labels, classes):
 	"""

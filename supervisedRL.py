@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-os.chdir('../DPM/')
-import classes.input.mnist as mnist
-os.chdir('../RL/')
+import support.mnist as mnist
+import support.external as ex
+
+ex = reload(ex)
 
 np.random.seed(12)
 
@@ -15,7 +15,7 @@ def sigmoid(x):
 	except:
 		raise OverflowError('math range error: x='+str(np.round(x[0][0],1)))
 
-def evenLabels(images, labels):
+def evenLabels(images, labels, nClasses):
 	nDigits, bins = np.histogram(labels, bins=nClasses, range=(0,nClasses-1))
 	m = np.min(nDigits)
 	images_even = np.zeros((m*nClasses, np.size(images,1)))
@@ -41,28 +41,26 @@ def update(step, dE, prevdE, dW, W):
 	prevdE = dE
 	return step, dE, prevdE, dW, W
 
-classes =  [0,1] # [4,9]
+# classes =  [ 0 , 1 ]
+classes =  [ 4 , 9 ]
+# classes =  [ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ]
+
 nClasses = len(classes)
 dataset = 'train'
-path = '../DPM/data-sets/MNIST'
-images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
+imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
+images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 ##? Normalize each image to the sum of its pixel values (due to feedforward inhibition in model)
 # A=900
 # images = (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 images/=255. #normalize images to range [0,1]
-images, labels = evenLabels(images, labels) #even out label class distribution
-
-# n=400
-# images[n:2*n,:] = images[1000:1000+n,:]
-# images = images[:2*n]
-# labels[n:2*n] = labels[1000:1000+n]
-# labels = labels[:2*n]
+images, labels = ex.evenLabels(images, labels, classes)
+# images, labels = evenLabels(images, labels, nClasses) #even out label class distribution
 
 nImages = np.size(images,0)
 nDimActions = 0 ##
 nDimStates = np.size(images,1)
 nInpNeurons = nDimStates + nDimActions + 1 # +1 for bias node
-nHidNeurons = 20
+nHidNeurons = 49
 nEpi = 50
 npos, nneg = 1.2, 0.5
 dmin, dmax, dinit = 0.000001, 1.0, 0.1
@@ -120,7 +118,7 @@ for e in range(nEpi):
 if True:
 	print 'testing...'
 	dataset = 'test'
-	images_t, labels_t = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = path)
+	images_t, labels_t = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
 	images_t/=255.
 	images_t, labels_t = evenLabels(images_t, labels_t)
 	nImages_t = np.size(images_t,0)
