@@ -192,6 +192,32 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
+def compute_dopa_2(rPredicted, rActual, dHigh, dMid, dLow):
+	"""
+	Computes the dopa signal based on the predicted and actual rewards
+
+	Args:
+		rPredicted (numpy array): predicted rewards for current batch
+		rActual (numpy array): received rewards for current batch
+		dHigh (numpy array): dopa value for unpredicted reward
+		dMid (numpy array): dopa value for correct reward prediction
+		dLow (numpy array): dopa value for incorrect reward prediction
+
+	returns:
+		numpy array: array of dopamine release value
+	"""
+
+	error = np.round(rActual-rPredicted)
+
+	dopa = np.zeros(len(rActual))
+
+	dopa[error  > 0] = dHigh		#unpredicted reward
+	dopa[error == 0] = dMid			#correct reward prediction
+	dopa[error  < 0] = dLow			#incorrect reward prediction
+
+	return dopa
+
+
 def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)
@@ -218,6 +244,26 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 		ach_labels = np.exp(aHigh*(-perc_mean+1))
 	if rActions!=None and aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
 	return ach_labels[pred_bLabels_idx], ach_labels
+
+def Q_learn(Q, state, action, reward, Q_LR=0.01):
+	"""
+	Q-learner for state-action pairs
+
+	Args;
+		Q (numpy array): look up table of Q values (state x action)
+		state (numpy array): index of the states visited in the current batch
+		action (numpy array): index of the actions taken in the current batch
+		reward (numpy array): reward value obtained in the current batch
+		Q_LR (float): learning rate (0 < LR < 1)
+
+	returns:
+		numpy array: Q look-up table
+	"""
+
+	for b in range(len(state)):
+		Q[state[b], action[b]] = (1 - Q_LR) * Q[state[b], action[b]] + Q_LR*reward[b]
+
+	return Q
 
 def save_data(W_in, W_act, args):
 	"""

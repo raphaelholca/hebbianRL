@@ -53,6 +53,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		# W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
+		Q = np.zeros((nActNeurons, nActNeurons))
+
+		choice_count = np.zeros((nClasses, nClasses))
 
 		for e in range(nEpiTot):
 			#shuffle input
@@ -108,10 +111,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
+					dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
+					
+					choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1
 				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
@@ -123,11 +130,15 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 				# dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
 				###
 
+				#update weights
 				W_in += dW_in
 				W_act += dW_act
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
+
+				#update Q table
+				Q = ex.Q_learn(Q, ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions), bReward, Q_LR=0.01)
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
@@ -156,7 +167,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 	if createOutput:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
-		rf.plot(runName, W_in_save, RFproba, target=target_save, W_act=W_act_pass, sort=sort, notsame=notsame)
+		rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
@@ -171,7 +182,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 
 	print '\nrun: '+runName
 
+	import pickle
+	f = open('choice_count', 'w')
+	pickle.dump(choice_count, f)
+	f.close()
+	f = open('Q', 'w')
+	pickle.dump(Q, f)
+	f.close()
+
 	# import pdb; pdb.set_trace()
+
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
 

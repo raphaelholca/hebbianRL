@@ -86,6 +86,12 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 
 def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
 	print "ploting RFs..."
+
+	if sort=='tSNE':
+		if np.mod(np.sqrt(np.size(W['000'],1)),1)!=0:
+			print '!! number of neurons not square; using class sorting for display !!'
+			sort='class'
+
 	for i,r in enumerate(sorted(W.keys())):
 		W_sort = np.copy(W[r])
 		print 'run: ' + str(i+1)
@@ -108,6 +114,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
 			notsame_pass = notsame[r]
 		else: 
 			notsame_pass = np.array([])
+
 		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
 		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
 		pyplot.close(fig)
