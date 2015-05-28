@@ -27,7 +27,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	images = ex.normalize(images, A*np.size(images,1)) #normalize input images
 	W_in_save = {}
 	W_act_save = {}
-	target_save = {}
 	nClasses = len(classes)
 	_, idx = np.unique(rActions, return_index=True)
 	lActions = rActions[np.sort(idx)]
@@ -118,7 +117,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					disinhib_Hid = ach*dopa
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 					
-					choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1
+					# choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1 #used to check the approximation of probability matching in decision making
 				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
@@ -145,7 +144,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
 		W_act_save[str(r).zfill(3)] = np.copy(W_act)
-		target_save[str(r).zfill(3)] = np.copy(target)
 
 	""" compute network statistics and performance """
 
