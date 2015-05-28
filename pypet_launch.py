@@ -26,13 +26,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dHigh'			:	[ 0.25,  0.5, 1.5] ,# np.arange(-2., 20.1, 2.0).tolist(),
-	'dMid'			:	[ 0.,  0.2,  0.5] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
+	't_hid'			:	[10., 1., 0.1, 0.01, 0.001] ,# np.arange(-2., 20.1, 2.0).tolist(),
+	't_act'			:	[10., 1., 0.1, 0.01, 0.001] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
 	# 'dNeut'			:	[ 0.,  -0.04, -0.08, -0.12, -0.16, -0.2] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
-	'dLow'			:	[ -0.25, -0.5, -1.5] # np.arange(-9.0,2.1, 1.0).tolist()
+	# 'dLow'			:	[ -0.25, -0.5, -1.5] # np.arange(-9.0,2.1, 1.0).tolist()
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dMid', 'dLow'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('t_hid', 't_act'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -80,7 +80,8 @@ kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 4					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
-'t'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+'t_hid'			: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+'t_act'			: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'dopa_l1'			,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results

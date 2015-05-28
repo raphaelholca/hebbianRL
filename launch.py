@@ -33,7 +33,8 @@ kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 4					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
-'t'				: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+'t_hid'			: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+'t_act'			: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 't_2'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination

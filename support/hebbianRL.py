@@ -19,7 +19,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -78,7 +78,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 				
 				#compute activation of hidden and classification neurons
 				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
-				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t), W_act, SM=False)
+				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_act), W_act, SM=False)
 
 				#predicted best action
 				bPredictActions = rActions[np.argmax(bActNeurons,1)]
@@ -86,11 +86,11 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if not bestAction and (e >= nEpiCrit):
 					bHidNeurons += np.random.uniform(0, 50, np.shape(bHidNeurons)) ##param explore, optimize
-					bHidNeurons = ex.softmax(bHidNeurons, t=t)
+					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
-					bHidNeurons = ex.softmax(bHidNeurons, t=t)
-				bActNeurons = ex.softmax(bActNeurons, t=0.001)
+					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
+				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
 				bActions = rActions[np.argmax(bActNeurons,1)]	
@@ -182,13 +182,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t, A, runName, datase
 
 	print '\nrun: '+runName
 
-	import pickle
-	f = open('choice_count', 'w')
-	pickle.dump(choice_count, f)
-	f.close()
-	f = open('Q', 'w')
-	pickle.dump(Q, f)
-	f.close()
+	# import pickle
+	# f = open('choice_count', 'w')
+	# pickle.dump(choice_count, f)
+	# f.close()
+	# f = open('Q', 'w')
+	# pickle.dump(Q, f)
+	# f.close()
 
 	# import pdb; pdb.set_trace()
 
