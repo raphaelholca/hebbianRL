@@ -77,7 +77,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				
 				#compute activation of hidden and classification neurons
 				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
-				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_act), W_act, SM=False)
+				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_hid), W_act, SM=False)
 
 				#predicted best action
 				bPredictActions = rActions[np.argmax(bActNeurons,1)]
@@ -110,11 +110,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
-					dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
+					# dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
+					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 					
 					# choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1 #used to check the approximation of probability matching in decision making
@@ -140,6 +141,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				Q = ex.Q_learn(Q, ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions), bReward, Q_LR=0.01)
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
+
+			print W_act[38,:]
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
