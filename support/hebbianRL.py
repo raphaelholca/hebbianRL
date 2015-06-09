@@ -144,6 +144,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
+			print W_act[38,:]
+
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
 		W_act_save[str(r).zfill(3)] = np.copy(W_act)
