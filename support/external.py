@@ -146,7 +146,7 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def compute_reward(labels, classes, actions, rActions):
+def compute_reward(labels, classes, actions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
 
@@ -154,7 +154,6 @@ def compute_reward(labels, classes, actions, rActions):
 		labels (numpy array): image labels
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		actions (numpy array): action taken
-		rActions (numpy array): rewarded action
 
 	returns:
 		numpy array: 1 (reward) for correct label-action pair, otherwise 0
@@ -162,7 +161,7 @@ def compute_reward(labels, classes, actions, rActions):
 
 	reward = np.zeros(len(labels), dtype=int)
 	for i in range(len(classes)):
-		reward[np.logical_and(labels==classes[i], actions==rActions[i])] = 1 #reward correct state-action pairs
+		reward[np.logical_and(labels==classes[i], actions==i)] = 1 #reward correct state-action pairs
 
 	return reward
 
@@ -194,7 +193,7 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 
 def compute_dopa_2(rPredicted, rActual, dHigh, dMid, dLow):
 	"""
-	Computes the dopa signal based on the predicted and actual rewards
+	Computes the dopa signal based on the difference between predicted and actual rewards
 
 	Args:
 		rPredicted (numpy array): predicted rewards for current batch
