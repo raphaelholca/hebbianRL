@@ -7,6 +7,7 @@ import pickle
 import os
 import sys
 import shutil
+import numba
 import time	
 import string
 from configobj import ConfigObj
@@ -26,13 +27,13 @@ def normalize(images, A):
 
 	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 
-def softmax(activ, vectorial=True, t=1., disinhib=np.ones(1)):
+def softmax(activ, implementation='numba', t=1., disinhib=np.ones(1)):
 	"""
 	Softmax function (equivalent to lateral inhibition, or winner-take-all)
 
 	Args:
 		activ (numpy array): activation of neurons to be fed to the function; should be (training examples x neurons)
-		vectorial (bool, optional): whether to use vectorial of iterative method
+		vectorial (str, optional): which implementation to use ('vectorial', 'iterative', 'numba')
 		t (float): temperature parameter; determines the sharpness of the softmax, or the strength of the competition
 
 	returns:
@@ -40,13 +41,12 @@ def softmax(activ, vectorial=True, t=1., disinhib=np.ones(1)):
 	"""
 
 	#vectorial
-	if vectorial:
+	if implementation=='vectorial':
 		activ_norm = np.copy(activ - np.max(activ,1)[:,np.newaxis])
 		activ_SM = np.exp((activ_norm)/t) / np.sum(np.exp((activ_norm)/t), 1)[:,np.newaxis]
-		return activ_SM
 
 	#iterative
-	else:
+	elif implementation=='iterative':
 		activ_SM = np.zeros_like(activ)
 		for i in range(np.size(activ,0)):
 			scale = 0
@@ -56,7 +56,30 @@ def softmax(activ, vectorial=True, t=1., disinhib=np.ones(1)):
 			if (I[np.argmin(I)] < -740 + scale):
 			    I[np.argmin(I)] = -740 + scale
 			activ_SM[i,:] = np.exp((I-scale)/t) / np.sum(np.exp((I-scale)/t))
-		return activ_SM
+
+	#iterative with numba
+	elif implementation=='numba':
+		activ_SM = np.zeros_like(activ)
+		activ_SM = softmax_numba(activ, activ_SM, t=t)
+	
+	return activ_SM
+
+@numba.njit
+def softmax_numba(activ, activ_SM, t=1.):
+	"""
+	Numba implementation of the softmax function
+	"""
+
+	for ex in range(activ.shape[0]):
+		sum_tot = 0.
+		ex_max=np.max(activ[ex,:])
+		for i in range(activ.shape[1]): #compute exponential
+			activ_SM[ex,i] = np.exp((activ[ex,i]-ex_max)/t)
+			sum_tot += activ_SM[ex,i]
+		for i in range(activ.shape[1]): #divide by sum of exponential
+			activ_SM[ex,i] /= sum_tot
+
+	return activ_SM
 
 def evenLabels(images, labels, classes):
 	"""
