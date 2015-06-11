@@ -169,13 +169,12 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def compute_reward(labels, classes, actions):
+def compute_reward(labels, actions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
 
 	Args:
 		labels (numpy array): image labels
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 		actions (numpy array): action taken
 
 	returns:
@@ -183,8 +182,7 @@ def compute_reward(labels, classes, actions):
 	"""
 
 	reward = np.zeros(len(labels), dtype=int)
-	for i in range(len(classes)):
-		reward[np.logical_and(labels==classes[i], actions==i)] = 1 #reward correct state-action pairs
+	reward[labels==actions] = 1
 
 	return reward
 

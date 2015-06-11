@@ -98,7 +98,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				bActions_idx = ex.val2idx(bActions, lActions)
 
 				#compute reward and ach signal
-				bReward = ex.compute_reward(bLabels, classes, np.argmax(bActNeurons,1))
+				bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
 				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
@@ -191,7 +191,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	# pickle.dump(Q, f)
 	# f.close()
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
