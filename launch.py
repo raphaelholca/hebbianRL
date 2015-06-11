@@ -29,8 +29,8 @@ rActions 	= np.array(['a','b','c'], dtype='|S1')
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 8 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
+'nEpiCrit'		: 1 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 1. 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
@@ -44,7 +44,7 @@ kwargs = {
 'dMid' 			: 0.01 				,# learning rate increase for correct reward prediction
 'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction
 'dLow' 			: -2.0				,# learning rate increase for incorrect reward predictio
-'nBatch' 		: 20 				,# mini-batch size
+'nBatch' 		: 1,#20 				,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
