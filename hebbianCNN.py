@@ -278,15 +278,29 @@ for e in range(nEpiTot):
 	print 'correct W_out assignment: ' + str(correct_Wout) + '/' + str(L2_feedf_neuronNum)
 
 #plot convolutional filter
-# for f in range(L1_mapNum):
-# 	plt.figure()
-# 	plt.imshow(np.reshape(L1_conv_W[:,f], (L1_conv_filterSide,L1_conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=min(L1_conv_W[:,f]), vmax=max(L1_conv_W[:,f]))
-# plt.show()
+fig = plt.figure()
+nRows = int(np.sqrt(L1_mapNum))
+nCols = L1_mapNum/nRows
+for f in range(L1_mapNum):
+	plt.subplot(nRows, nCols, f)
+	plt.imshow(np.reshape(L1_conv_W[:,f], (L1_conv_filterSide,L1_conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=min(L1_conv_W[:,f]), vmax=max(L1_conv_W[:,f]))
+	plt.xticks([])
+	plt.yticks([])
+fig.set_tight_layout(True)
+plt.show(block=False)
 
 # plot output neuron RF reconstruction
-# for n in range(L2_feedf_neuronNum):
-# 	W = np.reshape(L2_feedf_W[:,n], (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-# 	rc.recon(L1_conv_W, W, display_all=False)
+fig = plt.figure()
+nRows = int(np.sqrt(L2_feedf_neuronNum))
+nCols = L2_feedf_neuronNum/nRows
+for n in range(L2_feedf_neuronNum):
+	plt.subplot(nRows, nCols, n)
+	W = np.reshape(L2_feedf_W[:,n], (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
+	rc.recon(L1_conv_W, W, display_all=False)
+	plt.xticks([])
+	plt.yticks([])
+fig.set_tight_layout(True)
+plt.show(block=False)
 	
 
 
