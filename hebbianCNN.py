@@ -71,8 +71,19 @@ def get_conv_input(image, input_conv, conv_side):
 			im+=1
 	return input_conv	
 
+def subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide):
+	FM = np.reshape(FM_lin, (L1_conv_mapSide, L1_conv_mapSide, L1_mapNum))
+	SSM = np.zeros((L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
+	ite = np.arange(0, L1_conv_mapSide, 2)
+	SSM = subsampling_numba(FM, SSM, ite)
+	SSM = ex.softmax( np.reshape(SSM, (L1_subs_mapSide**2, L1_mapNum) ) )
+	SSM = np.reshape(SSM, (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
+	SSM_lin = np.reshape(SSM, (-1))[np.newaxis,:]
+
+	return SSM_lin
+
 @numba.njit
-def subsampling(FM, SSM, ite):
+def subsampling_numba(FM, SSM, ite):
 	"""
 	Subsamples the convolutional feature maps
 
@@ -130,12 +141,12 @@ classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpi 				= 5
+nEpi 				= 8
 A 					= 150.
 lr 					= 1e-5
 dataset 			= 'test'
 nBatch 				= 196  #196 112 49
-L1_mapNum 			= 6
+L1_mapNum 			= 12
 L1_conv_filterSide	= 5
 L2_feedf_neuronNum 	= 12
 L3_class_neuronNum 	= nClasses
@@ -206,13 +217,7 @@ for e in range(nEpiTot):
 		FM_lin = ex.propL1(input_conv, L1_conv_W, SM=True, t=0.01)
 
 		#subsample feature maps
-		FM = np.reshape(FM_lin, (L1_conv_mapSide, L1_conv_mapSide, L1_mapNum))
-		SSM = np.zeros((L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-		ite = np.arange(0, L1_conv_mapSide, 2)
-		SSM = subsampling(FM, SSM, ite)
-		SSM = ex.softmax( np.reshape(SSM, (L1_subs_mapSide**2, L1_mapNum) ) )
-		SSM = np.reshape(SSM, (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-		SSM_lin = np.reshape(SSM, (-1))[np.newaxis,:]
+		SSM_lin = subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide)
 
 		#activate feedforward layer
 		FF_lin = ex.propL1(SSM_lin, L2_feedf_W, SM=False)
@@ -235,9 +240,9 @@ for e in range(nEpiTot):
 			#compute reward and dopamine signal
 			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_lin_noise))
 
-			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.00, dNeut=-0.0, dLow=-2.0)
-			dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5)
-			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.01, dNeut=-0.02, dLow=-0.5)
+			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
+			dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
 
 			dopa_save.append(dopa[0])
 
@@ -247,7 +252,7 @@ for e in range(nEpiTot):
 			# learn weights...
 			for b in range(L1_conv_neuronNum/nBatch):
 				#...of the convolutional matrices
-				dW_conv = ex.learningStep(input_conv[b*nBatch:(b+1)*nBatch-1, :], FM_lin[b*nBatch:(b+1)*nBatch-1, :], L1_conv_W, lr=lr)
+				dW_conv = ex.learningStep(input_conv[b*nBatch:(b+1)*nBatch-1, :], FM_lin[b*nBatch:(b+1)*nBatch-1, :], L1_conv_W, lr=lr, disinhib=dopa)
 				L1_conv_W += dW_conv
 			
 			#...of the feedforward layer
