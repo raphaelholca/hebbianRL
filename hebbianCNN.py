@@ -335,6 +335,12 @@ for e in range(nEpi):
 
 	print 'train error: ' + str(np.round((1.-correct/rndImages.shape[0])*100,2)) +'%'
 
+	correct_test = 0.
+	for i in range(images_test_short.shape[0]):
+		classif = propagate(images_test_short[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)
+		if classif == labels_test_short[i]: correct_test += 1.
+	print 'test error: ' + str(np.round((1.-correct_test/images_test_short.shape[0])*100,2)) +'%'
+
 	correct_Wout = np.sum(np.argmax(last_neuron_class,1)==np.argmax(L3_class_W,1))
 	print 'correct W_out assignment: ' + str(correct_Wout) + '/' + str(L2_feedf_neuronNum)
 
@@ -349,7 +355,7 @@ pbar_epi = ProgressBar()
 for i in pbar_epi(range(images_test.shape[0])):
 	classif = propagate(images_test[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)
 	if classif == labels_test[i]: correct += 1.
-print 'test error: ' + str(np.round((1.-correct/rndImages.shape[0])*100,2)) +'%'
+print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'%'
 
 
 """ plot convolutional filter """
