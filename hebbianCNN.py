@@ -130,13 +130,11 @@ def load_images(classes, dataset, imPath, pad_size):
 	images, labels = ex.evenLabels(images, labels, classes)
 	# images = ex.normalize_numba(images, 1080)
 	images = add_padding(images, pad_size=pad_size, pad_value=0)
-	# images+=5. ## testing the effect of lower contrast on long training...
-	# images[images==0.]=5. ## testing the effect of non-zero back-ground on training...
 	images += 1e-5 #to avoid division by zero error when the convolving filter takes as input a patch of images that is filled with 0s
 
 	return images, labels
 
-def propagate(image, L1_conv_W, L2_feedf_W, L3_class_W, A, t, size_params):
+def propagate(image, L1_conv_W, L2_feedf_W, L3_class_W, A, t, size_params, noise=False, noise_distrib=0):
 	"""
 	propagates a single image through the network and return its classification
 	"""
@@ -159,12 +157,24 @@ def propagate(image, L1_conv_W, L2_feedf_W, L3_class_W, A, t, size_params):
 	SSM_lin = subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide)
 
 	#activate feedforward layer
-	FF_lin = ex.propL1(SSM_lin, L2_feedf_W, SM=True, t=t)
+	FF_lin = ex.propL1(SSM_lin, L2_feedf_W, SM=False)
+
+	#add noise
+	if noise:
+		FF_lin_noise = FF_lin + np.random.uniform(0, noise_distrib, np.shape(FF_lin))
+		FF_lin_noise = ex.softmax(FF_lin_noise, t=t)
+		class_lin_noise = ex.propL1(FF_lin_noise, L3_class_W, SM=True, t=0.001)
 	
+	FF_lin = ex.softmax(FF_lin, t=t)
+
 	#activate classification layer
 	class_lin = ex.propL1(FF_lin, L3_class_W, SM=True, t=0.001)
 
-	return np.argmax(class_lin)
+	if not noise:
+		return np.argmax(class_lin), input_conv, FM_lin, SSM_lin, FF_lin, class_lin
+	else:
+		return np.argmax(class_lin), input_conv, FM_lin, SSM_lin, FF_lin, class_lin, class_lin_noise
+
 
 """ define parameters """
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
@@ -173,7 +183,7 @@ classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpi 				= 10
+nEpi 				= 5
 nCrit 				= 6
 DA 					= False
 A 					= 200.
@@ -254,35 +264,10 @@ for e in range(nEpi):
 	pbar_epi = ProgressBar()
 	for i in pbar_epi(range(rndImages.shape[0])):
 		imcount+=1
-
-		#get input to the convolutional filter
-		input_conv = np.zeros((L1_conv_neuronNum, L1_conv_filterSide**2))
-		input_conv = get_conv_input(rndImages[i,:,:], input_conv, L1_conv_filterSide)
-		input_conv = ex.normalize_numba(input_conv, A)
-
-		#activate convolutional feature maps
-		FM_lin = ex.propL1(input_conv, L1_conv_W, SM=True, t=0.01)
-
-		#subsample feature maps
-		SSM_lin = subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide)
-
-		#activate feedforward layer
-		FF_lin = ex.propL1(SSM_lin, L2_feedf_W, SM=False)
 		
-		#add noise in FF_lin
-		FF_lin_noise = np.copy(FF_lin)
-		if DA and e>=nCrit and e<nEpi: FF_lin_noise += np.random.uniform(0, 50, np.shape(FF_lin)) ##param explore, optimize
-		FF_lin_noise = ex.softmax(FF_lin_noise, t=0.01)
-		FF_lin = ex.softmax(FF_lin, t=0.01)
+		classif, input_conv, FM_lin, SSM_lin, FF_lin, class_lin = propagate(rndImages[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params, noise=False)
 
-		#activate classification layer
-		class_lin = ex.propL1(FF_lin, L3_class_W, SM=True, t=0.001)
-		
 		if DA and e>=nCrit: #DOPA
-			#activate classification layer with noise
-			class_lin_noise = ex.propL1(FF_lin_noise, L3_class_W, SM=True, t=0.001)
-
-			#compute reward and dopamine signal
 			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_lin_noise))
 
 			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
@@ -292,35 +277,28 @@ for e in range(nEpi):
 			dopa_save.append(dopa[0])
 		else: dopa = None
 
-		last_neuron_class[np.argmax(FF_lin), np.argwhere(rndLabels[i]==classes)] += 1
+		last_neuron_class[np.argmax(FF_lin), np.argwhere(rndLabels[i]==classes)] += 1 ##will create a problem when noise is added
 
 		# learn weights...
+		#...of the convolutional matrices
 		if imcount<60000:
-			still_training = True
 			for b in range(L1_conv_neuronNum/nBatch):
-				#...of the convolutional matrices
 				dW_conv = ex.learningStep(input_conv[b*nBatch:(b+1)*nBatch-1, :], FM_lin[b*nBatch:(b+1)*nBatch-1, :], L1_conv_W, lr=lr*0.1, disinhib=dopa)
-				# if e>= 8: dW_conv[:,[0,2,3,4,7,8,11]] = np.zeros((L1_conv_filterSide**2,7)) ##prevents learning of 1 weight...
 				L1_conv_W += dW_conv
 				L1_conv_W = np.clip(L1_conv_W, 1e-10, np.inf)
-		elif still_training: 
-			print '** stopped conv filter training **'
-			still_training = False
 
 		#...of the feedforward layer
-		dW_FF = ex.learningStep(SSM_lin, FF_lin_noise, L2_feedf_W, lr=lr*3600, disinhib=dopa)
+		dW_FF = ex.learningStep(SSM_lin, FF_lin, L2_feedf_W, lr=lr*3600, disinhib=dopa)
 		L2_feedf_W += dW_FF
 		L2_feedf_W = np.clip(L2_feedf_W, 1e-10, np.inf)
 
 		#...of the classification layer
-		dW_class = ex.learningStep(FF_lin_noise, class_lin, L3_class_W, lr=0.005)
-		
+		dW_class = ex.learningStep(FF_lin, class_lin, L3_class_W, lr=0.005)
 		if np.argmax(class_lin) == ex.label2idx(classes, [rndLabels[i]]):
 			dW_class *= 0.75
 			correct_train+=1
 		else:
 			dW_class *= -0.5
-
 		L3_class_W += dW_class
 		L3_class_W = np.clip(L3_class_W, 1e-10, np.inf)
 
@@ -334,7 +312,7 @@ for e in range(nEpi):
 	labels_test_short = rndLabels_test[::step]
 	correct_test = 0.
 	for i in range(images_test_short.shape[0]):
-		classif = propagate(images_test_short[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)
+		classif = propagate(images_test_short[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)[0]
 		if classif == labels_test_short[i]: correct_test += 1.
 	print 'approx. test error: ' + str(np.round((1.-correct_test/images_test_short.shape[0])*100,2)) +'%'
 
@@ -342,16 +320,15 @@ for e in range(nEpi):
 	print 'correct W_out assignment: ' + str(correct_Wout) + '/' + str(L2_feedf_neuronNum)
 
 """ test network """
-print '\ntest epi'
+print '\ntesting network...'
 step = images_test.shape[0]/8920
 images_test=images_test[::step,:,:]
 labels_test=labels_test[::step]
-print labels_test.shape
 
 correct = 0.
 pbar_epi = ProgressBar()
 for i in pbar_epi(range(images_test.shape[0])):
-	classif = propagate(images_test[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)
+	classif = propagate(images_test[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)[0]
 	if classif == labels_test[i]: correct += 1.
 print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'%'
 
