@@ -45,13 +45,13 @@ def add_padding(images, pad_size, pad_value=0.):
 	return images_padded
 
 @numba.njit
-def get_conv_input(image, input_conv, conv_side):
+def get_conv_input(image, conv_input, conv_side):
 	"""
 	Gets the input to the convolving weight matrix
 
 	Args:
 		image (2D numpy array): image to get the input from; size = (images_side x images_side)
-		input_conv (2D numpy array): empty input array to be filled; size = (conv_neuronNum x conv_side**2)
+		conv_input (2D numpy array): empty input array to be filled; size = (conv_neuronNum x conv_side**2)
 		conv_side (int): size of the convolutional filter
 
 	returns:
@@ -66,21 +66,20 @@ def get_conv_input(image, input_conv, conv_side):
 			km=0
 			for k in range(conv_side):
 				for l in range(conv_side):
-					input_conv[im,km] = select[k,l]
+					conv_input[im,km] = select[k,l]
 					km+=1
 			im+=1
-	return input_conv	
+	return conv_input	
 
-def subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide):
-	FM = np.reshape(FM_lin, (L1_conv_mapSide, L1_conv_mapSide, L1_mapNum))
-	SSM = np.zeros((L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-	ite = np.arange(0, L1_conv_mapSide, 2)
+def subsampling(conv_activ, conv_mapSide, conv_mapNum, subS_mapSide):
+	FM = np.reshape(conv_activ, (conv_mapSide, conv_mapSide, conv_mapNum))
+	SSM = np.zeros((subS_mapSide, subS_mapSide, conv_mapNum))
+	ite = np.arange(0, conv_mapSide, 2)
 	SSM = subsampling_numba(FM, SSM, ite)
-	SSM = ex.softmax( np.reshape(SSM, (L1_subs_mapSide**2, L1_mapNum) ) )
-	SSM = np.reshape(SSM, (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-	SSM_lin = np.reshape(SSM, (-1))[np.newaxis,:]
+	SSM = ex.softmax( np.reshape(SSM, (subS_mapSide**2, conv_mapNum) ), t=1. )
+	subS_activ = np.reshape(SSM, (-1))[np.newaxis,:]
 
-	return SSM_lin
+	return subS_activ
 
 @numba.njit
 def subsampling_numba(FM, SSM, ite):
@@ -134,46 +133,46 @@ def load_images(classes, dataset, imPath, pad_size):
 
 	return images, labels
 
-def propagate(image, L1_conv_W, L2_feedf_W, L3_class_W, A, t, size_params, noise=False, noise_distrib=0):
+def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, noise_distrib=0):
 	"""
 	propagates a single image through the network and return its classification
 	"""
 	#get params from size_params dict
-	L1_conv_neuronNum = size_params['L1_conv_neuronNum']
-	L1_conv_filterSide = size_params['L1_conv_filterSide']
-	L1_conv_mapSide = size_params['L1_conv_mapSide']
-	L1_mapNum = size_params['L1_mapNum']
-	L1_subs_mapSide = size_params['L1_subs_mapSide']
+	conv_neuronNum = size_params['conv_neuronNum']
+	conv_filterSide = size_params['conv_filterSide']
+	conv_mapSide = size_params['conv_mapSide']
+	conv_mapNum = size_params['conv_mapNum']
+	subS_mapSide = size_params['subS_mapSide']
 
 	#get input to the convolutional filter
-	input_conv = np.zeros((L1_conv_neuronNum, L1_conv_filterSide**2))
-	input_conv = get_conv_input(image, input_conv, L1_conv_filterSide)
-	input_conv = ex.normalize_numba(input_conv, A)
+	conv_input = np.zeros((conv_neuronNum, conv_filterSide**2))
+	conv_input = get_conv_input(image, conv_input, conv_filterSide)
+	conv_input = ex.normalize_numba(conv_input, A)
 
 	#activate convolutional feature maps
-	FM_lin = ex.propL1(input_conv, L1_conv_W, SM=True, t=t)
+	conv_activ = ex.propL1(conv_input, conv_W, SM=True, t=t)
 
 	#subsample feature maps
-	SSM_lin = subsampling(FM_lin, L1_conv_mapSide, L1_mapNum, L1_subs_mapSide)
+	subS_activ = subsampling(conv_activ, conv_mapSide, conv_mapNum, subS_mapSide)
 
 	#activate feedforward layer
-	FF_lin = ex.propL1(SSM_lin, L2_feedf_W, SM=False)
+	feedF_activ = ex.propL1(subS_activ, feedF_W, SM=False)
 
 	#add noise
 	if noise:
-		FF_lin_noise = FF_lin + np.random.uniform(0, noise_distrib, np.shape(FF_lin))
+		FF_lin_noise = feedF_activ + np.random.uniform(0, noise_distrib, np.shape(feedF_activ))
 		FF_lin_noise = ex.softmax(FF_lin_noise, t=t)
-		class_lin_noise = ex.propL1(FF_lin_noise, L3_class_W, SM=True, t=0.001)
+		class_lin_noise = ex.propL1(FF_lin_noise, class_W, SM=True, t=0.001)
 	
-	FF_lin = ex.softmax(FF_lin, t=t)
+	feedF_activ = ex.softmax(feedF_activ, t=t)
 
 	#activate classification layer
-	class_lin = ex.propL1(FF_lin, L3_class_W, SM=True, t=0.001)
+	class_activ = ex.propL1(feedF_activ, class_W, SM=True, t=0.001)
 
 	if not noise:
-		return np.argmax(class_lin), input_conv, FM_lin, SSM_lin, FF_lin, class_lin
+		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ
 	else:
-		return np.argmax(class_lin), input_conv, FM_lin, SSM_lin, FF_lin, class_lin, class_lin_noise
+		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_lin_noise
 
 
 """ define parameters """
@@ -190,17 +189,17 @@ A 					= 200.
 lr 					= 1e-5
 dataset 			= 'test'
 nBatch 				= 196  #196 112 49
-L1_mapNum 			= 12
-L1_conv_filterSide	= 5
-L2_feedf_neuronNum 	= 49
-L3_class_neuronNum 	= nClasses
+conv_mapNum			= 12
+conv_filterSide		= 5
+feedF_neuronNum 	= 49
+class_neuronNum 	= nClasses
 seed 				= 970#np.random.randint(1000) #970
 
 np.random.seed(seed)
 print '\n' + 'run name: ' + runName + ' -- seed: ' + str(seed) + '\n'
 
 """ load and pre-process images """
-pad_size = (L1_conv_filterSide-1)/2
+pad_size = (conv_filterSide-1)/2
 imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 images, labels = load_images(classes, dataset, imPath, pad_size)
 dataset_test='test' if dataset=='train' else 'train'
@@ -225,30 +224,28 @@ images_test, labels_test = load_images(classes, dataset_test, imPath, pad_size)
 """ initialize variables """
 images_num = np.size(images, 0)
 images_side = np.size(images,2)
-L1_conv_neuronNum = (images_side-L1_conv_filterSide+1)**2
-L1_conv_mapSide = int(np.sqrt(L1_conv_neuronNum))
-L1_subs_mapSide = L1_conv_mapSide/2
-size_params = {'L1_conv_neuronNum':L1_conv_neuronNum, 'L1_conv_filterSide':L1_conv_filterSide, 'L1_conv_mapSide':L1_conv_mapSide, 'L1_mapNum':L1_mapNum, 'L1_subs_mapSide':L1_subs_mapSide}
+conv_neuronNum = (images_side-conv_filterSide+1)**2
+conv_mapSide = int(np.sqrt(conv_neuronNum))
+subS_mapSide = conv_mapSide/2
+size_params = {'conv_neuronNum':conv_neuronNum, 'conv_filterSide':conv_filterSide, 'conv_mapSide':conv_mapSide, 'conv_mapNum':conv_mapNum, 'subS_mapSide':subS_mapSide}
 
 """ initialize weights """
 if False: #load pre-trained weights from file
 	# f = open('w_corners', 'r')
-	# L1_conv_W = pickle.load(f)
+	# conv_W = pickle.load(f)
 	# f.close()
 
 	f = open('weights', 'r')
 	weights = pickle.load(f)
 	f.close()
 
-	L1_conv_W = weights['L1_conv_W']
-	L1_subs_W = weights['L1_subs_W']
-	L2_feedf_W = weights['L2_feedf_W']
-	L3_class_W = weights['L3_class_W']
+	conv_W = weights['conv_W']
+	feedF_W = weights['feedF_W']
+	class_W = weights['class_W']
 else: #random initialization
-	L1_conv_W = np.random.random_sample(size=(L1_conv_filterSide**2, L1_mapNum)) + A/(L1_conv_filterSide**2) + 2.5 ##0.5
-	L1_subs_W = np.random.random_sample(size=((L1_subs_mapSide**2)*L1_mapNum, (L1_subs_mapSide**2)*L1_mapNum)) + 1.5 ##for now, no trainable weights between cMaps and sMaps...
-	L2_feedf_W = np.random.random_sample(size=((L1_subs_mapSide**2)*L1_mapNum, L2_feedf_neuronNum))/1000 + float(L1_subs_mapSide**2)/((L1_subs_mapSide**2)*L1_mapNum) + 0.6
-	L3_class_W = (np.random.random_sample(size=(L2_feedf_neuronNum, L3_class_neuronNum))/1000+1.0)/L2_feedf_neuronNum
+	conv_W = np.random.random_sample(size=(conv_filterSide**2, conv_mapNum)) + A/(conv_filterSide**2) + 2.5 ##0.5
+	feedF_W = np.random.random_sample(size=((subS_mapSide**2)*conv_mapNum, feedF_neuronNum))/1000 + float(subS_mapSide**2)/((subS_mapSide**2)*conv_mapNum) + 0.6
+	class_W = (np.random.random_sample(size=(feedF_neuronNum, class_neuronNum))/1000+1.0)/feedF_neuronNum
 
 """ training network """
 print "training network..."
@@ -258,51 +255,51 @@ for e in range(nEpi):
 	rndImages, rndLabels = shuffle_images(images, labels)
 
 	correct_train = 0.
-	last_neuron_class = np.zeros((L2_feedf_neuronNum, L3_class_neuronNum))
+	last_neuron_class = np.zeros((feedF_neuronNum, class_neuronNum))
 	dopa_save = []
 
 	pbar_epi = ProgressBar()
 	for i in pbar_epi(range(rndImages.shape[0])):
 		imcount+=1
 		
-		classif, input_conv, FM_lin, SSM_lin, FF_lin, class_lin = propagate(rndImages[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params, noise=False)
+		classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=False)
 
 		if DA and e>=nCrit: #DOPA
 			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_lin_noise))
 
-			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
-			dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			# dopa = ex.compute_dopa([np.argmax(class_lin)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
+			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
 
 			dopa_save.append(dopa[0])
 		else: dopa = None
 
-		last_neuron_class[np.argmax(FF_lin), np.argwhere(rndLabels[i]==classes)] += 1 ##will create a problem when noise is added
+		last_neuron_class[np.argmax(feedF_activ), np.argwhere(rndLabels[i]==classes)] += 1 ##will create a problem when noise is added
 
 		# learn weights...
 		#...of the convolutional matrices
 		if imcount<60000:
-			for b in range(L1_conv_neuronNum/nBatch):
-				dW_conv = ex.learningStep(input_conv[b*nBatch:(b+1)*nBatch-1, :], FM_lin[b*nBatch:(b+1)*nBatch-1, :], L1_conv_W, lr=lr*0.1, disinhib=dopa)
-				L1_conv_W += dW_conv
-				L1_conv_W = np.clip(L1_conv_W, 1e-10, np.inf)
+			for b in range(conv_neuronNum/nBatch):
+				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch-1, :], conv_activ[b*nBatch:(b+1)*nBatch-1, :], conv_W, lr=lr*0.1, disinhib=dopa)
+				conv_W += dW_conv
+				conv_W = np.clip(conv_W, 1e-10, np.inf)
 
 		#...of the feedforward layer
-		dW_FF = ex.learningStep(SSM_lin, FF_lin, L2_feedf_W, lr=lr*3600, disinhib=dopa)
-		L2_feedf_W += dW_FF
-		L2_feedf_W = np.clip(L2_feedf_W, 1e-10, np.inf)
+		dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600, disinhib=dopa)
+		feedF_W += dW_FF
+		feedF_W = np.clip(feedF_W, 1e-10, np.inf)
 
 		#...of the classification layer
-		dW_class = ex.learningStep(FF_lin, class_lin, L3_class_W, lr=0.005)
-		if np.argmax(class_lin) == ex.label2idx(classes, [rndLabels[i]]):
+		dW_class = ex.learningStep(feedF_activ, class_activ, class_W, lr=0.005)
+		if np.argmax(class_activ) == ex.label2idx(classes, [rndLabels[i]]):
 			dW_class *= 0.75
 			correct_train+=1
 		else:
 			dW_class *= -0.5
-		L3_class_W += dW_class
-		L3_class_W = np.clip(L3_class_W, 1e-10, np.inf)
+		class_W += dW_class
+		class_W = np.clip(class_W, 1e-10, np.inf)
 
-		if np.isnan(L3_class_W).any(): import pdb; pdb.set_trace()
+		if np.isnan(class_W).any(): import pdb; pdb.set_trace()
 
 	print 'train error: ' + str(np.round((1.-correct_train/rndImages.shape[0])*100,2)) +'%'
 
@@ -312,12 +309,12 @@ for e in range(nEpi):
 	labels_test_short = rndLabels_test[::step]
 	correct_test = 0.
 	for i in range(images_test_short.shape[0]):
-		classif = propagate(images_test_short[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)[0]
+		classif = propagate(images_test_short[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
 		if classif == labels_test_short[i]: correct_test += 1.
 	print 'approx. test error: ' + str(np.round((1.-correct_test/images_test_short.shape[0])*100,2)) +'%'
 
-	correct_Wout = np.sum(np.argmax(last_neuron_class,1)==np.argmax(L3_class_W,1))
-	print 'correct W_out assignment: ' + str(correct_Wout) + '/' + str(L2_feedf_neuronNum)
+	correct_Wout = np.sum(np.argmax(last_neuron_class,1)==np.argmax(class_W,1))
+	print 'correct W_out assignment: ' + str(correct_Wout) + '/' + str(feedF_neuronNum)
 
 """ test network """
 print '\ntesting network...'
@@ -328,19 +325,19 @@ labels_test=labels_test[::step]
 correct = 0.
 pbar_epi = ProgressBar()
 for i in pbar_epi(range(images_test.shape[0])):
-	classif = propagate(images_test[i,:,:], L1_conv_W, L2_feedf_W, L3_class_W, A, 0.01, size_params)[0]
+	classif = propagate(images_test[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
 	if classif == labels_test[i]: correct += 1.
 print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'%'
 
 
 """ plot convolutional filter """
-# nRows = int(np.sqrt(L1_mapNum))
-# nCols = np.ceil(L1_mapNum/float(nRows))
+# nRows = int(np.sqrt(conv_mapNum))
+# nCols = np.ceil(conv_mapNum/float(nRows))
 # fig = plt.figure(figsize=(nCols,nRows))
-# for f in range(L1_mapNum):
+# for f in range(conv_mapNum):
 # 	plt.subplot(nRows, nCols, f)
-# 	plt.imshow(np.reshape(L1_conv_W[:,f], (L1_conv_filterSide,L1_conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=np.min(L1_conv_W), vmax=np.max(L1_conv_W))
-# 	# plt.imshow(np.reshape(L1_conv_W[:,f], (L1_conv_filterSide,L1_conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=np.min(L1_conv_W[:,f]), vmax=np.max(L1_conv_W[:,f]))
+# 	plt.imshow(np.reshape(conv_W[:,f], (conv_filterSide,conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=np.min(conv_W), vmax=np.max(conv_W))
+# 	# plt.imshow(np.reshape(conv_W[:,f], (conv_filterSide,conv_filterSide)), interpolation='nearest', cmap='Greys', vmin=np.min(conv_W[:,f]), vmax=np.max(conv_W[:,f]))
 # 	plt.xticks([])
 # 	plt.yticks([])
 # fig.patch.set_facecolor('white')
@@ -348,13 +345,13 @@ print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'
 # plt.show(block=False)
 
 """ plot output neuron RF reconstruction """
-# nRows = int(np.sqrt(L2_feedf_neuronNum))
-# nCols = L2_feedf_neuronNum/nRows
+# nRows = int(np.sqrt(feedF_neuronNum))
+# nCols = feedF_neuronNum/nRows
 # fig = plt.figure(figsize=(nCols,nRows))
-# for n in range(L2_feedf_neuronNum):
+# for n in range(feedF_neuronNum):
 # 	plt.subplot(nRows, nCols, n)
-# 	W = np.reshape(L2_feedf_W[:,n], (L1_subs_mapSide, L1_subs_mapSide, L1_mapNum))
-# 	rc.recon(L1_conv_W, W, display_all=False)
+# 	W = np.reshape(feedF_W[:,n], (subS_mapSide, subS_mapSide, conv_mapNum))
+# 	rc.recon(conv_W, W, display_all=False)
 # 	plt.xticks([])
 # 	plt.yticks([])
 # fig.patch.set_facecolor('white')
