@@ -58,7 +58,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		choice_count = np.zeros((nClasses, nClasses))
 
 		pbar_epi = ProgressBar()
-		for e in pbar_epi(range(nEpiTot)):
+		# for e in pbar_epi(range(nEpiTot)):
+		for e in range(nEpiTot):
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
@@ -108,7 +109,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
 					disinhib_Hid = ach
-					disinhib_Act = dopa 
+					disinhib_Act = dopa
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
@@ -143,6 +144,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				Q = ex.Q_learn(Q, ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions), bReward, Q_LR=0.01)
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
+
+			##to check Wact assignment after each episode:
+			RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
+			correct_W_act = 0.	
+			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
+			correct_W_act += np.sum(same)
+			correct_W_act/=len(RFproba)
+			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)

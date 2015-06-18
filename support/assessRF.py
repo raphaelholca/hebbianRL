@@ -32,7 +32,7 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
-	print "computing RF classes..."
+	if output: print "computing RF classes..."
 	nClasses = 10
 	nRun = len(W.keys())
 	nNeurons = np.size(W['000'],1)
@@ -49,7 +49,7 @@ def hist(runName, W, classes, nDimStates, images, labels, SVM=True, proba=False,
 	RFclass = np.zeros((nRun,nClasses))
 	RFselec = np.zeros((nRun,nClasses))
 	for i,r in enumerate(sorted(W.keys())):
-		print 'run: ' + str(i+1)
+		if output: print 'run: ' + str(i+1)
 		if SVM:
 			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r][:nDimStates,:].T),2)
 		else:

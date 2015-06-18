@@ -27,6 +27,18 @@ def normalize(images, A):
 
 	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 
+@numba.njit
+def normalize_numba(images, A):
+	A_i = (A-images.shape[1])
+	for im in range(images.shape[0]):
+		sum_px = 0
+		for px in range(images.shape[1]):
+			sum_px += images[im,px]
+		for px in range(images.shape[1]):
+			images[im,px] = A_i*images[im,px]/sum_px + 1.
+
+	return images
+
 def softmax(activ, implementation='numba', t=1., disinhib=np.ones(1)):
 	"""
 	Softmax function (equivalent to lateral inhibition, or winner-take-all)
@@ -124,7 +136,7 @@ def propL1(bInput, W_in, SM=True, t=1.):
 	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 
-def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
+def learningStep(preNeurons, postNeurons, W, lr, disinhib=None, numba=True):
 	"""
 	One learning step for the hebbian network
 
@@ -138,9 +150,42 @@ def learningStep(preNeurons, postNeurons, W, lr, disinhib=np.ones(1)):
 	returns:
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
+	if disinhib==None or disinhib.shape[0]!=postNeurons.shape[0]: disinhib=np.ones(postNeurons.shape[0])
 
-	postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
+	if numba:
+		postNeurons_lr = disinhibition(postNeurons, lr, disinhib, np.zeros_like(postNeurons))
+		dot = np.dot(preNeurons.T, postNeurons_lr)
+		return regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
+	else:
+		postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
+
+
+@numba.njit
+def disinhibition(postNeurons, lr, disinhib, postNeurons_lr):
+	"""
+	support function for numba implementation of learningStep() 
+	"""
+	for b in range(postNeurons.shape[0]):
+		for pn in range(postNeurons.shape[1]):
+			postNeurons_lr[b, pn] = postNeurons[b, pn] * lr * disinhib[b]
+
+	return postNeurons_lr
+
+@numba.njit
+def regularization(dot, postNeurons, W, sum_ar):
+	"""
+	support function for numba implementation of learningStep() 
+	"""
+	for j in range(postNeurons.shape[1]):
+		for i in range(postNeurons.shape[0]):
+			sum_ar[j] += postNeurons[i,j]
+	
+	for i in range(dot.shape[0]):
+		for j in range(dot.shape[1]):
+			dot[i,j] -= W[i,j] * sum_ar[j]
+
+	return dot
 
 def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 	"""
