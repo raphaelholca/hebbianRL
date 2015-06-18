@@ -133,7 +133,7 @@ def load_images(classes, dataset, imPath, pad_size):
 
 	return images, labels
 
-def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, noise_distrib=0):
+def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, noise_distrib=50):
 	"""
 	propagates a single image through the network and return its classification
 	"""
@@ -160,9 +160,9 @@ def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, n
 
 	#add noise
 	if noise:
-		FF_lin_noise = feedF_activ + np.random.uniform(0, noise_distrib, np.shape(feedF_activ))
-		FF_lin_noise = ex.softmax(FF_lin_noise, t=t)
-		class_lin_noise = ex.propL1(FF_lin_noise, class_W, SM=True, t=0.001)
+		feedF_activ_noise = feedF_activ + np.random.uniform(0, noise_distrib, np.shape(feedF_activ))
+		feedF_activ_noise = ex.softmax(feedF_activ_noise, t=t)
+		class_activ_noise = ex.propL1(feedF_activ_noise, class_W, SM=True, t=0.001)
 	
 	feedF_activ = ex.softmax(feedF_activ, t=t)
 
@@ -172,19 +172,19 @@ def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, n
 	if not noise:
 		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ
 	else:
-		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_lin_noise
+		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ_noise, class_activ, class_activ_noise
 
 
 """ define parameters """
-classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 # classes 	= np.array([0,1], dtype=int)
-# classes 	= np.array([4,7,9], dtype=int)
+classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpi 				= 5
-nCrit 				= 6
-DA 					= False
+nEpi 				= 50
+nCrit 				= 5
+DA 					= True
 A 					= 200.
 lr 					= 1e-5
 dataset 			= 'test'
@@ -262,14 +262,17 @@ for e in range(nEpi):
 	for i in pbar_epi(range(rndImages.shape[0])):
 		imcount+=1
 		
-		classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=False)
+		if e<nCrit or not DA:
+			classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=False)
 
-		if DA and e>=nCrit: #DOPA
-			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_lin_noise))
+		if e>=nCrit and DA: #DOPA
+			classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_activ_noise = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=True)
 
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
-			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_lin_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
+			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_activ_noise))
+
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
+			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
 
 			dopa_save.append(dopa[0])
 		else: dopa = None
@@ -310,7 +313,7 @@ for e in range(nEpi):
 	correct_test = 0.
 	for i in range(images_test_short.shape[0]):
 		classif = propagate(images_test_short[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
-		if classif == labels_test_short[i]: correct_test += 1.
+		if classif == ex.label2idx(classes, [labels_test_short[i]]): correct_test += 1.
 	print 'approx. test error: ' + str(np.round((1.-correct_test/images_test_short.shape[0])*100,2)) +'%'
 
 	correct_Wout = np.sum(np.argmax(last_neuron_class,1)==np.argmax(class_W,1))
@@ -326,7 +329,7 @@ correct = 0.
 pbar_epi = ProgressBar()
 for i in pbar_epi(range(images_test.shape[0])):
 	classif = propagate(images_test[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
-	if classif == labels_test[i]: correct += 1.
+	if classif == ex.label2idx(classes, [labels_test[i]]): correct += 1.
 print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'%'
 
 
