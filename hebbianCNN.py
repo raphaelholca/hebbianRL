@@ -182,12 +182,12 @@ classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpi 				= 50
-nCrit 				= 5
+nEpi 				= 10
+nCrit 				= 2
 DA 					= True
 A 					= 200.
 lr 					= 1e-5
-dataset 			= 'test'
+dataset 			= 'train'
 nBatch 				= 196  #196 112 49
 conv_mapNum			= 12
 conv_filterSide		= 5
@@ -283,7 +283,7 @@ for e in range(nEpi):
 		#...of the convolutional matrices
 		if imcount<60000:
 			for b in range(conv_neuronNum/nBatch):
-				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch-1, :], conv_activ[b*nBatch:(b+1)*nBatch-1, :], conv_W, lr=lr*0.1, disinhib=dopa)
+				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch-1, :], conv_activ[b*nBatch:(b+1)*nBatch-1, :], conv_W, lr=lr*0.1)#, disinhib=dopa)
 				conv_W += dW_conv
 				conv_W = np.clip(conv_W, 1e-10, np.inf)
 
@@ -306,7 +306,7 @@ for e in range(nEpi):
 
 	print 'train error: ' + str(np.round((1.-correct_train/rndImages.shape[0])*100,2)) +'%'
 
-	step = labels_test.shape[0]/1005
+	step = labels_test.shape[0]/(1005/nClasses)
 	rndImages_test, rndLabels_test = shuffle_images(images_test, labels_test)
 	images_test_short = rndImages_test[::step]
 	labels_test_short = rndLabels_test[::step]
@@ -321,7 +321,7 @@ for e in range(nEpi):
 
 """ test network """
 print '\ntesting network...'
-step = images_test.shape[0]/8920
+step = images_test.shape[0]/(8000/nClasses)
 images_test=images_test[::step,:,:]
 labels_test=labels_test[::step]
 
