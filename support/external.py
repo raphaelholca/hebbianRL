@@ -39,7 +39,7 @@ def normalize_numba(images, A):
 
 	return images
 
-def softmax(activ, implementation='numba', t=1., disinhib=np.ones(1)):
+def softmax(activ, implementation='numba', t=1.):
 	"""
 	Softmax function (equivalent to lateral inhibition, or winner-take-all)
 

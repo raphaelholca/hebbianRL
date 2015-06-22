@@ -40,8 +40,7 @@ def add_padding(images, pad_size, pad_value=0.):
 	images = np.reshape(images, (images_num, sqrtPixels, sqrtPixels))
 	images_padded = np.ones((images_num, sqrtPixels+pad_size*2, sqrtPixels+pad_size*2))*pad_value
 
-	images_padded[:, pad_size-1:sqrtPixels+pad_size-1, pad_size-1:sqrtPixels+pad_size-1] = images
-
+	images_padded[:, pad_size:sqrtPixels+pad_size, pad_size:sqrtPixels+pad_size] = images
 	return images_padded
 
 @numba.njit
@@ -170,7 +169,7 @@ def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise=False, n
 	class_activ = ex.propL1(feedF_activ, class_W, SM=True, t=0.001)
 
 	if not noise:
-		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ
+		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_activ
 	else:
 		return np.argmax(class_activ), conv_input, conv_activ, subS_activ, feedF_activ_noise, class_activ, class_activ_noise
 
@@ -182,16 +181,17 @@ classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpi 				= 10
-nCrit 				= 2
-DA 					= True
+nEpi 				= 2
+nCrit 				= 0
+DA 					= False
+noise 				= False
 A 					= 200.
 lr 					= 1e-5
-dataset 			= 'train'
+dataset 			= 'test'
 nBatch 				= 196  #196 112 49
-conv_mapNum			= 12
+conv_mapNum			= 6
 conv_filterSide		= 5
-feedF_neuronNum 	= 49
+feedF_neuronNum 	= 9
 class_neuronNum 	= nClasses
 seed 				= 970#np.random.randint(1000) #970
 
@@ -256,39 +256,38 @@ for e in range(nEpi):
 
 	correct_train = 0.
 	last_neuron_class = np.zeros((feedF_neuronNum, class_neuronNum))
-	dopa_save = []
+	dopa_save = np.array([])
 
 	pbar_epi = ProgressBar()
 	for i in pbar_epi(range(rndImages.shape[0])):
 		imcount+=1
+		noise_bool=True if noise and e>=nCrit and DA else False
 		
-		if e<nCrit or not DA:
-			classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=False)
+		classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_activ_noise = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=noise_bool)
 
 		if e>=nCrit and DA: #DOPA
-			classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_activ_noise = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=True)
-
 			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_activ_noise))
 
 			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.0, dLow=-2.0) #parameters from old network
-			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.00, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=1.00, dNeut=-0.02, dLow=-0.5) #testing parameters for convolutional layer
 
-			dopa_save.append(dopa[0])
+			dopa_save = np.append(dopa_save, dopa[0])
 		else: dopa = None
 
 		last_neuron_class[np.argmax(feedF_activ), np.argwhere(rndLabels[i]==classes)] += 1 ##will create a problem when noise is added
 
 		# learn weights...
 		#...of the convolutional matrices
-		if imcount<60000:
+		if True or imcount<60000:
 			for b in range(conv_neuronNum/nBatch):
-				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch-1, :], conv_activ[b*nBatch:(b+1)*nBatch-1, :], conv_W, lr=lr*0.1)#, disinhib=dopa)
+				dopa_batch = dopa*np.ones(nBatch) if dopa!=None else None
+				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch, :], conv_activ[b*nBatch:(b+1)*nBatch, :], conv_W, lr=lr*0.1, disinhib=dopa_batch)
 				conv_W += dW_conv
 				conv_W = np.clip(conv_W, 1e-10, np.inf)
 
 		#...of the feedforward layer
-		dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600, disinhib=dopa)
+		dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600)#, disinhib=dopa)
 		feedF_W += dW_FF
 		feedF_W = np.clip(feedF_W, 1e-10, np.inf)
 
