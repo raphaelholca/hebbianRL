@@ -191,7 +191,12 @@ def print_save(allCMs, allPerf, classes, runName, show):
 	print '-'*(len(c_str)+3)
 	print np.round(avgCM,2)
 	print '\naverage correct classification:'
-	print str(np.round(100*avgPerf,1)) + ' +/- ' + str(np.round(100*stePerf,1)) + '%'
+	print str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + '%'
+	if len(allPerf)>1:
+		print 'of which best performance is:'
+		print str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')'
+		print 'and worse performance is:'
+		print str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')'
 
 	fig = pl.plotCM(avgCM, classes)
 	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.png')

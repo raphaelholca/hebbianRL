@@ -58,8 +58,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		choice_count = np.zeros((nClasses, nClasses))
 
 		pbar_epi = ProgressBar()
-		# for e in pbar_epi(range(nEpiTot)):
-		for e in range(nEpiTot):
+		for e in pbar_epi(range(nEpiTot)):
+		# for e in range(nEpiTot):
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
@@ -181,7 +181,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, 'train', output=createOutput, show=showPlots)
+	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 
 	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'

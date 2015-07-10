@@ -3,6 +3,8 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import support.hebbianRL as rl
 import support.external as ex
@@ -27,12 +29,12 @@ def add_parameters(traj, kwargs):
 def add_exploration(traj, runName):
 	explore_dict = {
 	# 'dHigh'			:	[7., 8., 9.] ,# np.arange(-2., 20.1, 2.0).tolist(),
-	'dMid'			:	[0.6, 0.7, 0.75, 0.8, 0.9] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
+	'dMid'			:	[0.0] #, np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
 	# 'dNeut'			:	[ 0.,  -0.04, -0.08, -0.12, -0.16, -0.2] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
-	'dLow'			:	[-0.35, -0.45, -0.5, -0.55, -0.65] # np.arange(-9.0,2.1, 1.0).tolist()
+	# 'dLow'			:	[-0.35, -0.45, -0.5, -0.55, -0.65] # np.arange(-9.0,2.1, 1.0).tolist()
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dMid', 'dLow'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dMid'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -78,7 +80,7 @@ def get_images():
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 8					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 1					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 1.0 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
@@ -137,7 +139,7 @@ env = pypet.Environment(trajectory = 'xplr',
 						log_stdout=False,
 						add_time = False,
 						multiproc = True,
-						ncores = 10,
+						ncores = 1,
 						filename=filename,
 						overwrite_file=False)
 
