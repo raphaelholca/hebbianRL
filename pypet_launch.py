@@ -28,13 +28,13 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	# 'dHigh'			:	[7., 8., 9.] ,# np.arange(-2., 20.1, 2.0).tolist(),
+	'dHigh'			:	[8.] ,# np.arange(-2., 20.1, 2.0).tolist(),
 	'dMid'			:	[0.0] #, np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
 	# 'dNeut'			:	[ 0.,  -0.04, -0.08, -0.12, -0.16, -0.2] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
 	# 'dLow'			:	[-0.35, -0.45, -0.5, -0.55, -0.65] # np.arange(-9.0,2.1, 1.0).tolist()
 	}
 
-	explore_dict = pypet.cartesian_product(explore_dict, ('dMid'))
+	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dMid'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
 
@@ -80,12 +80,12 @@ def get_images():
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 1					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 5					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 1.0 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'DA_Wact'	,# name of the folder where to save results
+'runName' 		: 't'				,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -99,7 +99,7 @@ kwargs = {
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
-'createOutput'	: False				,# whether to create plots, save data, etc. (set to False when using pypet)
+'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: False				,# whether to sort weights by their class when displaying
@@ -139,7 +139,7 @@ env = pypet.Environment(trajectory = 'xplr',
 						log_stdout=False,
 						add_time = False,
 						multiproc = True,
-						ncores = 1,
+						ncores = 10,
 						filename=filename,
 						overwrite_file=False)
 

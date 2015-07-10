@@ -4,7 +4,7 @@ This function trains a hebbian neural network to learn a representation from the
 Output is saved under RL/data/[runName]
 """
 
-from progressbar import ProgressBar
+# from progressbar import ProgressBar
 import numpy as np
 import matplotlib.pyplot as pyplot
 import support.external as ex
@@ -50,16 +50,25 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+		if True: #initialize output neurons with already fixed connections
+			W_act = np.zeros((nHidNeurons, nActNeurons))
+			nHid_perClass = nHidNeurons/nClasses
+			nHidNeurons-nHid_perClass*nClasses
+			for c in range(nClasses): 
+				W_act[nHid_perClass*c : nHid_perClass*(c+1), c]=1.
+			for d,c in enumerate(np.arange(nHid_perClass*(c+1), nHidNeurons)):
+				W_act[c, d]=1.
+		else:
+			W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		# W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
 		Q = np.zeros((nActNeurons, nActNeurons))
 
 		choice_count = np.zeros((nClasses, nClasses))
 
-		pbar_epi = ProgressBar()
-		for e in pbar_epi(range(nEpiTot)):
-		# for e in range(nEpiTot):
+		# pbar_epi = ProgressBar()
+		# for e in pbar_epi(range(nEpiTot)):
+		for e in range(nEpiTot):
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
@@ -135,7 +144,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				#update weights
 				W_in += dW_in
-				W_act += dW_act
+				# W_act += dW_act
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
