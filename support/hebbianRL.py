@@ -50,7 +50,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-		if True: #initialize output neurons with already fixed connections
+		if False: #initialize output neurons with already fixed connections
 			W_act = np.zeros((nHidNeurons, nActNeurons))
 			nHid_perClass = nHidNeurons/nClasses
 			nHidNeurons-nHid_perClass*nClasses
@@ -59,7 +59,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			for d,c in enumerate(np.arange(nHid_perClass*(c+1), nHidNeurons)):
 				W_act[c, d]=1.
 		else:
-			W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+			W_act = ((np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons)
 		# W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
 		Q = np.zeros((nActNeurons, nActNeurons))
@@ -101,6 +101,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
+				
+				if e < nEpiCrit and e >= 0 and False: ## remove 'and False' to add exploration in the class layer; set e >= x for stat. pre-training of class layer for x epi 
+					bActNeurons += np.random.uniform(0, 20, np.shape(bActNeurons)) ##
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
@@ -115,7 +118,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
 					""" critical period """
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5)
+					if e < 0: ##set to e < x for stat. pre-training of class layer for x epi
+						dopa = np.ones(nBatch)
+					else:
+						dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+						# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=1.0, dNeut=0.0, dLow=1.0)
+						# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=+2.0, dMid=0.0, dNeut=0.0, dLow=-1.0)*0.1
+						# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=0.1, dNeut=dNeut, dLow=dLow)*1e-6 #decreasing learning rate ('*1e-6') may help
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa
@@ -135,7 +144,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr, disinhib=disinhib_Act)
-			
+				dopa_save = np.append(dopa_save, dopa)
+				# if e >= 3: 
+					# print dW_act[-2,:]
+					# import pdb; pdb.set_trace()
+					# print np.sum(dopa)
+
 				### for ach?
 				# postNeurons_lr = bActNeurons * (lr * disinhib_Act[:,np.newaxis])
 				# # dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
@@ -144,7 +158,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				#update weights
 				W_in += dW_in
-				# W_act += dW_act
+				W_act += dW_act
+				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
