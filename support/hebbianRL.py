@@ -112,8 +112,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				bHidNeurons = ex.propL1(bImages, W_in, SM=False)
 				bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_hid), W_act, SM=False)
 
-				hid_noSM = np.copy(bHidNeurons)
-
 				#predicted best action
 				bPredictActions = rActions[np.argmax(bActNeurons,1)]
 
@@ -126,7 +124,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 				
 				#adds noise in W_act neurons
-				if e < nEpiCrit and e >= 0: ## remove 'and False' to add exploration in the class layer; set e >= x for stat. pre-training of class layer for x epi 
+				if e < nEpiCrit: ## remove 'and False' to add exploration in the class layer
 					bActNeurons += np.random.uniform(0, 10, np.shape(bActNeurons)) ##
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
@@ -142,12 +140,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
 					""" critical period """
-					if e < 0: ##set to e < x for stat. pre-training of class layer for x epi
-						dopa = np.ones(nBatch)
-					else:
-						# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-						dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow) *1e-4 ##effect of decreased LR? #1e-2 to 1e-4 seems good
-						# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=+2.0, dMid=0.1, dNeut=0.0, dLow=-1.0)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=+2.0, dMid=0.1, dNeut=0.0, dLow=-1.0)
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa
@@ -166,8 +161,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
-				# dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-1, disinhib=disinhib_Act)
-				dW_act 	= ex.learningStep(ex.softmax(hid_noSM, t=10.), 	bActNeurons, W_act, 	lr=lr*1e-1, disinhib=disinhib_Act) ##
+				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
 				dopa_save = np.append(dopa_save, dopa)
 				# if e >= 3: 
 					# print dW_act[-2,:]

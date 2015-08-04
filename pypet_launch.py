@@ -86,7 +86,7 @@ kwargs = {
 't_hid'			: 1.0 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'same_DA_long_test'	,# name of the folder where to save results
+'runName' 		: 'same_DA_long_2'	,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)

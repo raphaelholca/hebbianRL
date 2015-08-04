@@ -32,7 +32,7 @@ rActions 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 20 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
-'nEpiDopa'		: 30				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
+'nEpiDopa'		: 5				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 1. 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
