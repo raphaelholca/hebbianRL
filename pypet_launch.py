@@ -28,15 +28,16 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dHigh'			:	[2., 3., 4.] ,# np.arange(-2., 20.1, 2.0).tolist(),
-	'dMid'			:	[0.2, 0.6, 1.0] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
-	'dNeut'			:	[-0.1, 0., 0.1] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
-	'dLow'			:	[-1.5, -1., -0.5] # np.arange(-9.0,2.1, 1.0).tolist()
+	'dHigh'			:	[4.0, 5.0, 6.0] ,# np.arange(-2., 20.1, 2.0).tolist(),
+	'dMid'			:	[-0.01, 0.0, 0.01] ,# np.round(np.arange(-2.0, 9.1, 1.0),1).tolist(),
+	'dNeut'			:	[-0.1, -0.05,  0.0] ,# np.round(np.arange(-0.6, 0.51, 0.1),1).tolist()
+	'dLow'			:	[-3.0, -2., -1.0] #np.arange(-5.0,0.1, 1.0).tolist()
 	}
 
 	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dMid', 'dNeut', 'dLow'))
 	explore_dict['runName'] = set_run_names(explore_dict, runName)
 	traj.f_explore(explore_dict)
+	return explore_dict
 
 def set_run_names(explore_dict, runName):
 	nXplr = len(explore_dict[explore_dict.keys()[0]])
@@ -79,22 +80,22 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 3					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nRun' 			: 3					,# number of runs
+'nEpiCrit'		: 20					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 1.0 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'same_DA'	,# name of the folder where to save results
+'runName' 		: 'same_DA_long_test'	,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 8.0 				,# learning rate increase for unexpected reward
-'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
+'dHigh' 		: 2.0 				,# learning rate increase for unexpected reward
+'dMid' 			: 0.01 				,# learning rate increase for correct reward prediction
 'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction
-'dLow' 			: -3.0				,# learning rate increase for incorrect reward prediction
+'dLow' 			: -1.0				,# learning rate increase for incorrect reward prediction
 'nBatch' 		: 20 				,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -139,13 +140,21 @@ env = pypet.Environment(trajectory = 'xplr',
 						log_stdout=False,
 						add_time = False,
 						multiproc = True,
-						ncores = 6,
+						ncores = 10,
 						filename=filename,
 						overwrite_file=False)
 
 traj = env.v_trajectory
 add_parameters(traj, kwargs)
-add_exploration(traj, kwargs['runName'])
+explore_dict = add_exploration(traj, kwargs['runName'])
+
+#save parameters to file
+kwargs_save = kwargs.copy()
+for k in explore_dict.keys():
+	if k != 'runName':
+		kwargs_save[k] = np.unique(explore_dict[k])
+os.mkdir('output/' + kwargs['runName'])
+ex.save_data(None, None, kwargs_save, save_weights=False)
 
 #run the simuation
 env.f_run(pypet_RLnetwork)

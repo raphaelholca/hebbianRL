@@ -330,7 +330,7 @@ def Q_learn(Q, state, action, reward, Q_LR=0.01):
 
 	return Q
 
-def save_data(W_in, W_act, args):
+def save_data(W_in, W_act, args, save_weights=True):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -340,16 +340,17 @@ def save_data(W_in, W_act, args):
 		args (dict): arguments to the hebbianRL function to be saved to ConfigObj
 	"""
 
-	pFile = open('output/' + args['runName'] + '/W_in', 'w')
-	pickle.dump(W_in, pFile)
-	pFile.close()
+	if save_weights:
+		pFile = open('output/' + args['runName'] + '/W_in', 'w')
+		pickle.dump(W_in, pFile)
+		pFile.close()
 
-	pFile = open('output/' + args['runName'] + '/W_act', 'w')
-	pickle.dump(W_act, pFile)
-	pFile.close()
+		pFile = open('output/' + args['runName'] + '/W_act', 'w')
+		pickle.dump(W_act, pFile)
+		pFile.close()
 
 	settingFile = ConfigObj()
-	settingFile.filename 			= 'output/' + args['runName'] + '/settings.txt'
+	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
 	for k in sorted(args.keys()):
 		if type(args[k]) == type(np.array(0)): #convert numpy array to list
 			args[k] = list(args[k])
