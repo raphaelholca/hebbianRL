@@ -20,6 +20,7 @@ References:
    Recognition, Proceedings of the IEEE, 86(11):2278-2324, November 1998.
    http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf
 
+from: http://deeplearning.net/tutorial/lenet.html
 """
 import os
 import sys
@@ -32,7 +33,7 @@ import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
-from logistic_sgd import LogisticRegression, load_data
+from bp_support.logistic_sgd import LogisticRegression, load_data
 from bp_support.mlp import HiddenLayer
 
 
@@ -111,9 +112,9 @@ class LeNetConvPoolLayer(object):
         self.params = [self.W, self.b]
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
+def evaluate_lenet5(learning_rate=0.1, n_epochs=50,
                     dataset='bp_support/mnist.pkl.gz',
-                    nkerns=[20, 50], batch_size=500):
+                    nkerns=[8, 50], batch_size=500):
     """ Demonstrates lenet on MNIST dataset
 
     :type learning_rate: float
@@ -180,25 +181,28 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # filtering reduces the image size to (12-5+1, 12-5+1) = (8, 8)
     # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
     # 4D output tensor is thus of shape (batch_size, nkerns[1], 4, 4)
-    layer1 = LeNetConvPoolLayer(
-        rng,
-        input=layer0.output,
-        image_shape=(batch_size, nkerns[0], 12, 12),
-        filter_shape=(nkerns[1], nkerns[0], 5, 5),
-        poolsize=(2, 2)
-    )
+
+    # layer1 = LeNetConvPoolLayer(
+    #     rng,
+    #     input=layer0.output,
+    #     image_shape=(batch_size, nkerns[0], 12, 12),
+    #     filter_shape=(nkerns[1], nkerns[0], 5, 5),
+    #     poolsize=(2, 2)
+    # )
 
     # the HiddenLayer being fully-connected, it operates on 2D matrices of
     # shape (batch_size, num_pixels) (i.e matrix of rasterized images).
     # This will generate a matrix of shape (batch_size, nkerns[1] * 4 * 4),
     # or (500, 50 * 4 * 4) = (500, 800) with the default values.
-    layer2_input = layer1.output.flatten(2)
+
+    layer2_input = layer0.output.flatten(2) ##
 
     # construct a fully-connected sigmoidal layer
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
-        n_in=nkerns[1] * 4 * 4,
+        # n_in=nkerns[1] * 4 * 4, ##
+        n_in=nkerns[0] * 12 * 12,
         n_out=500,
         activation=T.tanh
     )
@@ -229,7 +233,8 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     )
 
     # create a list of all model parameters to be fit by gradient descent
-    params = layer3.params + layer2.params + layer1.params + layer0.params
+    # params = layer3.params + layer2.params + layer1.params + layer0.params
+    params = layer3.params + layer2.params + layer0.params
 
     # create a list of gradients for all model parameters
     grads = T.grad(cost, params)
@@ -326,8 +331,6 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                 done_looping = True
                 break
 
-    import pdb; pdb.set_trace()
-
     end_time = time.clock()
     print('Optimization complete.')
     print('Best validation score of %f %% obtained at iteration %i, '
@@ -336,6 +339,9 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+
+    import pdb; pdb.set_trace()
+
 
 if __name__ == '__main__':
     evaluate_lenet5()

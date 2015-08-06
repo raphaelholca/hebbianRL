@@ -20,7 +20,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -57,9 +57,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 		choice_count = np.zeros((nClasses, nClasses))
 
-		pbar_epi = ProgressBar()
-		for e in pbar_epi(range(nEpiTot)):
-		# for e in range(nEpiTot):
+		# pbar_epi = ProgressBar()
+		# for e in pbar_epi(range(nEpiTot)):
+		for e in range(nEpiTot):
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
@@ -125,7 +125,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
-				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr, disinhib=disinhib_Act)
+				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-1, disinhib=disinhib_Act)
 			
 				### for ach?
 				# postNeurons_lr = bActNeurons * (lr * disinhib_Act[:,np.newaxis])
@@ -173,16 +173,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		correct_W_act += np.sum(same)
 	correct_W_act/=len(RFproba)
 
-	#plot the weights
+	# plot the weights
 	if createOutput:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
 		rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
 	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
@@ -202,20 +202,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 	import pdb; pdb.set_trace()
 
-
-	return allCMs, allPerf, correct_W_act/nHidNeurons
-
+	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
 
 
 
 
-
-
-
-
-
-
+	
 
 
 
