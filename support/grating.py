@@ -12,7 +12,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 		lambda_freq (int or float): Spatial frequency (pixels per cycle) 
 		theta (int, float, list or numpy array): Grating orientation in degrees (if list or array, a patch is created for each value)
 		sigma (int or float): gaussian standard deviation (in pixels)
-		phase (float): phase of the filter; range: [0, 1]
+		phase (float, list or numpy array): phase of the filter; range: [0, 1]
 		noise (int): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 
 	Returns:
@@ -22,6 +22,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 	noise = np.clip(noise, 1e-10, np.inf)
 	if type(theta) == int or type(theta) == float: theta = np.array([theta])
 	elif type(theta) == list: theta = np.array(theta)
+	if type(phase)==float or type(phase)==int: phase = np.array([phase])
 	n_gratings = len(theta)
 
 	# make linear ramp
@@ -44,7 +45,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 	# 2D Gaussian distribution
 	gauss = np.exp(-((Xm ** 2) + (Ym ** 2)) / (2 * (sigma / float(size)) ** 2))
 
-	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad)
+	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian trim
 	gratings += np.random.normal(0.0, noise, size=(size, size)) #add Gaussian noise
 	gratings -= np.min(gratings)
@@ -56,7 +57,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 # np.random.seed(100)
 
 # im_side = 28
-# im_number = 1
+# im_number = 10
 
 # im_cycles = 2.6*2.3 #(deg*cycle/deg) from Schoups et al., 2001
 # im_freq = np.round(im_side/im_cycles) #spatial frequency of the grating (pixel per cycle)
@@ -65,7 +66,9 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 # orientations = np.random.random(im_number)*180 #orientations of gratings (in degrees)
 
 # #create gratings
-# gratings = gabor(size=im_side, lambda_freq=im_freq, theta=orientations, sigma=im_side/5., phase=0, noise=noise_level)
+# gratings = gabor(size=im_side, lambda_freq=im_freq, theta=orientations, sigma=im_side/5., phase=np.random.random(im_number), noise=noise_level)
+# A=940.8
+# gratings = ex.normalize(gratings, A)
 
 # print orientations
 
@@ -73,11 +76,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 # 	plt.figure()
 # 	plt.imshow(np.reshape(gratings[i,:], (im_side, im_side)), interpolation='nearest', cmap='Greys')
 
-# A=940.8
-# gratings_norm = ex.normalize(gratings, A)
 
-# plt.figure()
-# plt.imshow(np.reshape(gratings_norm, (im_side, im_side)), interpolation='nearest', cmap='Greys')
 # plt.show(block=False)
 
 
