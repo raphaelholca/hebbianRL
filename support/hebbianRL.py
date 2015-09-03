@@ -36,7 +36,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
-	ach_bal = 0.25 ##optimize
+	# ach_bal = 0.25 ##optimize
 
 	""" training of the network """
 	print 'training network...'
