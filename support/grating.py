@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import external as ex
+ex = reload(ex)
 
 def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 	"""Creates a Gabor patch
@@ -45,13 +47,16 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad)
 	gratings *= gauss #add Gaussian trim
 	gratings += np.random.normal(0.0, noise, size=(size, size)) #add Gaussian noise
+	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
 
 	return gratings
 
+# np.random.seed(100)
+
 # im_side = 28
-# im_number = 10
+# im_number = 1
 
 # im_cycles = 2.6*2.3 #(deg*cycle/deg) from Schoups et al., 2001
 # im_freq = np.round(im_side/im_cycles) #spatial frequency of the grating (pixel per cycle)
@@ -62,14 +67,18 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 # #create gratings
 # gratings = gabor(size=im_side, lambda_freq=im_freq, theta=orientations, sigma=im_side/5., phase=0, noise=noise_level)
 
-
 # print orientations
 
 # for i in range(im_number):
 # 	plt.figure()
 # 	plt.imshow(np.reshape(gratings[i,:], (im_side, im_side)), interpolation='nearest', cmap='Greys')
-# plt.show(block=False)
 
+# A=940.8
+# gratings_norm = ex.normalize(gratings, A)
+
+# plt.figure()
+# plt.imshow(np.reshape(gratings_norm, (im_side, im_side)), interpolation='nearest', cmap='Greys')
+# plt.show(block=False)
 
 
 

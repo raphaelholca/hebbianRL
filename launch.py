@@ -37,10 +37,10 @@ kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
-'t_hid'			: 1. 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
+'t_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 't-print'			,# name of the folder where to save results
+'runName' 		: 'gabor-3'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -75,23 +75,26 @@ if kwargs['protocol'] == 'digit':
 	print 'loading train images...'
 	images, labels = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = kwargs['dataset'], path = imPath)
 	images, labels = ex.evenLabels(images, labels, classes)
+	images = ex.normalize(images, kwargs['A']*np.size(images,1))
 
 	print 'loading test images...'
 	test_dataset='test' if kwargs['dataset']=='train' else 'train'
 	images_test, labels_test = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = test_dataset, path = imPath)
 	images_test, labels_test = ex.evenLabels(images_test, labels_test, classes)
 	images_test, labels_test = ex.shuffle([images_test, labels_test])
+	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
 
 elif kwargs['protocol'] == 'gabor':
-	n_train = 1000
+	print 'creating gabor training images...'
+	n_train = 10000
 	labels = np.random.random(n_train)*180 #orientations of gratings (in degrees)
-	images = gr.gabor(size=28, lambda_freq=5, theta=labels, sigma=5, phase=0, noise=0)
+	images = gr.gabor(size=28, lambda_freq=5, theta=labels, sigma=28./5., phase=0, noise=0)
+	images = ex.normalize(images, kwargs['A']*np.size(images,1))
 
 	n_test = 100
 	labels_test = np.random.random(n_test)*180
-	images_test = gr.gabor(size=28, lambda_freq=5, theta=labels, sigma=5, phase=0, noise=0)
-
-images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
+	images_test = gr.gabor(size=28, lambda_freq=5, theta=labels, sigma=28./5., phase=0, noise=0)
+	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
 
 allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images=images, labels=labels, images_test=images_test, labels_test=labels_test, kwargs=kwargs, **kwargs)
 

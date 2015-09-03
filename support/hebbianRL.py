@@ -25,7 +25,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
 	else: print " !!! ----- not saving data ----- !!! "
-	images = ex.normalize(images, A*np.size(images,1)) #normalize input images
 	W_in_save = {}
 	W_act_save = {}
 	nClasses = len(classes)
@@ -51,9 +50,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
-		# W_act_init = np.copy(W_act)
+		W_in_init = np.copy(W_in)
+		W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
-		Q = np.zeros((nActNeurons, nActNeurons))
 
 		choice_count = np.zeros((nClasses, nClasses))
 
@@ -75,7 +74,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				dopa = np.ones(nBatch)
 				dW_in = 0.
 				dW_act = 0.
-				disinhib_Hid = np.zeros(nBatch)
+				disinhib_Hid = np.ones(nBatch)##np.zeros(nBatch)
 				disinhib_Act = np.zeros(nBatch)
 				
 				#compute activation of hidden and classification neurons
@@ -99,12 +98,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				bActions_idx = ex.val2idx(bActions, lActions)
 
 				#compute reward and ach signal
-				bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
-				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
-				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+				if protocol=='digit':
+					bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
+					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#compute dopa signal and disinhibition based on training period
-				if e < nEpiCrit:
+				if e < nEpiCrit and protocol=='digit':
 					""" critical period """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
@@ -114,7 +114,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					# rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
 					# dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
@@ -140,18 +139,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
-				#update Q table
-				Q = ex.Q_learn(Q, ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions), bReward, Q_LR=0.01)
-
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
-			##to check Wact assignment after each episode:
-			RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
-			correct_W_act = 0.	
-			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
-			correct_W_act += np.sum(same)
-			correct_W_act/=len(RFproba)
-			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
+			if protocol=='digit':
+				##to check Wact assignment after each episode:
+				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
+				correct_W_act = 0.	
+				same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
+				correct_W_act += np.sum(same)
+				correct_W_act/=len(RFproba)
+				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -159,46 +156,51 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 	""" compute network statistics and performance """
 
-	#compute histogram of RF classes
-	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
-	#compute the selectivity of RFs
-	# _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
+	if protocol=='digit':
+		#compute histogram of RF classes
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+		#compute the selectivity of RFs
+		# _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
 
-	#compute correct weight assignment in the action layer
-	correct_W_act = 0.
-	notsame = {}
-	for k in W_act_save.keys():
-		same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
-		notsame[k] = np.argwhere(~same)
-		correct_W_act += np.sum(same)
-	correct_W_act/=len(RFproba)
+		#compute correct weight assignment in the action layer
+		correct_W_act = 0.
+		notsame = {}
+		for k in W_act_save.keys():
+			same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
+			notsame[k] = np.argwhere(~same)
+			correct_W_act += np.sum(same)
+		correct_W_act/=len(RFproba)
+
+		#assess classification performance with neural classifier or SVM 
+		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+		if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+		if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+
+		print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
+
+	elif protocol=='gabor':
+		RFproba = np.zeros((nRun, nHidNeurons, nClasses))
+		allCMs = np.zeros((nRun, nClasses, nClasses))
+		allPerf = np.zeros(nRun)
+		correct_W_act = 0.
 
 	# plot the weights
 	if createOutput:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
-		rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+		if protocol=='digit':
+			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+		elif protocol=='gabor':
+			rf.plot(runName, W_in_save, RFproba)
 
-	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
-	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
-	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
+	
 
 	#save data
 	if createOutput:
 		ex.save_data(W_in_save, W_act_save, kwargs)
 
 	print '\nrun: '+runName
-
-	# import pickle
-	# f = open('choice_count', 'w')
-	# pickle.dump(choice_count, f)
-	# f.close()
-	# f = open('Q', 'w')
-	# pickle.dump(Q, f)
-	# f.close()
 
 	import pdb; pdb.set_trace()
 
