@@ -103,13 +103,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				bActions_idx = ex.val2idx(bActions, lActions)
 
 				#compute reward and ach signal
-				if protocol=='digit':
-					bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
-					# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
-					# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
+				bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
+				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#compute dopa signal and disinhibition based on training period
-				if e < nEpiCrit and protocol=='digit':
+				if e < nEpiCrit:
 					""" critical period """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5)
 
@@ -138,14 +137,13 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
-			if protocol=='digit':
-				##to check Wact assignment after each episode:
-				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
-				correct_W_act = 0.	
-				same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
-				correct_W_act += np.sum(same)
-				correct_W_act/=len(RFproba)
-				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
+			##to check Wact assignment after each episode:
+			RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
+			correct_W_act = 0.	
+			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
+			correct_W_act += np.sum(same)
+			correct_W_act/=len(RFproba)
+			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -183,6 +181,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			orientations_bin[mask_bin] = i
 
 		RFproba, RFclass, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
+		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
 		allCMs = np.zeros((nRun, nClasses, nClasses))
 		allPerf = np.zeros(nRun)
@@ -195,7 +194,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		if protocol=='digit':
 			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
 		elif protocol=='gabor':
-			rf.plot(runName, W_in_save, RFproba)
+			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass)
 
 
 	

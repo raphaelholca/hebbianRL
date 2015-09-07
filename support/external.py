@@ -571,6 +571,9 @@ def computeCM(classResults, labels_test, classes):
 			classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
 			overTot = np.sum(labels_test==label)
 			confusMatrix[ilabel, iclassif] = float(classifiedAs)/overTot
+
+	# import pdb; pdb.set_trace()
+	
 	return confusMatrix
 
 def conv_bool(bool_str):
