@@ -20,7 +20,7 @@ cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs, images_task=None, labels_task=None, orientations=None, orientations_task=None, orientations_test=None):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -36,6 +36,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
 	# ach_bal = 0.25 ##optimize
+
 
 	""" training of the network """
 	print 'training network...'
