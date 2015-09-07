@@ -84,8 +84,6 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 		else:
 			pyplot.close(fig)
 
-	import pdb; pdb.set_trace()
-
 	return RFproba, RFclass, RFselec
 
 def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):

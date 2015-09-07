@@ -156,8 +156,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	if protocol=='digit':
 		#compute histogram of RF classes
 		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
-		#compute the selectivity of RFs
-		# _, _, RFselec = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=False, output=False, show=False, lr_ratio=1.0)
 
 		#compute correct weight assignment in the action layer
 		correct_W_act = 0.
@@ -184,9 +182,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
 			orientations_bin[mask_bin] = i
 
-		RFproba, RFclass, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
 
-		RFproba = np.zeros((nRun, nHidNeurons, nClasses))
 		allCMs = np.zeros((nRun, nClasses, nClasses))
 		allPerf = np.zeros(nRun)
 		correct_W_act = 0.
