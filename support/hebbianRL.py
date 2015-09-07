@@ -67,8 +67,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			for b in range(int(nImages/nBatch)):
 				
 				#select batch training images (may leave a few training examples out (< nBatch))
-				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
-				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
+				if protocol=='digit' or (protocol=='gabor' and e < nEpiCrit): 
+					bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
+					bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
+				elif protocol=='gabor' and e >= nEpiCrit:
+					bImages = images_task[b*nBatch:(b+1)*nBatch,:]
+					bLabels = labels_task[b*nBatch:(b+1)*nBatch]
 
 				#initialize batch variables
 				ach = np.ones(nBatch)
@@ -121,18 +125,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 					
-					# choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1 #used to check the approximation of probability matching in decision making
-				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-1, disinhib=disinhib_Act)
 			
-				### for ach?
-				# postNeurons_lr = bActNeurons * (lr * disinhib_Act[:,np.newaxis])
-				# # dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				# dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				###
-
 				#update weights
 				W_in += dW_in
 				W_act += dW_act
@@ -144,7 +140,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 			if protocol=='digit':
 				##to check Wact assignment after each episode:
-				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
+				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
 				correct_W_act = 0.	
 				same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
 				correct_W_act += np.sum(same)
@@ -159,9 +155,9 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 	if protocol=='digit':
 		#compute histogram of RF classes
-		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 		#compute the selectivity of RFs
-		# _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
+		# _, _, RFselec = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=False, output=False, show=False, lr_ratio=1.0)
 
 		#compute correct weight assignment in the action layer
 		correct_W_act = 0.
@@ -180,6 +176,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
 	elif protocol=='gabor':
+		#compute histogram of RF classes
+		n_bins = 10
+		bin_size = 180./n_bins
+		orientations_bin = np.zeros(len(orientations), dtype=int)
+		for i in range(n_bins): 
+			mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
+			orientations_bin[mask_bin] = i
+
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+
 		RFproba = np.zeros((nRun, nHidNeurons, nClasses))
 		allCMs = np.zeros((nRun, nClasses, nClasses))
 		allPerf = np.zeros(nRun)

@@ -23,12 +23,12 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-4'			,# name of the folder where to save results
+'runName' 		: 'gabor-2'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -39,7 +39,7 @@ kwargs = {
 'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction
 'dLow' 			: -2.0				,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
-'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
+'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 135. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 20. 				,# range within wich to test the network (on each side of target orientation)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
