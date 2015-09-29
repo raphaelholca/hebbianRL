@@ -4,7 +4,8 @@ import external as ex
 ex = reload(ex)
 
 def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
-	"""Creates a Gabor patch
+	"""
+	Creates a Gabor patch
 
 	Args:
 
@@ -46,38 +47,81 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 	gauss = np.exp(-((Xm ** 2) + (Ym ** 2)) / (2 * (sigma / float(size)) ** 2))
 
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
-	gratings *= gauss #add Gaussian trim
-	gratings += np.random.normal(0.0, noise, size=(size, size)) #add Gaussian noise
+	gratings *= gauss #add Gaussian
+	gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
 
 	return gratings
 
-# np.random.seed(100)
+def tuning_curves(W, method, output, t=0.1):
+	"""
+	compute the tuning curve of the neurons
 
-# im_side = 28
-# im_number = 10
+	Args:
+		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
+		method (str): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
+		output (bool): whether or not to generate plots
+		t (float, optional): temperature of the softmax function; should be the same as during learning
+	"""
 
-# im_cycles = 2.6*2.3 #(deg*cycle/deg) from Schoups et al., 2001
-# im_freq = np.round(im_side/im_cycles) #spatial frequency of the grating (pixel per cycle)
-# noise_level = 0.
+	if method not in ['basic', 'no_softmax', 'with_noise']:
+		print '!!!!!!!!! invalid method input - using \'basic\' method !!!!!!!!!!'
+		method='basic'
 
-# orientations = np.random.random(im_number)*180 #orientations of gratings (in degrees)
+	noise = 0.5#1.0
+	noise_trial = 100
+	ori_step = 0.1
+	n_input = int(180/ori_step)
+	im_size = int(np.sqrt(np.size(W[W.keys()[0]],0)))
+	n_neurons = int(np.size(W[W.keys()[0]],1))
 
-# #create gratings
-# gratings = gabor(size=im_side, lambda_freq=im_freq, theta=orientations, sigma=im_side/5., phase=np.random.random(im_number), noise=noise_level)
-# A=940.8
-# gratings = ex.normalize(gratings, A)
+	orientations = np.arange(0,180,ori_step)
+	SM = False if method=='no_softmax' else True
+	if method != 'with_noise':
+		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
+	else:
+		test_input = []
+		for _ in range(noise_trial):
+			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise))
 
-# print orientations
+	curves_dict = {}
+	for r in W.keys():
+		curves_dict[r] = np.zeros((n_input, n_neurons))
+		for i in range(len(test_input)):
+			curves_dict[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+		if output:
+			plt.figure()
+			plt.plot(curves_dict[r])
 
-# for i in range(im_number):
-# 	plt.figure()
-# 	plt.imshow(np.reshape(gratings[i,:], (im_side, im_side)), interpolation='nearest', cmap='Greys')
+	plt.show(block=False)
+
+	# import pdb; pdb.set_trace()
+
+	return curves_dict
+
+def preferred_orientation(W):
+	curves_dict = tuning_curves(W, method='no_softmax', output=False)
 
 
-# plt.show(block=False)
+	n_input = np.size(curves_dict[curves_dict.keys()[0]],0)
+
+	pref_ori_dict = {}
+	for r in curves_dict.keys():
+		pref_ori_dict[r] = np.argmax(curves_dict[r],0) * (180./n_input) ##180??
+
+	return pref_ori_dict
+
+
+
+
+
+
+
+
+
+
 
 
 
