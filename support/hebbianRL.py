@@ -12,6 +12,7 @@ import support.plots as pl
 import support.classifier as cl
 import support.assessRF as rf
 import support.svmutils as su
+import support.grating as gr
 import sys
 
 ex = reload(ex)
@@ -19,6 +20,7 @@ pl = reload(pl)
 cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
+gr = reload(gr)
 
 def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs, images_task=None, labels_task=None, orientations=None, orientations_task=None, orientations_test=None):
 
@@ -137,8 +139,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
-			##to check Wact assignment after each episode:
-			RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
+			#to check Wact assignment after each episode:
+			if protocol=='digit':
+				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
+			elif protocol=='gabor':
+				pref_ori = gr.preferred_orientations({'000':W_in}, params=kwargs)
+				RFproba = np.zeros((1, nHidNeurons, nClasses), dtype=int)
+				RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
+				RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
 			correct_W_act = 0.	
 			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
 			correct_W_act += np.sum(same)
@@ -155,21 +163,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		#compute histogram of RF classes
 		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 
-		#compute correct weight assignment in the action layer
-		correct_W_act = 0.
-		notsame = {}
-		for k in W_act_save.keys():
-			same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
-			notsame[k] = np.argwhere(~same)
-			correct_W_act += np.sum(same)
-		correct_W_act/=len(RFproba)
-
 		#assess classification performance with neural classifier or SVM 
 		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 		if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 		if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
-
-		print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)+'.0'
 
 	elif protocol=='gabor':
 		#compute histogram of RF classes
@@ -180,12 +177,24 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
 			orientations_bin[mask_bin] = i
 
-		RFproba, RFclass, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
+		# RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, n_bins=10, SVM=SVM, output=False, show=False)
+		pref_ori = gr.preferred_orientations(W_in_save, params=kwargs)
+		RFproba = np.zeros((nRun, nHidNeurons, nClasses), dtype=int)
+		for r in pref_ori.keys():
+			RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
+			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
+		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
 		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
-		allCMs = np.zeros((nRun, nClasses, nClasses))
-		allPerf = np.zeros(nRun)
-		correct_W_act = 0.
+	#compute correct weight assignment in the action layer
+	correct_W_act = 0.
+	notsame = {}
+	for k in W_act_save.keys():
+		same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
+		notsame[k] = np.argwhere(~same)
+		correct_W_act += np.sum(same)
+	correct_W_act/=len(RFproba)
+	print '\ncorrect action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	# plot the weights
 	if createOutput:
@@ -194,10 +203,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		if protocol=='digit':
 			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
 		elif protocol=='gabor':
-			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass)
+			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
 
-
-	
 
 	#save data
 	if createOutput:

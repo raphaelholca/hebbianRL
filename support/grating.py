@@ -55,7 +55,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	return gratings
 
-def tuning_curves(W, method, output, t=0.1):
+def tuning_curves(W, method, output, params=None):
 	"""
 	compute the tuning curve of the neurons
 
@@ -63,14 +63,26 @@ def tuning_curves(W, method, output, t=0.1):
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
 		method (str): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
 		output (bool): whether or not to generate plots
-		t (float, optional): temperature of the softmax function; should be the same as during learning
+		params (dict, optional): parameters of the main simulation (kwargs)
+
+	returns:
+		(dict): the tuning curves for each neuron of each run
 	"""
 
 	if method not in ['basic', 'no_softmax', 'with_noise']:
-		print '!!!!!!!!! invalid method input - using \'basic\' method !!!!!!!!!!'
+		print '!!! invalid method - using \'basic\' method !!!'
 		method='basic'
 
-	noise = 0.5#1.0
+	if params is not None:
+		t = params['t_hid']
+		target_ori = params['target_ori']
+
+	else:
+		t = 0.1
+		target_ori = 45.
+
+
+	noise = 1.0
 	noise_trial = 100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
@@ -86,41 +98,93 @@ def tuning_curves(W, method, output, t=0.1):
 		for _ in range(noise_trial):
 			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise))
 
-	curves_dict = {}
+	curves = {}
 	for r in W.keys():
-		curves_dict[r] = np.zeros((n_input, n_neurons))
+		curves[r] = np.zeros((n_input, n_neurons))
 		for i in range(len(test_input)):
-			curves_dict[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+			curves[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 		if output:
 			plt.figure()
-			plt.plot(curves_dict[r])
+			plt.plot(curves[r])
 
 	plt.show(block=False)
 
 	# import pdb; pdb.set_trace()
 
-	return curves_dict
+	return curves
 
-def preferred_orientation(W):
-	curves_dict = tuning_curves(W, method='no_softmax', output=False)
+def preferred_orientations(W, params=None):
+	"""
+	compute the preferred orientation of neurons
 
+	Args:
+		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
+		params (dict, optional): parameters of the main simulation (kwargs)
 
-	n_input = np.size(curves_dict[curves_dict.keys()[0]],0)
+	returns:
+		the preferred orientation of all neurons in all runs
+	"""
 
-	pref_ori_dict = {}
-	for r in curves_dict.keys():
-		pref_ori_dict[r] = np.argmax(curves_dict[r],0) * (180./n_input) ##180??
-
-	return pref_ori_dict
-
-
-
-
+	curves = tuning_curves(W, method='no_softmax', output=False, params=params)
 
 
+	n_input = np.size(curves[curves.keys()[0]],0)
+
+	pref_ori = {}
+	for r in curves.keys():
+		pref_ori[r] = np.argmax(curves[r],0) * (180./n_input) ##180??
+
+	return pref_ori
 
 
+def slopes(W, curves, pref_ori, params=None):
+	"""
+	compute slope of tuning curves at target orientation
 
+	Args:
+		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
+		curves (dict): the tuning curves for each neuron of each run; *!!* for now does not support curves if computed with 'with_noise' method)
+		pref_ori (dict): the preferred orientation of all neurons in all runs
+		params (dict, optional): parameters of the main simulation (kwargs)
+
+	returns:
+		(dict): slopes of the tuning curves *!!* should be plotted so that slope value is alligned between two measurement points
+	"""
+
+	if params is not None:
+		t = params['t_hid']
+		target_ori = params['target_ori']
+
+	else:
+		t = 0.1
+		target_ori = 70.
+
+	n_input = np.size(curves[curves.keys()[0]],0)
+
+	slopes = {}
+
+	for r in W.keys():
+		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
+
+		plt.figure()
+		for o in np.arange(0,180,10):
+			target_idx = int(o * (n_input/180))
+		
+			x = pref_ori[r]-o
+			x[x>90]-=180
+			x[x<-90]+=180
+			y = slopes[r][target_idx, :]
+
+			# plt.figure()
+			plt.scatter(x, y)
+			# plt.plot(curves[r][:,0])
+			# plt.plot(slopes[r][:,0]*10)
+		plt.show(block=False)
+
+
+	# import pdb;pdb.set_trace()
+
+	return slopes
 
 
 
