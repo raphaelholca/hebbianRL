@@ -22,22 +22,22 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 
 """ parameters """
 kwargs = {
-'nRun' 			: 2					,# number of runs
-'nEpiCrit'		: 2 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
-'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
-'t_hid'			: 0.001 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
+'nRun' 			: 1					,# number of runs
+'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
+'t_hid'			: 0.001 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-test'			,# name of the folder where to save results
+'runName' 		: 'gabor-DA'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 0.45,#4.5 				,# learning rate increase for unexpected reward
-'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.01,#-0.1				,# learning rate increase for correct no reward prediction
-'dLow' 			: -0.2,#-2.0				,# learning rate increase for incorrect reward predictio
+'dHigh' 		: 0.45,#4.5 		,# learning rate increase for unexpected reward
+'dMid' 			: 0.2 				,# learning rate increase for correct reward prediction
+'dNeut' 		: -0.01,#-0.1		,# learning rate increase for correct no reward prediction
+'dLow' 			: -0.2,#-2.0		,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 90. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -48,7 +48,7 @@ kwargs = {
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
-'sort' 			: None				,# sorting methods for weights when displaying. Legal value: None, 'class', 'tSNE'
+'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 168#np.random.randint(1000) 	# seed of the random number generator
 }
