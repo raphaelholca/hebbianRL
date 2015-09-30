@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 ex = reload(ex)
 pl = reload(pl)
 
-def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, train_dataset, actions=False, output=True, show=True):
+def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, images_test, labels_test, actions=False, output=True, show=True):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -29,13 +29,7 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
-	""" load and pre-process images """
-	print "assessing performance with action neurons..."
-	if  train_dataset=='train': test_dataset='test'
-	else: test_dataset='train'
-	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
-	images = ex.normalize(images, A*nDimStates)
-	images, labels = ex.evenLabels(images, labels, classes)
+	print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -56,15 +50,15 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		W_act = W_act_save[iw]
 
 		""" testing of the classifier """
-		hidNeurons = ex.propL1(images, W_in)
+		hidNeurons = ex.propL1(images_test, W_in)
 		actNeurons = ex.propL1(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
 		classResults = rActions_z[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels, classes, rActions_z)))
-		allPerf.append(correct_classif/len(labels))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels, classes, rActions_z), np.unique(rActions_z))
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions_z)))
+		allPerf.append(correct_classif/len(labels_test))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions_z), np.unique(rActions_z))
 		CM = CM[sorter,:]
 		CM = CM[:,sorter]
 		allCMs.append(CM)
@@ -90,6 +84,8 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		show (bool, optional): whether to display the confusion matrix (True) or not (False)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
+
+	print "\nassessing performance..."
 
 	""" load and pre-process images """
 	print 'assessing performance with SVM...'
@@ -126,7 +122,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		print_save(allCMs, allPerf, classes, runName, show)
 	return allCMs, allPerf
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_dataset, output=True, show=True):
+def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test, labels_test, output=True, show=True):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
@@ -141,14 +137,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_datas
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
-	""" load and pre-process images """
-	print "assessing performance with neuron class..."
-	if  train_dataset=='train': test_dataset='test'
-	else: test_dataset='train'
-	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
-	images, labels = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset, path=imPath)
-	images = ex.normalize(images, A*nDimStates)
-	images, labels = ex.evenLabels(images, labels, classes)
+	print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -160,12 +149,12 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, train_datas
 		print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
 		neuronC = np.argmax(RFproba[i],1) #class of each neuron
-		argmaxActiv = np.argmax(ex.propL1(images, W_in, SM=False),1)
+		argmaxActiv = np.argmax(ex.propL1(images_test, W_in, SM=False),1)
 		classResults = neuronC[argmaxActiv]
 
 		""" compute classification performance """
-		allPerf.append(float(np.sum(classResults==labels))/len(labels))
-		allCMs.append(ex.computeCM(classResults, labels, classes))
+		allPerf.append(float(np.sum(classResults==labels_test))/len(labels_test))
+		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
 	if output:
@@ -184,19 +173,26 @@ def print_save(allCMs, allPerf, classes, runName, show):
 	pickle.dump(pDict, pFile)
 	pFile.close()
 
-	print '\naverage confusion matrix:'
+	perf_print = ''
+	perf_print += '\naverage confusion matrix:' + '\n'
 	c_str = ''
 	for c in classes: c_str += str(c).rjust(6)
-	print c_str
-	print '-'*(len(c_str)+3)
-	print np.round(avgCM,2)
-	print '\naverage correct classification:'
-	print str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + '%'
+	perf_print += c_str + '\n'
+	perf_print += '-'*(len(c_str)+3) + '\n'
+	perf_print += str(np.round(avgCM,2)) + '\n'
+	perf_print += '\naverage correct classification:' + '\n'
+	perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + ' %' + '\n'
 	if len(allPerf)>1:
-		print 'of which best performance is:'
-		print str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')'
-		print 'and worse performance is:'
-		print str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')'
+		perf_print += '\nof which best performance is:' + '\n'
+		perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
+		perf_print += 'and worse performance is:' + '\n'
+		perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
+
+	print perf_print
+
+	perf_file = open('./output/' + runName + '/' +runName+ '_perf.txt', 'w')
+	perf_file.write(perf_print)
+	perf_file.close()
 
 	fig = pl.plotCM(avgCM, classes)
 	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.png')

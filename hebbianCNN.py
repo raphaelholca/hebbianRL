@@ -5,6 +5,11 @@ Date: 26/05/2015
 This function creates a convolutional hebbian neural network
 """
 
+"""
+TO DO NEXT:
+train a hebbian network on the images transformed in the representation space of a back-prop conv net.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import recon as rc
@@ -190,23 +195,22 @@ def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise='none', 
 
 
 """ define parameters """
-# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-classes 	= np.array([4, 9], dtype=int)
+classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+# classes 	= np.array([4, 9], dtype=int)
 # classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpiCrit			= 3
-nEpiDopa			= 3
-DA 					= True
+nEpiCrit			= 10
+nEpiDopa			= 35
 noise 				= 'feedF' #'none' 'conv' 'feedF'
 A 					= 900.##200.
 lr 					= 1e-5
-dataset 			= 'test'
+dataset 			= 'train'
 nBatch 				= 196##196  #196 112 49
-conv_mapNum			= 8
-conv_filterSide		= 5#5
-feedF_neuronNum 	= 2
+conv_mapNum			= 20
+conv_filterSide		= 5#20#5
+feedF_neuronNum 	= 49
 class_neuronNum 	= nClasses
 seed 				= 951#np.random.randint(1000) #970
 
@@ -214,7 +218,7 @@ np.random.seed(seed)
 print '\n' + 'run name: ' + runName + ' -- seed: ' + str(seed) + '\n'
 
 """ load and pre-process images """
-pad_size = (conv_filterSide-1)/2 ###
+pad_size = (conv_filterSide-1)/2 ### 0
 imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 images, labels = load_images(classes, dataset, imPath, pad_size)
 dataset_test='test' if dataset=='train' else 'train'
@@ -242,29 +246,32 @@ images_num = np.size(images, 0)
 images_side = np.size(images,2)
 conv_neuronNum = (images_side-conv_filterSide+1)**2
 conv_mapSide = int(np.sqrt(conv_neuronNum))
-subS_mapSide = conv_mapSide/2 ##
+subS_mapSide = conv_mapSide/2 ## conv_mapSide ## conv_mapSide/2
 size_params = {'conv_neuronNum':conv_neuronNum, 'conv_filterSide':conv_filterSide, 'conv_mapSide':conv_mapSide, 'conv_mapNum':conv_mapNum, 'subS_mapSide':subS_mapSide}
 
 """ initialize weights """
 if False: #load pre-trained weights from file
-	# f = open('w_corners', 'r')
+	# f = open('weights_bp_long', 'r')
 	# conv_W = pickle.load(f)
+	# conv_W = np.reshape(conv_W, (6,25))
+	# conv_W -= np.min(conv_W,1)[:,np.newaxis]
+	# conv_W = ex.normalize(conv_W,900).T
 	# f.close()
 
-	f = open('weights', 'r')
-	weights = pickle.load(f)
-	f.close()
+	# f = open('weights', 'r')
+	# weights = pickle.load(f)
+	# f.close()
 
-	conv_W = weights['conv_W']
-	feedF_W = weights['feedF_W']
-	class_W = weights['class_W']
+	# conv_W = weights['conv_W']
+	# feedF_W = weights['feedF_W']
+	# class_W = weights['class_W']
 else: #random initialization
 	# conv_W = np.random.random_sample(size=(conv_filterSide**2, conv_mapNum)) + A/(conv_filterSide**2) + 2.5
 	conv_W = np.random.random_sample(size=(conv_filterSide**2, conv_mapNum)) + A/(conv_filterSide**2) ###just for trials with conv_filter size == image size
-	feedF_W = np.random.random_sample(size=((subS_mapSide**2)*conv_mapNum, feedF_neuronNum))/1000 + float(subS_mapSide**2)/((subS_mapSide**2)*conv_mapNum) + 0.6
-	# feedF_W = np.random.random_sample(size=((subS_mapSide**2)*conv_mapNum, feedF_neuronNum))/1000 + float(subS_mapSide**2)/((subS_mapSide**2)*conv_mapNum) + 1.0 ###just for trials with conv_filter size == image size
-	# class_W = (np.random.random_sample(size=(feedF_neuronNum, class_neuronNum))/1000+1.0)/feedF_neuronNum
-	class_W = (np.random.random_sample(size=(feedF_neuronNum, class_neuronNum))/1000+1.0)/feedF_neuronNum + 0.1 ###just for trials with conv_filter size == image size
+# feedF_W = np.random.random_sample(size=((subS_mapSide**2)*conv_mapNum, feedF_neuronNum))/1000 + float(subS_mapSide**2)/((subS_mapSide**2)*conv_mapNum) + 0.6
+feedF_W = np.random.random_sample(size=((subS_mapSide**2)*conv_mapNum, feedF_neuronNum))/1000 + float(subS_mapSide**2)/((subS_mapSide**2)*conv_mapNum) + 1.0 ###just for trials with conv_filter size == image size
+class_W = (np.random.random_sample(size=(feedF_neuronNum, class_neuronNum))/1000+1.0)/feedF_neuronNum
+# class_W = (np.random.random_sample(size=(feedF_neuronNum, class_neuronNum))/1000+1.0)/feedF_neuronNum + 0.1 ###just for trials with conv_filter size == image size
 
 """ training network """
 print "training network..."
@@ -281,35 +288,39 @@ for e in range(nEpiTot):
 	for i in pbar_epi(range(rndImages.shape[0])):
 		# pdb.set_trace()
 		imcount+=1
-		noise_bool=np.copy(noise) if noise!='none' and e>=nEpiCrit and DA else 'none'
+		noise_bool=np.copy(noise) if noise!='none' and e>=nEpiCrit else 'none'
 		
 		classif, conv_input, conv_activ, subS_activ, feedF_activ, class_activ, class_activ_noise = propagate(rndImages[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params, noise=noise_bool)
 
-		if e>=nEpiCrit and DA: #DOPA
+		dopa_conv = None
+		dopa_feedF = None
+		if e>=nEpiCrit: #DOPA
 			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_activ_noise))
 
 			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.02, dLow=-2.0) #parameters from old network
-			dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.0, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.0, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			dopa_conv = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			dopa_feedF = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
 			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=1.0, dNeut=-0.02, dLow=-0.5) #OK parameters for (large) convolutional layer
 
-			dopa_save = np.append(dopa_save, dopa[0])
-		else: dopa = None
+			dopa_save = np.append(dopa_save, dopa_conv[0])
+			
 
 		last_neuron_class[np.argmax(feedF_activ), np.argwhere(rndLabels[i]==classes)] += 1 ##will create a problem when noise is added
 
 		# learn weights...
 		#...of the convolutional matrices
-		if True or imcount<60000:
+		if True and imcount<60000:
 			for b in range(conv_neuronNum/nBatch):
-				dopa_batch = dopa*np.ones(nBatch) if dopa!=None else None
+				dopa_batch = dopa_conv*np.ones(nBatch) if dopa_conv!=None else None
 				# dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch, :], conv_activ[b*nBatch:(b+1)*nBatch, :], conv_W, lr=lr*0.1, disinhib=dopa_batch)
 				dW_conv = ex.learningStep(conv_input[b*nBatch:(b+1)*nBatch, :], conv_activ[b*nBatch:(b+1)*nBatch, :], conv_W, lr=lr*0.1*10000)#, disinhib=dopa_batch) ###just for trials with conv_filter size == image size
 				conv_W += dW_conv
 				conv_W = np.clip(conv_W, 1e-10, np.inf)
 
 		#...of the feedforward layer
-		dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600, disinhib=dopa)
-		# dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600*10, disinhib=dopa) ###just for trials with conv_filter size == image size
+		dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600, disinhib=dopa_feedF)
+		# dW_FF = ex.learningStep(subS_activ, feedF_activ, feedF_W, lr=lr*3600*10, disinhib=dopa_feedF) ###just for trials with conv_filter size == image size
 		feedF_W += dW_FF
 		feedF_W = np.clip(feedF_W, 1e-10, np.inf)
 
@@ -373,7 +384,7 @@ plt.show(block=False)
 """ plot output neuron RF reconstruction """
 nRows = int(np.sqrt(feedF_neuronNum))
 nCols = feedF_neuronNum/nRows
-fig = plt.figure(figsize=(nCols*2,nRows*2))
+fig = plt.figure(figsize=(nCols,nRows))
 for n in range(feedF_neuronNum):
 	plt.subplot(nRows, nCols, n)
 	W = np.reshape(feedF_W[:,n], (subS_mapSide, subS_mapSide, conv_mapNum))

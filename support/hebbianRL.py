@@ -12,6 +12,7 @@ import support.plots as pl
 import support.classifier as cl
 import support.assessRF as rf
 import support.svmutils as su
+import support.grating as gr
 import sys
 
 ex = reload(ex)
@@ -19,46 +20,31 @@ pl = reload(pl)
 cl = reload(cl)
 rf = reload(rf)
 su = reload(su)
+gr = reload(gr)
 
-##
-# def reorder(W_in, W_act, RFproba, classes, rActions):
-# 	nClasses = np.size(W_act,1)
-# 	assignment=np.zeros((nClasses, nClasses))
-# 	for i in range(nClasses):
-# 		for j in range(nClasses):
-# 			assignment[i,j] += np.sum(rActions[np.argmax(W_act,1)][ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions)==rActions[i]]==rActions[j])
-# 
-# 	new_W = np.copy(W_act)
-# 	for i in range(np.size(W_act,1)):
-# 		if np.max(assignment,1)[i] == assignment[i, np.argmax(assignment,1)[i]]:
-# 			new_W[:,i] = W_act[:,np.argmax(assignment,1)[i]]
-# 	return new_W
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, kwargs):
+def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs, images_task=None, labels_task=None, orientations=None, orientations_task=None, orientations_test=None):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
 	else: print " !!! ----- not saving data ----- !!! "
-	images = ex.normalize(images, A*np.size(images,1)) #normalize input images
 	W_in_save = {}
 	W_act_save = {}
 	nClasses = len(classes)
 	_, idx = np.unique(rActions, return_index=True)
 	lActions = rActions[np.sort(idx)]
 	nEpiTot = nEpiCrit + nEpiDopa
-	if seed!=0:
-		np.random.seed(seed)
-	else:
-		np.random.seed(None)
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
-	ach_bal = 0.25 ##optimize
+	# ach_bal = 0.25 ##optimize
+
 
 	""" training of the network """
-	print 'training network...'
+	print '\ntraining network...'
 	for r in range(nRun):
-		print 'run: ' + str(r+1)
+		np.random.seed(seed+r)
+		print '\nrun: ' + str(r+1)
 
 		#randommly assigns a class with ACh release (used to run multiple runs of ACh)
 		# if True: target, rActions, rActions, lActions = ex.rand_ACh(nClasses) ##
@@ -67,19 +53,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-		if False: #initialize output neurons with already fixed connections
-			W_act = np.zeros((nHidNeurons, nActNeurons))
-			nHid_perClass = nHidNeurons/nClasses
-			nHidNeurons-nHid_perClass*nClasses
-			for c in range(nClasses): 
-				W_act[nHid_perClass*c : nHid_perClass*(c+1), c]=1.
-			for d,c in enumerate(np.arange(nHid_perClass*(c+1), nHidNeurons)):
-				W_act[c, d]=1.
-		else:
-			W_act = ((np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons)
-		# W_act_init = np.copy(W_act)
+		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+		W_in_init = np.copy(W_in)
+		W_act_init = np.copy(W_act)
 		perf_track = np.zeros((nActNeurons, 2))
-		Q = np.zeros((nActNeurons, nActNeurons))
 
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = []
@@ -100,15 +77,19 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			for b in range(int(nImages/nBatch)):
 				
 				#select batch training images (may leave a few training examples out (< nBatch))
-				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
-				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
+				if protocol=='digit' or (protocol=='gabor' and e < nEpiCrit): 
+					bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
+					bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
+				elif protocol=='gabor' and e >= nEpiCrit:
+					bImages = images_task[b*nBatch:(b+1)*nBatch,:]
+					bLabels = labels_task[b*nBatch:(b+1)*nBatch]
 
 				#initialize batch variables
 				ach = np.ones(nBatch)
 				dopa = np.ones(nBatch)
 				dW_in = 0.
 				dW_act = 0.
-				disinhib_Hid = np.zeros(nBatch)
+				disinhib_Hid = np.ones(nBatch)##np.zeros(nBatch)
 				disinhib_Act = np.zeros(nBatch)
 				
 				#compute activation of hidden and classification neurons
@@ -156,30 +137,16 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=4.0, dMid=0.0, dNeut=-0.1, dLow=-1.5)
-					# rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
 					# dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 					
-					# choice_count[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)] += 1 #used to check the approximation of probability matching in decision making
-				
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
 				dopa_save = np.append(dopa_save, dopa)
-				# if e >= 3: 
-					# print dW_act[-2,:]
-					# import pdb; pdb.set_trace()
-					# print np.sum(dopa)
-
-				### for ach?
-				# postNeurons_lr = bActNeurons * (lr * disinhib_Act[:,np.newaxis])
-				# # dW_act = (np.dot((bHidNeurons * ach[:,np.newaxis]).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				# dW_act = (np.dot((bHidNeurons * ((1-ach_bal)+ach[:,np.newaxis]*ach_bal)).T, postNeurons_lr) - np.sum(postNeurons_lr, 0) * W_act)
-				###
 
 				#update weights
 				W_in += dW_in
@@ -189,19 +156,23 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
-				#update Q table
-				Q = ex.Q_learn(Q, ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions), bReward, Q_LR=0.01)
-
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
-			##to check Wact assignment after each episode:
-			RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
+			#to check Wact assignment after each episode:
+			if protocol=='digit':
+				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
+			elif protocol=='gabor':
+				pref_ori = gr.preferred_orientations({'000':W_in}, params=kwargs)
+				RFproba = np.zeros((1, nHidNeurons, nClasses), dtype=int)
+				RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
+				RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
 			correct_W_act = 0.	
 			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
 			correct_W_act += np.sum(same)
 			correct_W_act/=len(RFproba)
-			print str(e+1) + ': correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
-			print np.sum(W_act,0)
+			if e==nEpiCrit: print '----------end crit-----------'
+			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
+
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -209,10 +180,26 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 	""" compute network statistics and performance """
 
-	#compute histogram of RF classes
-	RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
-	#compute the selectivity of RFs
-	# _, _, RFselec = rf.hist(runName, W_in_save, classes, nInpNeurons, images, labels, SVM=False, proba=False, output=False, show=False, lr_ratio=1.0)
+	if protocol=='digit':
+		#compute histogram of RF classes
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+
+	elif protocol=='gabor':
+		#compute histogram of RF classes
+		n_bins = 10
+		bin_size = 180./n_bins
+		orientations_bin = np.zeros(len(orientations), dtype=int)
+		for i in range(n_bins): 
+			mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
+			orientations_bin[mask_bin] = i
+
+		# RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, n_bins=10, SVM=SVM, output=False, show=False)
+		pref_ori = gr.preferred_orientations(W_in_save, params=kwargs)
+		RFproba = np.zeros((nRun, nHidNeurons, nClasses), dtype=int)
+		for r in pref_ori.keys():
+			RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
+			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
+		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
 
 	###
 	# assignment=np.zeros((nClasses, nClasses))
@@ -232,49 +219,37 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		correct_W_act += np.sum(same)
 	correct_W_act/=len(RFproba)
 
-	#plot the weights
+	# plot the weights
 	if createOutput:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
-		rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+		if protocol=='digit':
+			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+		elif protocol=='gabor':
+			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
-	print '\ncorrect action weight assignment:\n ' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
+	print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	#save data
 	if createOutput:
 		ex.save_data(W_in_save, W_act_save, kwargs)
 
-	print '\nrun: '+runName
-
-	# import pickle
-	# f = open('choice_count', 'w')
-	# pickle.dump(choice_count, f)
-	# f.close()
-	# f = open('Q', 'w')
-	# pickle.dump(Q, f)
-	# f.close()
+	print '\nrun: '+runName + '\n'
 
 	# import pdb; pdb.set_trace()
 
-
-	return allCMs, allPerf, correct_W_act/nHidNeurons
-
+	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
 
 
 
 
-
-
-
-
-
-
+	
 
 
 
