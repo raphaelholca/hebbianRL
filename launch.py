@@ -43,9 +43,9 @@ kwargs = {
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 5.0 				,# learning rate increase for unexpected reward
-'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.1				,# learning rate increase for correct no reward prediction
-'dLow' 			: -2.0				,# learning rate increase for incorrect reward prediction
+'dMid' 			: 0.02 				,# learning rate increase for correct reward prediction
+'dNeut' 		: -0.3				,# learning rate increase for correct no reward prediction
+'dLow' 			: -1.0				,# learning rate increase for incorrect reward prediction
 'nBatch' 		: 20 				,# mini-batch size
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -55,7 +55,7 @@ kwargs = {
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Legal value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 500#np.random.randint(1000) 	# seed of the random number generator
+'seed' 			: 992#np.random.randint(1000) 	# seed of the random number generator
 }
 
 kwargs['classes'] 	= classes

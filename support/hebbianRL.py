@@ -27,7 +27,7 @@ su = reload(su)
 # 	for i in range(nClasses):
 # 		for j in range(nClasses):
 # 			assignment[i,j] += np.sum(rActions[np.argmax(W_act,1)][ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions)==rActions[i]]==rActions[j])
-
+# 
 # 	new_W = np.copy(W_act)
 # 	for i in range(np.size(W_act,1)):
 # 		if np.max(assignment,1)[i] == assignment[i, np.argmax(assignment,1)[i]]:
@@ -46,7 +46,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	_, idx = np.unique(rActions, return_index=True)
 	lActions = rActions[np.sort(idx)]
 	nEpiTot = nEpiCrit + nEpiDopa
-	np.random.seed(seed)
+	if seed!=0:
+		np.random.seed(seed)
+	else:
+		np.random.seed(None)
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
@@ -124,8 +127,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 				
 				#adds noise in W_act neurons
-				if e < nEpiCrit: ## remove 'and False' to add exploration in the class layer
-					bActNeurons += np.random.uniform(0, 10, np.shape(bActNeurons)) ##
+				if e < nEpiCrit:
+					bActNeurons += np.random.uniform(0, 10, np.shape(bActNeurons)) ##param explore, optimize
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
@@ -138,11 +141,14 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#compute dopa signal and disinhibition based on training period
-				if e < nEpiCrit:
+				if e < 2:
+					disinhib_Hid = ach
+					disinhib_Act = np.zeros(nBatch)
+				elif e < nEpiCrit:
 					""" critical period """
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=+2.0, dMid=0.1, dNeut=0.0, dLow=-1.0)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa
@@ -150,6 +156,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=4.0, dMid=0.0, dNeut=-0.1, dLow=-1.5)
 					# rPredicted = Q[ex.val2idx(bPredictActions, lActions), ex.val2idx(bActions, lActions)]
 					# dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
@@ -252,7 +259,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	# pickle.dump(Q, f)
 	# f.close()
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons
