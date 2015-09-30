@@ -33,7 +33,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	_, idx = np.unique(rActions, return_index=True)
 	lActions = rActions[np.sort(idx)]
 	nEpiTot = nEpiCrit + nEpiDopa
-	np.random.seed(seed)
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses

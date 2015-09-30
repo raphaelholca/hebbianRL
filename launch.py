@@ -22,22 +22,22 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 
 """ parameters """
 kwargs = {
-'nRun' 			: 2					,# number of runs
-'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nRun' 			: 1					,# number of runs
+'nEpiCrit'		: 20 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor'			,# name of the folder where to save results
+'runName' 		: 'gabor_20-1'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 7.0 				,# learning rate increase for unexpected reward
-'dMid' 			: 0.01 				,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction
-'dLow' 			: -2.0				,# learning rate increase for incorrect reward predictio
+'dHigh' 		: 0.,#4.5 				,# learning rate increase for unexpected reward
+'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
+'dNeut' 		: 0.,#-0.1				,# learning rate increase for correct no reward prediction
+'dLow' 			: 0.,#-2.0				,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 90. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -56,6 +56,7 @@ kwargs = {
 """ load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
 print 'seed: ' + str(kwargs['seed']) + '\n'
+np.random.seed(kwargs['seed'])
 
 if kwargs['protocol'] == 'digit':
 	kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
@@ -99,7 +100,7 @@ elif kwargs['protocol'] == 'gabor':
 	labels = np.zeros(n_train, dtype=int)
 	labels[orientations<=target_ori] = 0
 	labels[orientations>target_ori] = 1
-	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.) #np.random.random(n_train)
+	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0) #np.random.random(n_train)
 	images = ex.normalize(images, kwargs['A']*np.size(images,1))
 
 	n_task = 10000
@@ -107,7 +108,7 @@ elif kwargs['protocol'] == 'gabor':
 	labels_task = np.zeros(n_task, dtype=int)
 	labels_task[orientations_task<=target_ori] = 0
 	labels_task[orientations_task>target_ori] = 1
-	images_task = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_task, sigma=im_size/5., phase=0.25, noise=0.6)
+	images_task = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_task, sigma=im_size/5., phase=0.25, noise=0.0)
 	images_task = ex.normalize(images_task, kwargs['A']*np.size(images,1))
 
 	n_test = 100
@@ -116,7 +117,7 @@ elif kwargs['protocol'] == 'gabor':
 	labels_test = np.zeros(n_test, dtype=int)
 	labels_test[orientations_test<=target_ori] = 0
 	labels_test[orientations_test>target_ori] = 1
-	images_test = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_test, sigma=im_size/5., phase=0.25, noise=0.6)
+	images_test = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_test, sigma=im_size/5., phase=0.25, noise=0.7)
 	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
 
 	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images=images, labels=labels, orientations=orientations, images_task=images_task, labels_task=labels_task, orientations_task=orientations_task, images_test=images_test, labels_test=labels_test, orientations_test=orientations_test, kwargs=kwargs, **kwargs)
