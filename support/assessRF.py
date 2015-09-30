@@ -31,7 +31,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
-	if output: print "computing RF classes..."
+	if output: print "\ncomputing RF classes..."
 	nRun = len(W.keys())
 	nNeurons = np.size(W['000'],1)
 
@@ -87,7 +87,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 	return RFproba, RFclass, RFselec
 
 def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
-	print "ploting RFs..."
+	print "\nploting RFs..."
 
 	if sort=='tSNE':
 		if np.mod(np.sqrt(np.size(W['000'],1)),1)!=0:

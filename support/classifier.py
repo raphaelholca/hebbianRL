@@ -29,6 +29,8 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
+	print "\nassessing performance..."
+
 	""" variable initialization """
 	allCMs = []
 	allPerf = []
@@ -83,6 +85,8 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
 
+	print "\nassessing performance..."
+
 	""" load and pre-process images """
 	print 'assessing performance with SVM...'
 	if  train_dataset=='train': test_dataset='test'
@@ -133,6 +137,8 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
+	print "\nassessing performance..."
+
 	""" variable initialization """
 	allCMs = []
 	allPerf = []
@@ -180,7 +186,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 		perf_print += '\nof which best performance is:' + '\n'
 		perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
 		perf_print += 'and worse performance is:' + '\n'
-		perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')'
+		perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
 
 	print perf_print
 

@@ -40,9 +40,10 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 
 
 	""" training of the network """
-	print 'training network...'
+	print '\ntraining network...'
 	for r in range(nRun):
-		print 'run: ' + str(r+1)
+		np.random.seed(seed+r)
+		print '\nrun: ' + str(r+1)
 
 		#randommly assigns a class with ACh release (used to run multiple runs of ACh)
 		# if True: target, rActions, rActions, lActions = ex.rand_ACh(nClasses) ##
@@ -211,7 +212,7 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	if createOutput:
 		ex.save_data(W_in_save, W_act_save, kwargs)
 
-	print '\nrun: '+runName
+	print '\nrun: '+runName + '\n'
 
 	import pdb; pdb.set_trace()
 
