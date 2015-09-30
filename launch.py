@@ -4,13 +4,11 @@ matplotlib.use('Agg')
 import pickle
 import os
 import struct
-import recon as rc
 import support.hebbianRL as rl
 import support.external as ex
 import support.mnist as mnist
 import support.grating as gr
 
-rc = reload(rc)
 rl = reload(rl)
 ex = reload(ex)
 gr = reload(gr)
@@ -25,12 +23,12 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
+'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-DA'		,# name of the folder where to save results
+'runName' 		: 'gabor-t'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)

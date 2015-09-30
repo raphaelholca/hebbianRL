@@ -33,7 +33,8 @@ def add_exploration(traj, runName):
 	'dMid'			:	np.arange(0.0, 0.81, 0.2).tolist(),
 	# 'dMid'			:	np.arange(0.00, 0.21, 0.05).tolist(),
 	'dNeut'			:	np.round(np.arange(-0.4, 0.1, 0.1),1).tolist(),
-	'dLow'			:	np.arange(-2.0, 0.1, 0.5).tolist()
+	# 'dLow'			:	np.arange(-2.0, 0.1, 0.5).tolist()
+	'dLow'			:	np.arange(-4.0, 0.1, 1.0).tolist()
 	}
 
 	explore_dict = pypet.cartesian_product(explore_dict, ('dHigh', 'dMid', 'dNeut', 'dLow'))
@@ -69,10 +70,6 @@ def pypet_RLnetwork(traj):
 
 	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
 
-def postproc(traj, result_list):
-	""" TODO? """
-	return
-
 def get_images():
 	""" load and pre-process images """
 	images, labels = mnist.read_images_from_mnist(classes = classes, dataset = kwargs['dataset'], path = imPath)
@@ -82,13 +79,13 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 20					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
-'t_hid'			: 1.0 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+'nRun' 			: 2					,# number of runs
+'nEpiCrit'		: 5					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'t_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_repres'	,# name of the folder where to save results
+'runName' 		: 'xplr_gabor'		,# name of the folder where to save results
 'dataset'		: 'train'			,# MNIST dataset to use; legal values: 'test', 'train' ##use train for actual results
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -107,7 +104,7 @@ kwargs = {
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: False				,# whether to sort weights by their class when displaying
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 0#np.random.randint(1000) 				# seed of the random number generator; set to 0 for no seed
+'seed' 			: 168#np.random.randint(1000) 				# seed of the random number generator; set to 0 for no seed
 }
 
 classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)

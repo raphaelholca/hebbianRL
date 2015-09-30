@@ -150,7 +150,7 @@ def learningStep(preNeurons, postNeurons, W, lr, disinhib=None, numba=True):
 	returns:
 		numpy array: change in weight; must be added to the weight matrix W
 	"""
-	if disinhib==None or disinhib.shape[0]!=postNeurons.shape[0]: disinhib=np.ones(postNeurons.shape[0])
+	if disinhib is None or disinhib.shape[0]!=postNeurons.shape[0]: disinhib=np.ones(postNeurons.shape[0])
 
 	if numba:
 		postNeurons_lr = disinhibition(postNeurons, lr, disinhib, np.zeros_like(postNeurons))
