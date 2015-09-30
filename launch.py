@@ -23,21 +23,21 @@ rActions (str)	: for each class of MNIST, the action that is rewarded. Capital l
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 20 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiCrit'		: 1 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor_20-1'			,# name of the folder where to save results
+'runName' 		: 'gabor-test'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 0.,#4.5 				,# learning rate increase for unexpected reward
+'dHigh' 		: 0.45,#4.5 				,# learning rate increase for unexpected reward
 'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction
-'dNeut' 		: 0.,#-0.1				,# learning rate increase for correct no reward prediction
-'dLow' 			: 0.,#-2.0				,# learning rate increase for incorrect reward predictio
+'dNeut' 		: -0.01,#-0.1				,# learning rate increase for correct no reward prediction
+'dLow' 			: -0.2,#-2.0				,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 90. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -108,7 +108,7 @@ elif kwargs['protocol'] == 'gabor':
 	labels_task = np.zeros(n_task, dtype=int)
 	labels_task[orientations_task<=target_ori] = 0
 	labels_task[orientations_task>target_ori] = 1
-	images_task = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_task, sigma=im_size/5., phase=0.25, noise=0.0)
+	images_task = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_task, sigma=im_size/5., phase=0.25, noise=0.7)
 	images_task = ex.normalize(images_task, kwargs['A']*np.size(images,1))
 
 	n_test = 100

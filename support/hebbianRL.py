@@ -151,6 +151,8 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
 			correct_W_act += np.sum(same)
 			correct_W_act/=len(RFproba)
+			if e==nEpiCrit: print '----------end crit-----------'
+
 			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 		#save weights
@@ -162,11 +164,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 	if protocol=='digit':
 		#compute histogram of RF classes
 		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
-
-		#assess classification performance with neural classifier or SVM 
-		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
-		if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-		if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
 	elif protocol=='gabor':
 		#compute histogram of RF classes
@@ -184,7 +181,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 			RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
 		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
-		if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
 	#compute correct weight assignment in the action layer
 	correct_W_act = 0.
@@ -194,7 +190,6 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		notsame[k] = np.argwhere(~same)
 		correct_W_act += np.sum(same)
 	correct_W_act/=len(RFproba)
-	print '\ncorrect action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	# plot the weights
 	if createOutput:
@@ -205,6 +200,12 @@ def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runN
 		elif protocol=='gabor':
 			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
 
+	#assess classification performance with neural classifier or SVM 
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+
+	print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	#save data
 	if createOutput:

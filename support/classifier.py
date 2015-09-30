@@ -175,7 +175,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 	perf_print += '-'*(len(c_str)+3) + '\n'
 	perf_print += str(np.round(avgCM,2)) + '\n'
 	perf_print += '\naverage correct classification:' + '\n'
-	perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + '%' + '\n'
+	perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + ' %' + '\n'
 	if len(allPerf)>1:
 		perf_print += '\nof which best performance is:' + '\n'
 		perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
