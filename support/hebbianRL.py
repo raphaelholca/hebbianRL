@@ -125,10 +125,7 @@ def RLnetwork(	images, labels, orientations,
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#compute dopa signal and disinhibition based on training period
-				if e < 0:
-					disinhib_Hid = ach
-					disinhib_Act = np.zeros(nBatch)
-				elif e < nEpiCrit:
+				if e < nEpiCrit:
 					""" critical period """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
@@ -140,7 +137,6 @@ def RLnetwork(	images, labels, orientations,
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					# dopa = ex.compute_dopa_2(rPredicted, bReward, dHigh=dHigh, dMid=dMid, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
