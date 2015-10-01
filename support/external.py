@@ -667,23 +667,6 @@ def set_run_names(explore_dict, runName):
 			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
 	return runName_list
 
-def pypet_RLnetwork(traj):
-	images, labels = get_images()
-	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
-
-	# try:
-	allCMs, allPerf, perc_correct_W_act = rl.RLnetwork(images=images, labels=labels, kwargs=parameter_dict, **parameter_dict)
-	# except ValueError:
-	# 	print "----- NaN in computations -----"
-	# 	allCMs, allPerf, perc_correct_W_act = -np.inf, -np.inf, -np.inf
-	
-	traj.f_add_result('RLnetwork.$', 
-					perc_W_act=perc_correct_W_act, 
-					perf=np.mean(allPerf), 
-					comment='exploring dopa for action weights')
-
-	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
-
 
 
 

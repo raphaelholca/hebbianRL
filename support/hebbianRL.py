@@ -125,7 +125,7 @@ def RLnetwork(	images, labels, orientations,
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#compute dopa signal and disinhibition based on training period
-				if e < 2:
+				if e < 0:
 					disinhib_Hid = ach
 					disinhib_Act = np.zeros(nBatch)
 				elif e < nEpiCrit:
