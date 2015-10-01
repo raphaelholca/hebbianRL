@@ -70,12 +70,6 @@ def RLnetwork(	images, labels, orientations,
 			#shuffle input
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
-			if e==nEpiCrit: print '--end crit--'
-			###
-			# if e==5:
-			# 	RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, nInpNeurons, images, labels, SVM=SVM, proba=False, output=False, show=False)
-			# 	W_act = reorder(W_in, W_act, RFproba, classes, rActions)
-
 			#train network with mini-batches
 			for b in range(int(nImages/nBatch)):
 				
