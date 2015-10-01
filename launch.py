@@ -7,28 +7,19 @@ import struct
 import support.hebbianRL as rl
 import support.external as ex
 import support.mnist as mnist
-import support.grating as gr
 
 rl = reload(rl)
 ex = reload(ex)
-gr = reload(gr)
-
-""" 
-experimental variables
-
-classes (int) 	: class of the MNIST dataset to use to train the network
-rActions (str)	: for each class of MNIST, the action that is rewarded. Capital letters indicates a class that is paired with ACh release.
-"""
 
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
-'t_hid'			: 0.1 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
+'t_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-t'		,# name of the folder where to save results
+'runName' 		: 'testing'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -42,7 +33,12 @@ kwargs = {
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 90. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 10. 				,# degree range within wich to test the network (on each side of target orientation)
+'noise_crit'	: 0.0 				,# noise injected in the gabor filter for the pre-training (critical period)
+'noise_train'	: 0.7 				,# noise injected in the gabor filter for the training
+'noise_test'	: 0.7 				,# noise injected in the gabor filter for the testing
+'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
+'pypet_xplr'	: False				,# whether to compute pypet-based parameter exploration
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
@@ -84,43 +80,36 @@ if kwargs['protocol'] == 'digit':
 	images_test, labels_test = ex.shuffle([images_test, labels_test])
 	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
 	
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images=images, labels=labels, images_test=images_test, labels_test=labels_test, kwargs=kwargs, **kwargs)
-
+	orientations = None
+	images_task = None
+	labels_task = None
+	orientations_task = None
+	orientations_test = None
 
 elif kwargs['protocol'] == 'gabor':
 	print 'creating gabor training images...'
 	
 	kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
-	target_ori = kwargs['target_ori']
-	excentricity = kwargs['excentricity']
-	im_size = 28
+
 	n_train = 10000
+	n_test = 1000
+	
 	orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
-	labels = np.zeros(n_train, dtype=int)
-	labels[orientations<=target_ori] = 0
-	labels[orientations>target_ori] = 1
-	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0) #np.random.random(n_train)
-	images = ex.normalize(images, kwargs['A']*np.size(images,1))
+	images, labels = ex.generate_gabors(orientations, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_crit'], kwargs['A'])
 
-	n_task = 10000
-	orientations_task = np.random.random(n_task)*excentricity*2 + target_ori - excentricity #orientations of gratings (in degrees)
-	labels_task = np.zeros(n_task, dtype=int)
-	labels_task[orientations_task<=target_ori] = 0
-	labels_task[orientations_task>target_ori] = 1
-	images_task = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_task, sigma=im_size/5., phase=0.25, noise=0.7)
-	images_task = ex.normalize(images_task, kwargs['A']*np.size(images,1))
+	orientations_task = np.random.random(n_train)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
+	images_task, labels_task = ex.generate_gabors(orientations_task, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_train'], kwargs['A'])
 
-	n_test = 100
-	# orientations_test = np.random.random(n_test)*180
-	orientations_test = np.random.random(n_test)*excentricity*2 + target_ori - excentricity #orientations of gratings (in degrees)
-	labels_test = np.zeros(n_test, dtype=int)
-	labels_test[orientations_test<=target_ori] = 0
-	labels_test[orientations_test>target_ori] = 1
-	images_test = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations_test, sigma=im_size/5., phase=0.25, noise=0.7)
-	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
+	orientations_test = np.random.random(n_test)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
+	images_test, labels_test = ex.generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
 
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images=images, labels=labels, orientations=orientations, images_task=images_task, labels_task=labels_task, orientations_task=orientations_task, images_test=images_test, labels_test=labels_test, orientations_test=orientations_test, kwargs=kwargs, **kwargs)
+
+if not kwargs['pypet_xplr']:
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
+																				images_test, labels_test, orientations_test, 
+																				images_task, labels_task, orientations_task, 
+																				kwargs, **kwargs)
 
 
 

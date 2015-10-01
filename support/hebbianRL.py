@@ -23,7 +23,10 @@ su = reload(su)
 gr = reload(gr)
 
 
-def RLnetwork(classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, classifier, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed, images, labels, images_test, labels_test, kwargs, images_task=None, labels_task=None, orientations=None, orientations_task=None, orientations_test=None):
+def RLnetwork(	images, labels, orientations, 
+				images_test, labels_test, orientations_test, 
+				images_task, labels_task, orientations_task, 
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory

@@ -28,11 +28,11 @@ def add_parameters(traj, kwargs):
 
 def add_exploration(traj, runName):
 	explore_dict = {
-	'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
+	#- 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
 	# 'dMid'			:	np.arange(0.00, 0.041, 0.01).tolist(),
-	'dMid'			:	np.arange(0.0, 0.81, 0.2).tolist(),
+	#- 'dMid'			:	np.arange(0.0, 0.81, 0.2).tolist(),
 	# 'dMid'			:	np.arange(0.00, 0.21, 0.05).tolist(),
-	'dNeut'			:	np.round(np.arange(-0.4, 0.1, 0.1),1).tolist(),
+	#- 'dNeut'			:	np.round(np.arange(-0.4, 0.1, 0.1),1).tolist(),
 	# 'dLow'			:	np.arange(-2.0, 0.1, 0.5).tolist()
 	'dLow'			:	np.arange(-4.0, 0.1, 1.0).tolist()
 	}
@@ -79,9 +79,9 @@ def get_images():
 
 """ parameters """
 kwargs = {
-'nRun' 			: 2					,# number of runs
-'nEpiCrit'		: 5					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nRun' 			: 1					,# number of runs
+'nEpiCrit'		: 1					,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 't_act'			: 0.1 	 			,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8

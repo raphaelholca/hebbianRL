@@ -11,6 +11,9 @@ import numba
 import time	
 import string
 from configobj import ConfigObj
+import grating as gr
+
+gr = reload(gr)
 
 def normalize(images, A):
 	"""
@@ -29,6 +32,17 @@ def normalize(images, A):
 
 @numba.njit
 def normalize_numba(images, A):
+	"""
+	numba-optimized version of the normalize function; Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
+
+	Args:
+
+		images (numpy array): image to normalize
+		A (int): normalization constant
+
+	returns:
+		numpy array: normalized images
+	"""
 	A_i = (A-images.shape[1])
 	for im in range(images.shape[0]):
 		sum_px = 0
@@ -38,6 +52,30 @@ def normalize_numba(images, A):
 			images[im,px] = A_i*images[im,px]/sum_px + 1.
 
 	return images
+
+def generate_gabors(orientations, target_ori, im_size, noise, A):
+	"""
+	Calling function to generate gabor filters
+
+	Args:
+		orientations (numpy array): 1-D array of orientations of gratings (in degrees) (one grating is created for each orientation provided)
+		target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
+		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
+		noise (int): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
+		A (float): input normalization constant
+
+	returns:
+		numpy array: gabor filters of size: (len(orientations), im_size*im_size)
+		numpy array: labels (clock-wise / counter clock-wise) of each gabor filter
+	"""
+
+	labels = np.zeros(len(orientations), dtype=int)
+	labels[orientations<=target_ori] = 0
+	labels[orientations>target_ori] = 1
+	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise)
+	images = normalize(images, A*np.size(images,1))
+
+	return images, labels
 
 def softmax(activ, implementation='numba', t=1.):
 	"""
