@@ -204,15 +204,6 @@ def RLnetwork(	images, labels, orientations,
 			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
 		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
 
-	###
-	# assignment=np.zeros((nClasses, nClasses))
-	# for i in range(nClasses):
-	# 	for j in range(nClasses):
-	# 		assignment[i,j] += np.sum(rActions[np.argmax(W_act_save['000'],1)][ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions)==rActions[i]]==rActions[j])
-	# print assignment
-	# print np.sum(assignment,0)
-	# print np.mean(np.max(assignment,1)/np.sum(assignment,1))
-
 	#compute correct weight assignment in the action layer
 	correct_W_act = 0.
 	notsame = {}
