@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 import pickle
 import os
 import struct
@@ -47,13 +45,13 @@ kwargs = {
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 1. 				,# learning rate increase for unexpected reward
 'dMid' 			: 0. 				,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.01				,# learning rate increase for correct no reward prediction
-'dLow' 			: -.5				,# learning rate increase for incorrect reward predictio
+'dNeut' 		: -0.02				,# learning rate increase for correct no reward prediction
+'dLow' 			: -.50				,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
-'target_ori' 	: 90. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
-'excentricity' 	: 2. 				,# degree range within wich to test the network (on each side of target orientation)
-'noise_crit'	: 0.0 				,# noise injected in the gabor filter for the pre-training (critical period)
+'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
+'excentricity' 	: 10. 				,# degree range within wich to test the network (on each side of target orientation)
+'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
 'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
 'noise_test'	: 0. 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
@@ -147,6 +145,9 @@ if not kwargs['pypet_xplr']:
 																				kwargs, **kwargs)
 else:
 	""" launch simulation with pypet """
+	import matplotlib
+	matplotlib.use('Agg') #to avoid sending plots to screen when working on the servers
+
 	env = pypet.Environment(trajectory = 'xplr',
 							comment = 'testing with pypet...',
 							log_stdout=False,

@@ -473,6 +473,8 @@ def checkdir(runName, OW_bool=True):
 		elif overwrite in ['y', 'yes']:
 			if os.path.exists('output/' + runName + '/RFs'):
 				shutil.rmtree('output/' + runName + '/RFs')
+			if os.path.exists('output/' + runName + '/TCs'):
+				shutil.rmtree('output/' + runName + '/TCs')
 			shutil.rmtree('output/' + runName)
 		else:
 			runName = overwrite
@@ -480,6 +482,7 @@ def checkdir(runName, OW_bool=True):
 			return runName
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
+	os.makedirs('output/' + runName + '/TCs')
 	print 'run:  ' + runName
 	return runName
 

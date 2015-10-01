@@ -55,15 +55,15 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	return gratings
 
-def tuning_curves(W, method, output, params=None):
+def tuning_curves(W, params, method='basic', plot=True):
 	"""
 	compute the tuning curve of the neurons
 
 	Args:
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
-		method (str): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
-		output (bool): whether or not to generate plots
-		params (dict, optional): parameters of the main simulation (kwargs)
+		params (dict): parameters of the main simulation (kwargs)
+		method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
+		plot (bool, optional): whether or not to create plots
 
 	returns:
 		(dict): the tuning curves for each neuron of each run
@@ -73,14 +73,9 @@ def tuning_curves(W, method, output, params=None):
 		print '!!! invalid method - using \'basic\' method !!!'
 		method='basic'
 
-	if params is not None:
-		t = params['t_hid']
-		target_ori = params['target_ori']
-
-	else:
-		t = 0.1
-		target_ori = 45.
-
+	t = params['t_hid']
+	target_ori = params['target_ori']
+	runName = params['runName']
 
 	noise = 1.0
 	noise_trial = 100
@@ -100,32 +95,47 @@ def tuning_curves(W, method, output, params=None):
 
 	curves = {}
 	for r in W.keys():
+		if plot: 
+			fig, ax = plt.subplots()
 		curves[r] = np.zeros((n_input, n_neurons))
 		for i in range(len(test_input)):
 			curves[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
-		if output:
-			plt.figure()
-			plt.plot(curves[r])
+			if plot:
+				ax.plot(orientations, curves[r])
+				ax.vlines(target_ori, 0, np.max(curves[r])*1.05, colors=u'r', linestyles=u'dashed')
 
-	plt.show(block=False)
+				fig.patch.set_facecolor('white')
+				ax.spines['right'].set_visible(False)
+				ax.spines['top'].set_visible(False)
+				ax.xaxis.set_ticks_position('bottom')
+				ax.yaxis.set_ticks_position('left')
+				ax.set_xlabel('angle (deg)', fontsize=18)
+				ax.set_ylabel('response', fontsize=18)
+				ax.set_ylim([0, np.max(curves[r])*1.1])
+				ax.tick_params(axis='both', which='major', direction='out')
+				plt.tight_layout()
+		
+		if plot:
+			plt.savefig('output/' + runName + '/TCs/' +runName+ '_' + str(r).zfill(3))
+			plt.close(fig)
 
 	# import pdb; pdb.set_trace()
 
 	return curves
 
-def preferred_orientations(W, params=None):
+def preferred_orientations(W, params):
 	"""
 	compute the preferred orientation of neurons
 
 	Args:
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
-		params (dict, optional): parameters of the main simulation (kwargs)
+		params (dict): parameters of the main simulation (kwargs)
 
 	returns:
 		the preferred orientation of all neurons in all runs
 	"""
 
-	curves = tuning_curves(W, method='no_softmax', output=False, params=params)
+	curves = tuning_curves(W, params, method='no_softmax', plot=False)
 
 
 	n_input = np.size(curves[curves.keys()[0]],0)
