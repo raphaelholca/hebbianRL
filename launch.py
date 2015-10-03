@@ -37,18 +37,18 @@ kwargs = {
 't_hid'			: 0.0001 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-DA'			,# name of the folder where to save results
+'runName' 		: 'digit-perf'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 9					,# number of hidden neurons
+'nHidNeurons'	: 16					,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 1. 				,# learning rate increase for unexpected reward
+'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward
 'dMid' 			: 0. 				,# learning rate increase for correct reward prediction
-'dNeut' 		: -0.02				,# learning rate increase for correct no reward prediction
-'dLow' 			: -.50				,# learning rate increase for incorrect reward predictio
+'dNeut' 		: -0.1				,# learning rate increase for correct no reward prediction
+'dLow' 			: -2.0				,# learning rate increase for incorrect reward predictio
 'nBatch' 		: 20 				,# mini-batch size
-'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
+'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 10. 				,# degree range within wich to test the network (on each side of target orientation)
 'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
@@ -57,6 +57,7 @@ kwargs = {
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'pypet_xplr'	: False				,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)

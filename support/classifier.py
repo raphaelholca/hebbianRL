@@ -26,10 +26,11 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
 		actions (bool, optional): whether to display actions (True) of labels (False) on the plot of the classification matrix 
+		ouput (bool, optional) : whether to generate print and figure output
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
-	print "\nassessing performance..."
+	if output: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -45,7 +46,7 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 	labels_print[rActions_uni=='z'] = 'z'
 
 	for iw in sorted(W_in_save.keys()):
-		print 'run: ' + str(int(iw)+1)
+		if output: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw]
 		W_act = W_act_save[iw]
 
@@ -81,14 +82,15 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
 		train_dataset (str): name of the dataset used for training
+		ouput (bool, optional) : whether to generate print and figure output
 		show (bool, optional): whether to display the confusion matrix (True) or not (False)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
 
-	print "\nassessing performance..."
+	if output: print "\nassessing performance..."
 
 	""" load and pre-process images """
-	print 'assessing performance with SVM...'
+	if output: print 'assessing performance with SVM...'
 	if  train_dataset=='train': test_dataset='test'
 	else: test_dataset='train'
 	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
@@ -133,11 +135,11 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		RFproba (numpy array) : probability of that a RF belongs to a certain class (of the MNIST dataset)
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
-		vote (bool, optional) : whether to use the sum of the activation of all neurons of each class (True - all neurons 'vote' with their activation value for its class), or to use the class of the maximally activated neuron (False)
+		ouput (bool, optional) : whether to generate print and figure output
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
-	print "\nassessing performance..."
+	if output: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -146,7 +148,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 	""" make image class prediction based on the class of most activated neuron """
 	for i, iw in enumerate(sorted(W_in_save.keys())):
 		""" load weight matrix and find most activated neuron """
-		print 'run: ' + str(int(iw)+1)
+		if output: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
 		neuronC = np.argmax(RFproba[i],1) #class of each neuron
 		argmaxActiv = np.argmax(ex.propL1(images_test, W_in, SM=False),1)

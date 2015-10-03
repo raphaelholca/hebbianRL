@@ -26,7 +26,7 @@ gr = reload(gr)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -63,6 +63,7 @@ def RLnetwork(	images, labels, orientations,
 
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = []
+		perf_save = []
 
 		# pbar_epi = ProgressBar()
 		# for e in pbar_epi(range(nEpiTot)):
@@ -121,9 +122,9 @@ def RLnetwork(	images, labels, orientations,
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
 					""" critical period """
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
+					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa
@@ -151,7 +152,9 @@ def RLnetwork(	images, labels, orientations,
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
-			#to check Wact assignment after each episode:
+			if e==nEpiCrit: print '----------end crit-----------'
+
+			#check Wact assignment after each episode:
 			if protocol=='digit':
 				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
 			elif protocol=='gabor':
@@ -163,8 +166,15 @@ def RLnetwork(	images, labels, orientations,
 			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
 			correct_W_act += np.sum(same)
 			correct_W_act/=len(RFproba)
-			if e==nEpiCrit: print '----------end crit-----------'
-			print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
+
+			#check performance after each episode
+			if test_each_epi and classifier=='actionNeurons':
+				_, perf = cl.actionNeurons(runName, {'000':W_in}, {'000':W_act}, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=False, show=False)
+				perf_save.append(perf[0])
+				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf[0]*100,1)) + '%' 
+			
+			else:
+				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 
 		#save weights
@@ -222,7 +232,7 @@ def RLnetwork(	images, labels, orientations,
 
 	#save data
 	if createOutput:
-		ex.save_data(W_in_save, W_act_save, kwargs)
+		ex.save_data(W_in_save, W_act_save, perf_save, kwargs)
 
 	print '\nrun: '+runName + '\n'
 
