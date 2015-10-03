@@ -33,6 +33,7 @@ def RLnetwork(	images, labels, orientations,
 	else: print " !!! ----- not saving data ----- !!! "
 	W_in_save = {}
 	W_act_save = {}
+	perf_save = {}
 	nClasses = len(classes)
 	_, idx = np.unique(rActions, return_index=True)
 	lActions = rActions[np.sort(idx)]
@@ -63,7 +64,7 @@ def RLnetwork(	images, labels, orientations,
 
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = []
-		perf_save = []
+		perf_epi = []
 
 		# pbar_epi = ProgressBar()
 		# for e in pbar_epi(range(nEpiTot)):
@@ -169,9 +170,9 @@ def RLnetwork(	images, labels, orientations,
 
 			#check performance after each episode
 			if test_each_epi and classifier=='actionNeurons':
-				_, perf = cl.actionNeurons(runName, {'000':W_in}, {'000':W_act}, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=False, show=False)
-				perf_save.append(perf[0])
-				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf[0]*100,1)) + '%' 
+				_, perf_tmp = cl.actionNeurons(runName, {'000':W_in}, {'000':W_act}, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=False, show=False)
+				perf_epi.append(perf_tmp[0])
+				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%' 
 			
 			else:
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
@@ -180,6 +181,7 @@ def RLnetwork(	images, labels, orientations,
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
 		W_act_save[str(r).zfill(3)] = np.copy(W_act)
+		perf_save[str(r).zfill(3)] = np.copy(perf_epi)
 
 	""" compute network statistics and performance """
 
