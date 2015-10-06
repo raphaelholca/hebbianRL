@@ -35,7 +35,7 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nEpiCrit'		: 2 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
@@ -54,7 +54,7 @@ kwargs = {
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 10. 				,# degree range within wich to test the network (on each side of target orientation)
-'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
+'noise_crit'	: 0.0 				,# noise injected in the gabor filter for the pre-training (critical period)
 'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
 'noise_test'	: 0. 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
@@ -131,7 +131,7 @@ elif kwargs['protocol'] == 'gabor':
 
 	n_train = 10000
 	n_test = 1000
-	
+
 	orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
 	images, labels = ex.generate_gabors(orientations, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_crit'], kwargs['A'])
 

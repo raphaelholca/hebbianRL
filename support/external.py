@@ -53,7 +53,7 @@ def normalize_numba(images, A):
 
 	return images
 
-def generate_gabors(orientations, target_ori, im_size, noise, A):
+def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 	"""
 	Calling function to generate gabor filters
 
@@ -63,6 +63,7 @@ def generate_gabors(orientations, target_ori, im_size, noise, A):
 		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 		noise (int): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 		A (float): input normalization constant
+		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1]
 
 	returns:
 		numpy array: gabor filters of size: (len(orientations), im_size*im_size)
@@ -72,7 +73,7 @@ def generate_gabors(orientations, target_ori, im_size, noise, A):
 	labels = np.zeros(len(orientations), dtype=int)
 	labels[orientations<=target_ori] = 0
 	labels[orientations>target_ori] = 1
-	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise)
+	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise=noise)
 	images = normalize(images, A*np.size(images,1))
 
 	return images, labels

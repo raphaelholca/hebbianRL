@@ -57,6 +57,7 @@ def RLnetwork(	images, labels, orientations,
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
+		# W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons))*3 + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		W_in_init = np.copy(W_in)
 		W_act_init = np.copy(W_act)
