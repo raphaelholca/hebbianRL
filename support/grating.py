@@ -147,7 +147,7 @@ def preferred_orientations(W, params):
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, params=None):
+def slopes(W, curves, pref_ori, params, plot=True):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -155,46 +155,66 @@ def slopes(W, curves, pref_ori, params=None):
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
 		curves (dict): the tuning curves for each neuron of each run; *!!* for now does not support curves if computed with 'with_noise' method)
 		pref_ori (dict): the preferred orientation of all neurons in all runs
-		params (dict, optional): parameters of the main simulation (kwargs)
+		params (dict): parameters of the main simulation (kwargs)
+		plot (bool, optional): whether or not to create plots
 
 	returns:
-		(dict): slopes of the tuning curves *!!* should be plotted so that slope value is alligned between two measurement points
+		slopes (dict): slopes of the tuning curves for each individual neuron *!!* should be plotted so that slope value is alligned between two measurement points
+		all_slopes (dict): all slopes collapsed in a single list, with their order matching degrees away from preferred orientation stores in all_deg
+		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
 
-	if params is not None:
-		t = params['t_hid']
-		target_ori = params['target_ori']
-
-	else:
-		t = 0.1
-		target_ori = 70.
+	t = params['t_hid']
+	target_ori = params['target_ori']
+	runName = params['runName']
 
 	n_input = np.size(curves[curves.keys()[0]],0)
 
 	slopes = {}
+	all_slopes = {}
+	all_deg = {}
 
 	for r in W.keys():
 		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
+		all_slopes[r] =[]
+		all_deg[r] =[]
 
-		plt.figure()
+		if plot: 
+			fig, ax = plt.subplots()
+		
 		for o in np.arange(0,180,10):
 			target_idx = int(o * (n_input/180))
 		
-			x = pref_ori[r]-o
-			x[x>90]-=180
-			x[x<-90]+=180
+			deg = pref_ori[r]-o
+			deg[deg>90]-=180
+			deg[deg<-90]+=180
 			y = slopes[r][target_idx, :]
+			
+			all_slopes[r].append(y)
+			all_deg[r].append(deg)
 
-			# plt.figure()
-			plt.scatter(x, y)
-			# plt.plot(curves[r][:,0])
-			# plt.plot(slopes[r][:,0]*10)
-		plt.show(block=False)
+			if plot: 
+				plt.scatter(deg, y)
+
+		if plot:
+			fig.patch.set_facecolor('white')
+			ax.spines['right'].set_visible(False)
+			ax.spines['top'].set_visible(False)
+			ax.xaxis.set_ticks_position('bottom')
+			ax.yaxis.set_ticks_position('left')
+			ax.set_xlabel('degrees away from preferred', fontsize=18)
+			ax.set_ylabel('slope', fontsize=18)
+			# ax.set_ylim([0, np.max(curves[r])*1.1])
+			ax.tick_params(axis='both', which='major', direction='out')
+			plt.tight_layout()
+		
+			plt.savefig('output/' + runName + '/TCs/' + 'slope')
+			plt.close(fig)
 
 
 	# import pdb;pdb.set_trace()
 
-	return slopes
+	return slopes, all_slopes, all_deg
 
 
 
