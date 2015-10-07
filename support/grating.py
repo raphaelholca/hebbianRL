@@ -163,6 +163,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
 
+	nRun = params['nRun']
 	t = params['t_hid']
 	target_ori = params['target_ori']
 	runName = params['runName']
@@ -173,10 +174,10 @@ def slopes(W, curves, pref_ori, params, plot=True):
 	slopes = {}
 	all_slopes = {}
 	all_deg = {}
-	all_dist_from_target = []
-	all_slope_at_target = []
+	all_dist_from_target = np.empty((nRun, nHidNeurons))
+	all_slope_at_target = np.empty((nRun, nHidNeurons))
 
-	for r in W.keys():
+	for i_r, r in enumerate(W.keys()):
 		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
 		all_slopes[r] =[]
 		all_deg[r] =[]
@@ -187,8 +188,8 @@ def slopes(W, curves, pref_ori, params, plot=True):
 		target_idx = int(target_ori * (n_input/180))
 		slope_at_target = slopes[r][target_idx, np.arange(nHidNeurons)]
 
-		all_dist_from_target.append(dist_target)
-		all_slope_at_target.append(slope_at_target)
+		all_dist_from_target[i_r, :] = dist_target
+		all_slope_at_target[i_r, :] = slope_at_target
 
 		if plot: 
 			fig, ax = plt.subplots()

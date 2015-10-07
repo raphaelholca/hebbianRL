@@ -413,12 +413,15 @@ def load_data(runs_list, path='../output/'):
 	Loads data from files for specified runs
 
 	Args:
-		runs_list (dict): list of the runs to load from files; should be something like: runs = ['control_49-small', 'dopa_49-small']
+		runs_list (dict or list): list of the runs to load from files; should be something like: runs = ['control_49-small', 'dopa_49-small']
 		path (string, optional): path to the folders containing the data
 
 	returns:
 		dict: dictionary of dictionaries filled with data loaded from file
 	"""
+
+	if type(runs_list) not in [list, np.array, dict]:
+		runs_list = [runs_list] 
 
 	runs = {}
 	for r in runs_list: runs[r]=dict()
@@ -442,30 +445,55 @@ def load_data(runs_list, path='../output/'):
 		runs[k]['RFclass'] = pickle.load(pFile)
 		pFile.close()
 
+		pFile = open(path + runName + '/perf_epi', 'r')
+		runs[k]['perf_epi'] = pickle.load(pFile)
+		pFile.close()
+
+		pFile = open(path + runName + '/slopes', 'r')
+		runs[k]['slopes'] = pickle.load(pFile)
+		pFile.close()
+
 		settingFile = ConfigObj(datapath+'/settings.txt')
 
+		runs[k]['nRun'] 			= int(settingFile['nRun'])
 		runs[k]['runName'] 			= runName
-		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
-		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
 		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
 		runs[k]['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
+		runs[k]['t_hid'] 			= float(settingFile['t_hid'])
+		runs[k]['t_act'] 			= float(settingFile['t_act'])
+		runs[k]['A'] 				= float(settingFile['A'])
+		runs[k]['dataset'] 			= settingFile['dataset']
 		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
-		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
-		runs[k]['feedback'] 		= conv_bool(settingFile['feedback'])
-		# runs[k]['lr'] 				= float(settingFile['lr'])
+		runs[k]['lr'] 				= float(settingFile['lr'])
 		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
+		runs[k]['aPairing'] 		= float(settingFile['aPairing'])
 		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
 		runs[k]['dMid'] 			= float(settingFile['dMid'])
 		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
 		runs[k]['dLow'] 			= float(settingFile['dLow'])
-		runs[k]['classifier'] 		= settingFile['classifier']
-		runs[k]['dataset'] 			= settingFile['dataset']
-		runs[k]['nRun'] 			= int(settingFile['nRun'])
 		runs[k]['nBatch'] 			= int(settingFile['nBatch'])
-		runs[k]['A'] 				= float(settingFile['A'])
+		runs[k]['protocol'] 		= settingFile['protocol']
+		runs[k]['target_ori'] 		= float(settingFile['target_ori'])
+		runs[k]['excentricity'] 	= float(settingFile['excentricity'])
+		runs[k]['noise_crit'] 		= float(settingFile['noise_crit'])
+		runs[k]['noise_train'] 		= float(settingFile['noise_train'])
+		runs[k]['noise_test'] 		= float(settingFile['noise_test'])
+		runs[k]['im_size'] 			= int(settingFile['im_size'])
+		runs[k]['classifier'] 		= settingFile['classifier']
+		runs[k]['pypet_xplr'] 		= conv_bool(settingFile['pypet_xplr'])
+		runs[k]['test_each_epi'] 	= conv_bool(settingFile['test_each_epi'])
+		runs[k]['SVM'] 				= conv_bool(settingFile['SVM'])
+		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
+		runs[k]['createOutput'] 	= conv_bool(settingFile['createOutput'])
+		runs[k]['showPlots'] 		= conv_bool(settingFile['showPlots'])
+		runs[k]['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
+		runs[k]['sort'] 			= settingFile['sort']
 		runs[k]['target'] 			= settingFile['target']
+		runs[k]['seed'] 			= int(settingFile['seed'])
 
-		runs[k]['nClasses'] = len(runs[k]['classes'])
+		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
+		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
+		runs[k]['nClasses'] 		= len(runs[k]['classes'])
 
 	return runs
 
