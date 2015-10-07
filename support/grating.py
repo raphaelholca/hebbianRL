@@ -111,15 +111,14 @@ def tuning_curves(W, params, method='basic', plot=True):
 				ax.yaxis.set_ticks_position('left')
 				ax.set_xlabel('angle (deg)', fontsize=18)
 				ax.set_ylabel('response', fontsize=18)
-				ax.set_ylim([0, np.max(curves[r])*1.1])
+				ax.set_ylim([np.min(curves[r]), np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
+				# import pdb; pdb.set_trace()
 				ax.tick_params(axis='both', which='major', direction='out')
 				plt.tight_layout()
 		
 		if plot:
-			plt.savefig('output/' + runName + '/TCs/' +runName+ '_' + str(r).zfill(3))
+			plt.savefig('output/' + runName + '/TCs/' + 'TCs_'  +runName+ '_' + str(r).zfill(3))
 			plt.close(fig)
-
-	# import pdb; pdb.set_trace()
 
 	return curves
 
@@ -208,11 +207,8 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 		
-			plt.savefig('output/' + runName + '/TCs/' + 'slope')
+			plt.savefig('output/' + runName + '/TCs/' + 'slopes_' + runName+ '_' + str(r).zfill(3))
 			plt.close(fig)
-
-
-	# import pdb;pdb.set_trace()
 
 	return slopes, all_slopes, all_deg
 

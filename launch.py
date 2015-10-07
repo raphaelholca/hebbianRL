@@ -34,8 +34,8 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 2 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nRun' 			: 10					,# number of runs
+'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
@@ -65,10 +65,10 @@ kwargs = {
 'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False) (i.e, whether to take exploratory decision or not)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
-'show_W_act'	: True				,# whether to display W_act weights on the weight plots
+'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 992#np.random.randint(1000) 	# seed of the random number generator
+'seed' 			: 998#np.random.randint(1000) 	# seed of the random number generator
 }
 
 """ parameters for exploration """

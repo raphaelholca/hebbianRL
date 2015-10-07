@@ -224,7 +224,7 @@ def RLnetwork(	images, labels, orientations,
 			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
 		elif protocol=='gabor':
 			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
-			curves = gr.tuning_curves(W_in_save, params=kwargs, method='basic', plot=True)
+			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True)
 			_, _, _ = gr.slopes(W_in_save, curves, pref_ori, kwargs)
 
 	#assess classification performance with neural classifier or SVM 
