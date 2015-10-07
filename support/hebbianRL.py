@@ -222,10 +222,11 @@ def RLnetwork(	images, labels, orientations,
 		else: W_act_pass=None
 		if protocol=='digit':
 			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+			slopes = {}
 		elif protocol=='gabor':
 			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
-			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True)
-			_, _, _ = gr.slopes(W_in_save, curves, pref_ori, kwargs)
+			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True) #basic, no_softmax, with_noise
+			slopes = gr.slopes(W_in_save, curves, pref_ori, kwargs)
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
@@ -236,7 +237,7 @@ def RLnetwork(	images, labels, orientations,
 
 	#save data
 	if createOutput:
-		ex.save_data(W_in_save, W_act_save, perf_save, kwargs)
+		ex.save_data(W_in_save, W_act_save, perf_save, slopes, kwargs)
 
 	print '\nrun: '+runName + '\n'
 

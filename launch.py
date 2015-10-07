@@ -34,13 +34,13 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 10					,# number of runs
-'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
+'nRun' 			: 5					,# number of runs
+'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
 'nEpiDopa'		: 0					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor'			,# name of the folder where to save results
+'runName' 		: 'gabor-noDA'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16					,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -53,7 +53,7 @@ kwargs = {
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
-'excentricity' 	: 10. 				,# degree range within wich to test the network (on each side of target orientation)
+'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
 'noise_crit'	: 0.0 				,# noise injected in the gabor filter for the pre-training (critical period)
 'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
 'noise_test'	: 0. 				,# noise injected in the gabor filter for the testing
@@ -62,13 +62,13 @@ kwargs = {
 'pypet_xplr'	: False				,# whether to compute pypet-based parameter exploration
 'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False) (i.e, whether to take exploratory decision or not)
+'bestAction' 	: True				,# whether to take predicted best action (True) or take random actions (False) (i.e, whether to take exploratory decision or not)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 998#np.random.randint(1000) 	# seed of the random number generator
+'seed' 			: 995#np.random.randint(1000) 	# seed of the random number generator
 }
 
 """ parameters for exploration """

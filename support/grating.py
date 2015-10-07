@@ -166,28 +166,40 @@ def slopes(W, curves, pref_ori, params, plot=True):
 	t = params['t_hid']
 	target_ori = params['target_ori']
 	runName = params['runName']
+	nHidNeurons = params['nHidNeurons']
 
 	n_input = np.size(curves[curves.keys()[0]],0)
 
 	slopes = {}
 	all_slopes = {}
 	all_deg = {}
+	all_dist_from_target = []
+	all_slope_at_target = []
 
 	for r in W.keys():
 		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
 		all_slopes[r] =[]
 		all_deg[r] =[]
 
+		dist_target = pref_ori[r] - target_ori
+		dist_target[dist_target>90]-=180
+		dist_target[dist_target<-90]+=180
+		target_idx = int(target_ori * (n_input/180))
+		slope_at_target = slopes[r][target_idx, np.arange(nHidNeurons)]
+
+		all_dist_from_target.append(dist_target)
+		all_slope_at_target.append(slope_at_target)
+
 		if plot: 
 			fig, ax = plt.subplots()
 		
 		for o in np.arange(0,180,10):
-			target_idx = int(o * (n_input/180))
+			deg_idx = int(o * (n_input/180))
 		
 			deg = pref_ori[r]-o
 			deg[deg>90]-=180
 			deg[deg<-90]+=180
-			y = slopes[r][target_idx, :]
+			y = slopes[r][deg_idx, :]
 			
 			all_slopes[r].append(y)
 			all_deg[r].append(deg)
@@ -196,6 +208,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 				plt.scatter(deg, y)
 
 		if plot:
+			""" plot of slope w.r.t. distance from preferred orientation """
 			fig.patch.set_facecolor('white')
 			ax.spines['right'].set_visible(False)
 			ax.spines['top'].set_visible(False)
@@ -210,7 +223,23 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			plt.savefig('output/' + runName + '/TCs/' + 'slopes_' + runName+ '_' + str(r).zfill(3))
 			plt.close(fig)
 
-	return slopes, all_slopes, all_deg
+			""" plot of slope at target orientation """
+			fig, ax = plt.subplots()
+			ax.scatter(all_dist_from_target, all_slope_at_target)
+
+			ax.spines['right'].set_visible(False)
+			ax.spines['top'].set_visible(False)
+			ax.xaxis.set_ticks_position('bottom')
+			ax.yaxis.set_ticks_position('left')
+			ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
+			ax.set_ylabel('slope at target orientation', fontsize=18)
+			ax.tick_params(axis='both', which='major', direction='out')
+			plt.tight_layout()
+
+			plt.savefig('output/' + runName + '/TCs/' + 'slopes_at_target')
+			plt.close(fig)
+
+	return {'slopes':slopes, 'all_slopes':all_slopes, 'all_deg':all_deg, 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
 
