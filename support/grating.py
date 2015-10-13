@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import external as ex
 ex = reload(ex)
 
@@ -97,14 +98,15 @@ def tuning_curves(W, params, method='basic', plot=True):
 	for r in W.keys():
 		if plot: 
 			fig, ax = plt.subplots()
+			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		curves[r] = np.zeros((n_input, n_neurons))
 		for i in range(len(test_input)):
 			curves[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			if plot:
 				pref_ori_sorter = np.argmax(curves[r], 0).argsort()
 				
-				ax.plot(orientations, curves[r][:,pref_ori_sorter], lw=1.3)
-				ax.vlines(target_ori, 0, np.max(curves[r])*1.05, colors=u'g', linewidth=2, linestyle=':')
+				ax.plot(orientations, curves[r][:,pref_ori_sorter], lw=2)
+				ax.vlines(target_ori, 0, np.max(curves[r])*1.2, colors=u'k', linewidth=3, linestyle=':')
 
 				fig.patch.set_facecolor('white')
 				ax.spines['right'].set_visible(False)
@@ -113,9 +115,9 @@ def tuning_curves(W, params, method='basic', plot=True):
 				ax.yaxis.set_ticks_position('left')
 				ax.set_xlabel('angle (deg)', fontsize=18)
 				ax.set_ylabel('response', fontsize=18)
-				ax.set_ylim([np.min(curves[r]), np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
-				# import pdb; pdb.set_trace()
-				ax.tick_params(axis='both', which='major', direction='out')
+				if method=='no_softmax': ax.set_ylim([119,138])
+				else: ax.set_ylim([np.min(curves[r]), np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
+				ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 				plt.tight_layout()
 		
 		if plot:
