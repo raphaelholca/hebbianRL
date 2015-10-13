@@ -101,8 +101,10 @@ def tuning_curves(W, params, method='basic', plot=True):
 		for i in range(len(test_input)):
 			curves[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			if plot:
-				ax.plot(orientations, curves[r])
-				ax.vlines(target_ori, 0, np.max(curves[r])*1.05, colors=u'r', linestyles=u'dashed')
+				pref_ori_sorter = np.argmax(curves[r], 0).argsort()
+				
+				ax.plot(orientations, curves[r][:,pref_ori_sorter], lw=1.3)
+				ax.vlines(target_ori, 0, np.max(curves[r])*1.05, colors=u'g', linewidth=2, linestyle=':')
 
 				fig.patch.set_facecolor('white')
 				ax.spines['right'].set_visible(False)

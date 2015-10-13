@@ -408,7 +408,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 	
 	settingFile.write()
 
-def load_data(runs_list, path='../output/'):
+def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 	"""
 	Loads data from files for specified runs
 
@@ -454,46 +454,46 @@ def load_data(runs_list, path='../output/'):
 		pFile.close()
 
 		settingFile = ConfigObj(datapath+'/settings.txt')
+		runs[k]['kwargs'] = {}
 
-		runs[k]['nRun'] 			= int(settingFile['nRun'])
-		runs[k]['runName'] 			= runName
-		runs[k]['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
-		runs[k]['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
-		runs[k]['t_hid'] 			= float(settingFile['t_hid'])
-		runs[k]['t_act'] 			= float(settingFile['t_act'])
-		runs[k]['A'] 				= float(settingFile['A'])
-		runs[k]['dataset'] 			= settingFile['dataset']
-		runs[k]['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
-		runs[k]['lr'] 				= float(settingFile['lr'])
-		runs[k]['aHigh'] 			= float(settingFile['aHigh'])
-		runs[k]['aPairing'] 		= float(settingFile['aPairing'])
-		runs[k]['dHigh'] 			= float(settingFile['dHigh'])
-		runs[k]['dMid'] 			= float(settingFile['dMid'])
-		runs[k]['dNeut'] 			= float(settingFile['dNeut'])
-		runs[k]['dLow'] 			= float(settingFile['dLow'])
-		runs[k]['nBatch'] 			= int(settingFile['nBatch'])
-		runs[k]['protocol'] 		= settingFile['protocol']
-		runs[k]['target_ori'] 		= float(settingFile['target_ori'])
-		runs[k]['excentricity'] 	= float(settingFile['excentricity'])
-		runs[k]['noise_crit'] 		= float(settingFile['noise_crit'])
-		runs[k]['noise_train'] 		= float(settingFile['noise_train'])
-		runs[k]['noise_test'] 		= float(settingFile['noise_test'])
-		runs[k]['im_size'] 			= int(settingFile['im_size'])
-		runs[k]['classifier'] 		= settingFile['classifier']
-		runs[k]['pypet_xplr'] 		= conv_bool(settingFile['pypet_xplr'])
-		runs[k]['test_each_epi'] 	= conv_bool(settingFile['test_each_epi'])
-		runs[k]['SVM'] 				= conv_bool(settingFile['SVM'])
-		runs[k]['bestAction'] 		= conv_bool(settingFile['bestAction'])
-		runs[k]['createOutput'] 	= conv_bool(settingFile['createOutput'])
-		runs[k]['showPlots'] 		= conv_bool(settingFile['showPlots'])
-		runs[k]['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
-		runs[k]['sort'] 			= settingFile['sort']
-		runs[k]['target'] 			= settingFile['target']
-		runs[k]['seed'] 			= int(settingFile['seed'])
+		runs[k]['kwargs']['nRun'] 			= int(settingFile['nRun'])
+		runs[k]['kwargs']['runName'] 			= runName
+		runs[k]['kwargs']['nEpiCrit'] 		= int(settingFile['nEpiCrit'])
+		runs[k]['kwargs']['nEpiDopa'] 		= int(settingFile['nEpiDopa'])
+		runs[k]['kwargs']['t_hid'] 			= float(settingFile['t_hid'])
+		runs[k]['kwargs']['t_act'] 			= float(settingFile['t_act'])
+		runs[k]['kwargs']['A'] 				= float(settingFile['A'])
+		runs[k]['kwargs']['dataset'] 			= settingFile['dataset']
+		runs[k]['kwargs']['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
+		runs[k]['kwargs']['lr'] 				= float(settingFile['lr'])
+		runs[k]['kwargs']['aHigh'] 			= float(settingFile['aHigh'])
+		runs[k]['kwargs']['aPairing'] 		= float(settingFile['aPairing'])
+		runs[k]['kwargs']['dHigh'] 			= float(settingFile['dHigh'])
+		runs[k]['kwargs']['dMid'] 			= float(settingFile['dMid'])
+		runs[k]['kwargs']['dNeut'] 			= float(settingFile['dNeut'])
+		runs[k]['kwargs']['dLow'] 			= float(settingFile['dLow'])
+		runs[k]['kwargs']['nBatch'] 			= int(settingFile['nBatch'])
+		runs[k]['kwargs']['protocol'] 		= settingFile['protocol']
+		runs[k]['kwargs']['target_ori'] 		= float(settingFile['target_ori'])
+		runs[k]['kwargs']['excentricity'] 	= float(settingFile['excentricity'])
+		runs[k]['kwargs']['noise_crit'] 		= float(settingFile['noise_crit'])
+		runs[k]['kwargs']['noise_train'] 		= float(settingFile['noise_train'])
+		runs[k]['kwargs']['noise_test'] 		= float(settingFile['noise_test'])
+		runs[k]['kwargs']['im_size'] 			= int(settingFile['im_size'])
+		runs[k]['kwargs']['classifier'] 		= settingFile['classifier']
+		runs[k]['kwargs']['pypet_xplr'] 		= conv_bool(settingFile['pypet_xplr'])
+		runs[k]['kwargs']['test_each_epi'] 	= conv_bool(settingFile['test_each_epi'])
+		runs[k]['kwargs']['SVM'] 				= conv_bool(settingFile['SVM'])
+		runs[k]['kwargs']['bestAction'] 		= conv_bool(settingFile['bestAction'])
+		runs[k]['kwargs']['createOutput'] 	= conv_bool(settingFile['createOutput'])
+		runs[k]['kwargs']['showPlots'] 		= conv_bool(settingFile['showPlots'])
+		runs[k]['kwargs']['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
+		runs[k]['kwargs']['sort'] 			= settingFile['sort']
+		runs[k]['kwargs']['target'] 			= settingFile['target']
+		runs[k]['kwargs']['seed'] 			= int(settingFile['seed'])
 
-		runs[k]['classes'] 			= np.array(map(int, settingFile['classes']))
-		runs[k]['rActions'] 		= np.array(settingFile['rActions'])
-		runs[k]['nClasses'] 		= len(runs[k]['classes'])
+		runs[k]['kwargs']['classes'] 			= np.array(map(int, settingFile['classes']))
+		runs[k]['kwargs']['rActions'] 		= np.array(settingFile['rActions'])
 
 	return runs
 
