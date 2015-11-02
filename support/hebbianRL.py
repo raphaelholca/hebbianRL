@@ -26,7 +26,7 @@ gr = reload(gr)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -100,7 +100,7 @@ def RLnetwork(	images, labels, orientations,
 				bPredictActions = rActions[np.argmax(bActNeurons,1)]
 
 				#add noise to activation of hidden neurons and compute lateral inhibition
-				if not bestAction and (e >= nEpiCrit):
+				if exploration and (e >= nEpiCrit):
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
 					bHidNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bHidNeurons))[exploratory]
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
@@ -120,7 +120,7 @@ def RLnetwork(	images, labels, orientations,
 
 				#compute reward and ach signal
 				bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
-				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
+				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for exploration = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#determine predicted reward
@@ -234,7 +234,7 @@ def RLnetwork(	images, labels, orientations,
 			slopes = {}
 		elif protocol=='gabor':
 			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
-			curves = gr.tuning_curves(W_in_save, params=kwargs, method='basic', plot=True) #basic, no_softmax, with_noise
+			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True) #basic, no_softmax, with_noise
 			slopes = gr.slopes(W_in_save, curves, pref_ori, kwargs)
 
 	#assess classification performance with neural classifier or SVM 

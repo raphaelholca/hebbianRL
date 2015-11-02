@@ -40,10 +40,12 @@ for k in param.keys():
 
 keys = param.keys()
 for ik in range(len(keys)):
+	if len(keys)==1: ik=-1
 	for k in keys[ik+1:]:
 		others = keys[:]
-		others.remove(keys[ik])
-		others.remove(k)
+		if len(keys)>1: 
+			others.remove(keys[ik])
+			others.remove(k)
 		
 		mask = np.ones_like(param[k], dtype=bool)
 		if len(param)>2:

@@ -35,20 +35,18 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)		#50
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)				#20
-'t_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
-'t_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
+'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'t_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer #digit:0.1 ; gabor:
+'t_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer #digit:0.1 ; gabor:
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 't-e_greedy'				,# name of the folder where to save results
+'runName' 		: 't-explr'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
-
-'e_greedy'		: True 			,# whether to use an epsilon-greedy approach to noise injection
+'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 4. 				,# 'strength' of noise added in the activation of action neurons
-
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward
@@ -67,7 +65,7 @@ kwargs = {
 'pypet_xplr'	: False				,# whether to compute pypet-based parameter exploration
 'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'bestAction' 	: False				,# whether to take predicted best action (True) or take random actions (False) (i.e, whether to take exploratory decision or not)
+'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
