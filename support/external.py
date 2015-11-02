@@ -275,9 +275,8 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 	Computes the dopa signal based on the actual and predicted rewards
 
 	Args:
-		bPredictActions (numpy array): predicted best action
-		bActions (numpy array): action taken
-		bReward (numpy array): reward received
+		predicted_reward (numpy array, bool): predicted reward (True, False)
+		bReward (numpy array, int): reward received (0, 1)
 		dHigh (numpy array): dopa value for unpredicted reward
 		dMid (numpy array): dopa value for correct reward prediction
 		dNeut (numpy array): dopa value for correct no reward prediction
@@ -289,10 +288,10 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(predicted_reward, bReward==1)] = dHigh			#unpredicted reward
-	dopa[np.logical_and(~predicted_reward, bReward==1)] = dMid			#correct reward prediction
-	dopa[np.logical_and(predicted_reward, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[np.logical_and(~predicted_reward, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[np.logical_and(~predicted_reward, bReward==1)] = dHigh			#unpredicted reward
+	dopa[np.logical_and(predicted_reward, bReward==1)] = dMid			#correct reward prediction
+	dopa[np.logical_and(~predicted_reward, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[np.logical_and(predicted_reward, bReward==0)] = dLow			#incorrect reward prediction
 
 	return dopa
 
