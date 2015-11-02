@@ -26,7 +26,7 @@ gr = reload(gr)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_hid, noise_act, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, bestAction, createOutput, showPlots, show_W_act, sort, target, seed):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -101,7 +101,8 @@ def RLnetwork(	images, labels, orientations,
 
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if not bestAction and (e >= nEpiCrit):
-					bHidNeurons += np.random.uniform(0, 50, np.shape(bHidNeurons)) ##param explore, optimize
+					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
+					bHidNeurons[exploratory] += np.random.uniform(0, noise_hid, np.shape(bHidNeurons))[exploratory] ##param explore, optimize
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
@@ -109,7 +110,8 @@ def RLnetwork(	images, labels, orientations,
 				
 				#adds noise in W_act neurons
 				if e < nEpiCrit:
-					bActNeurons += np.random.uniform(0, 10, np.shape(bActNeurons)) ##param explore, optimize
+					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
+					bActNeurons[exploratory] += np.random.uniform(0, noise_act, np.shape(bActNeurons))[exploratory] ##param explore, optimize
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
@@ -121,19 +123,25 @@ def RLnetwork(	images, labels, orientations,
 				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for bestAction = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
+				#determine predicted reward
+				if e_greedy:
+					predicted_reward = ~exploratory
+				else:
+					predicted_reward = bPredictActions!=bActions
+
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
 					""" critical period """
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
+					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
 
 					disinhib_Hid = ach
 					disinhib_Act = dopa
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2

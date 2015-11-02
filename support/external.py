@@ -270,7 +270,7 @@ def compute_reward(labels, actions):
 
 	return reward
 
-def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
+def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 	"""
 	Computes the dopa signal based on the actual and predicted rewards
 
@@ -287,12 +287,12 @@ def compute_dopa(bPredictActions, bActions, bReward, dHigh, dMid, dNeut, dLow):
 		numpy array: array of dopamine release value
 	"""
 
-	dopa = np.zeros(len(bActions))
+	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(bPredictActions!=bActions, bReward==1)] = dHigh			#unpredicted reward
-	dopa[np.logical_and(bPredictActions==bActions, bReward==1)] = dMid			#correct reward prediction
-	dopa[np.logical_and(bPredictActions!=bActions, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[np.logical_and(bPredictActions==bActions, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward, bReward==1)] = dHigh			#unpredicted reward
+	dopa[np.logical_and(~predicted_reward, bReward==1)] = dMid			#correct reward prediction
+	dopa[np.logical_and(predicted_reward, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[np.logical_and(~predicted_reward, bReward==0)] = dLow			#incorrect reward prediction
 
 	return dopa
 

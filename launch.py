@@ -40,10 +40,16 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 't-0'				,# name of the folder where to save results
+'runName' 		: 't-1'				,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
+
+'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
+'epsilon'		: 0.8 				,# probability of taking an exploratory decisions, range: [0,1]
+'noise_hid'		: 50 				,# 'strength' of noise added in the activation of hidden neurons
+'noise_act'		: 10 				,# 'strength' of noise added in the activation of action neurons
+
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward
@@ -73,13 +79,8 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-# 'dHigh'			:	np.arange(0.00, 0.041, 0.01).tolist(),
-'dMid'			:	np.arange(0.0, 0.81, 0.2).tolist(),
-# 'dMid'			:	np.arange(0.00, 0.21, 0.05).tolist(),
-'dNeut'			:	np.round(np.arange(-0.4, 0.1, 0.1),1).tolist(),
-# 'dLow'			:	np.arange(-2.0, 0.1, 0.5).tolist()
-'dLow'			:	np.arange(-4.0, 0.1, 1.0).tolist()
+'noise_hid'			:	np.arange(20, 71, 10).tolist(),
+'noise_act'			:	np.arange(4, 17, 4).tolist(),
 }
 
 """ load and pre-process images """
