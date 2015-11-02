@@ -115,8 +115,8 @@ def tuning_curves(W, params, method='basic', plot=True):
 				ax.yaxis.set_ticks_position('left')
 				ax.set_xlabel('angle (deg)', fontsize=18)
 				ax.set_ylabel('response', fontsize=18)
-				# if method=='no_softmax': ax.set_ylim([119,138])
-				# else: ax.set_ylim([np.min(curves[r]), np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
+				if method=='no_softmax' and False: ax.set_ylim([119,138])
+				else: ax.set_ylim([np.min(curves[r])-(np.max(curves[r])-np.min(curves[r]))*.1, np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
 				ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 				plt.tight_layout()
 		

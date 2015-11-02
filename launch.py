@@ -20,7 +20,7 @@ def pypet_RLnetwork(traj):
 	images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task = get_images()
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images, labels, orientations, 
 																			images_test, labels_test, orientations_test, 
 																			images_task, labels_task, orientations_task, 
 																			parameter_dict, **parameter_dict)
@@ -35,18 +35,18 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 3 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer #digit:0.1 ; gabor:
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer #digit:0.1 ; gabor:
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 't-explr'		,# name of the folder where to save results
+'runName' 		: 'gabor_xplr'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 49				,# number of hidden neurons
+'nHidNeurons'	: 16				,# number of hidden neurons
 'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 4. 				,# 'strength' of noise added in the activation of action neurons
+'noise_std'		: 0.1 				,# 'strength' of noise added in the activation of action neurons
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward
@@ -54,7 +54,7 @@ kwargs = {
 'dNeut' 		: -0.1				,# learning rate increase for correct no reward prediction
 'dLow' 			: -2.0				,# learning rate increase for incorrect reward prediction
 'nBatch' 		: 20 				,# mini-batch size
-'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
+'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
 'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
@@ -68,7 +68,7 @@ kwargs = {
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'createOutput'	: True				,# whether to create plots, save data, etc. (set to False when using pypet)
 'showPlots'		: False				,# whether to display plots
-'show_W_act'	: False				,# whether to display W_act weights on the weight plots
+'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995#np.random.randint(1000) 	# seed of the random number generator
@@ -76,8 +76,9 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'epsilon'			:	np.arange(0.5, 1.01, 0.1).tolist(),
-'noise_std'			:	np.arange(3., 5.1, 1.).tolist()
+'dHigh'			:	np.arange(2, 6.01, 1.).tolist(),
+'dLow'			:	np.arange(-4, 0.1, 1.).tolist(),
+'noise_std'		:	[0.01, 0.05, 0.1, 0.5, 1.0, 2.0]#np.arange(., 5.1, 1.).tolist()
 }
 
 """ load and pre-process images """

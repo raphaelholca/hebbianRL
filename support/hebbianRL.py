@@ -111,7 +111,8 @@ def RLnetwork(	images, labels, orientations,
 				#adds noise in W_act neurons
 				if e < nEpiCrit:
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-					bActNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bActNeurons))[exploratory]
+					# bActNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bActNeurons))[exploratory]
+					bActNeurons[exploratory] += np.random.normal(20, 4., np.shape(bActNeurons))[exploratory]
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
