@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pypet
 
-folder_path = '../output/normal_e_greedy_xplr/'
+folder_path = '../output/gabor_xplr_lr/'
 # folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/same_DA_long_3/'
 
 traj_name = 'xplr'
@@ -57,14 +57,27 @@ for ik in range(len(keys)):
 		pY = param[k][mask]
 		rC = np.array(p_W_act)[mask]
 
+		if True: #True: non-linear representation of results; False: linear representation 
+			ipX = np.zeros(len(pX))
+			ipY = np.zeros(len(pY))
+			for i in range(len(pX)):
+				ipX[i] = np.argwhere(pX[i]==np.sort(np.unique(pX)))
+				ipY[i] = np.argwhere(pY[i]==np.sort(np.unique(pY)))
+		else:
+			ipX = np.copy(pX)
+			ipY = np.copy(pY)
+
 		fig = plt.figure()
 		fig.patch.set_facecolor('white')
-		plt.scatter(pX, pY, c=rC, cmap='CMRmap', vmin=0.0, vmax=np.max(p_W_act), s=5000, marker='s')
-		plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
+		plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=0.0, vmax=np.max(p_W_act), s=5000, marker='s')
+		# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 		for i in range(len(pX)):
-			plt.text(pX[i], pY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center')
-		plt.xticks(pX)
-		plt.yticks(pY)
+			if pX[i]==param[keys[ik]][arg_best] and pY[i]==param[k][arg_best]:
+				plt.text(ipX[i], ipY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center', weight='bold', bbox=dict(facecolor='red', alpha=0.5))
+			else:
+				plt.text(ipX[i], ipY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center')
+		plt.xticks(ipX, pX)
+		plt.yticks(ipY, pY)
 		plt.xlabel(keys[ik], fontsize=25)
 		plt.ylabel(k, fontsize=25)
 		plt.tick_params(axis='both', which='major', labelsize=18)
