@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib as mpl
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
 """ initialize color maps """
@@ -121,9 +122,35 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
+def perf_progress(perf, kwargs):
+	"""
+	plots the progression of the error rate over training episodes
+	"""
+	runName = kwargs['runName']
+	nEpiCrit = kwargs['nEpiCrit']
+	nEpiDopa = kwargs['nEpiDopa']
+	# runName = 'gabor-3'
+	# nEpiCrit = 5
+	# nEpiDopa = 10
 
+	fig, ax = plt.subplots()
+	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
+	for r in perf.keys():
+		ax.plot(np.arange(nEpiDopa)+1, perf[r][nEpiCrit:]*100, lw=3)
 
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('episodes after dopa', fontsize=18)
+	ax.set_ylabel('% correct', fontsize=18)
+	plt.tight_layout()
+
+	plt.savefig('output/' + runName + '/' + runName+ '_progress')
+	plt.close(fig)	
 
 
 

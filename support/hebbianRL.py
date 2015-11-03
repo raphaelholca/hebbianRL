@@ -237,6 +237,8 @@ def RLnetwork(	images, labels, orientations,
 			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
 			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True) #basic, no_softmax, with_noise
 			slopes = gr.slopes(W_in_save, curves, pref_ori, kwargs)
+		if test_each_epi:
+			pl.perf_progress(perf_save, kwargs)
 
 	#assess classification performance with neural classifier or SVM 
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
