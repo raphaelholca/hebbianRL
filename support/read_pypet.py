@@ -69,6 +69,7 @@ for ik in range(len(keys)):
 
 		fig = plt.figure()
 		fig.patch.set_facecolor('white')
+		
 		plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(p_W_act), vmax=np.max(p_W_act), s=5000, marker='s')
 		# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 		for i in range(len(pX)):
