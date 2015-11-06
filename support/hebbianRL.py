@@ -72,7 +72,7 @@ def RLnetwork(	images, labels, orientations,
 		# for e in pbar_epi(range(nEpiTot)):
 		for e in range(nEpiTot):
 			#shuffle input
-			if e==nEpiCrit: print '----------end crit-----------'
+			if e==nEpiCrit and createOutput: print '----------end crit-----------'
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
 			#train network with mini-batches
@@ -180,12 +180,12 @@ def RLnetwork(	images, labels, orientations,
 			correct_W_act/=len(RFproba)
 
 			#check performance after each episode
-			if test_each_epi and classifier=='actionNeurons':
+			if test_each_epi and classifier=='actionNeurons' and createOutput:
 				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%' 
 			
-			else:
+			elif createOutput:
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
 
