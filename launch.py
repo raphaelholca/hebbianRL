@@ -34,23 +34,23 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1				,# number of runs
+'nRun' 			: 5					,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 15				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 		digit: 0.1 	; gabor: 0.1
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 		digit: 0.1 	; gabor: 0.1
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-0-10'			,# name of the folder where to save results
+'runName' 		: 'gabor-xplr-9'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 0.1 			,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.01
+'noise_std'		: 0.1 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.01
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 1.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: 0.00 			,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dMid' 			: 0.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
 'dNeut' 		: -0.00				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -2.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
@@ -63,10 +63,10 @@ kwargs = {
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'pypet_xplr'	: True 				,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: False 				,# whether to test the network's performance at each episode
+'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: False				,# whether to create plots, save data, etc. (set to False when using pypet)
+'createOutput'	: False				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
@@ -76,16 +76,17 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'dHigh'			:	np.arange(0., 2.1, 0.5).tolist(),
-# 'dMid'			:	np.arange(2, 6.01, 1.).tolist(),
-# 'dNeut'			:	np.arange(2, 6.01, 1.).tolist(),
-'dLow'			:	np.arange(-1, 0., 0.2).tolist(),
-'noise_std'		:	[0.01, 0.005, 0.001, 0.0005, 0.0001]#np.arange(., 5.1, 1.).tolist()
+'dHigh'			:	np.arange(0., 4.1, 1.).tolist(),
+'dMid'			:	np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dNeut'			:	np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dLow'			:	np.arange(-4., 0.1, 1.).tolist(),
+# 'noise_std'		:	[0.005, 0.01, 0.05]
 }
 
 """ load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
 print 'seed: ' + str(kwargs['seed']) + '\n'
+if not kwargs['createOutput']: print " !!! ----- not saving data ----- !!! "
 np.random.seed(kwargs['seed'])
 
 global images, labels, orientations

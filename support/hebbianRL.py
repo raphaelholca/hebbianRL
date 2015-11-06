@@ -30,7 +30,6 @@ def RLnetwork(	images, labels, orientations,
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
-	else: print " !!! ----- not saving data ----- !!! "
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -41,23 +40,17 @@ def RLnetwork(	images, labels, orientations,
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
-	# ach_bal = 0.25 ##optimize
-
 
 	""" training of the network """
-	print '\ntraining network...'
+	if createOutput: print '\ntraining network...'
 	for r in range(nRun):
 		np.random.seed(seed+r)
-		print '\nrun: ' + str(r+1)
-
-		#randommly assigns a class with ACh release (used to run multiple runs of ACh)
-		# if True: target, rActions, rActions, lActions = ex.rand_ACh(nClasses) ##
+		if createOutput: print '\nrun: ' + str(r+1)
 
 		#initialize network variables
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
 		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-		# W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons))*3 + 1.0
 		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
 		W_in_init = np.copy(W_in)
 		W_act_init = np.copy(W_act)
@@ -159,11 +152,11 @@ def RLnetwork(	images, labels, orientations,
 				#update weights
 				W_in += dW_in
 				W_act += dW_act
-				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
+				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
 			#check Wact assignment after each episode:
@@ -184,7 +177,6 @@ def RLnetwork(	images, labels, orientations,
 				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%' 
-			
 			elif createOutput:
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
 
@@ -245,15 +237,15 @@ def RLnetwork(	images, labels, orientations,
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
-	print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
+	if createOutput: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	#save data
 	if createOutput:
 		ex.save_data(W_in_save, W_act_save, perf_save, slopes, kwargs)
 
-	print '\nrun: '+runName + '\n'
+	if createOutput: print '\nrun: '+runName + '\n'
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
