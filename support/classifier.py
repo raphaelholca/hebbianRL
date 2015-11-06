@@ -11,24 +11,25 @@ from sklearn.svm import SVC
 ex = reload(ex)
 pl = reload(pl)
 
-def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeurons, nDimStates, A, images_test, labels_test, actions=False, output=True, show=True):
+def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actions=False, output=True, show=True):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
 	Args:
-		runName (str) : name of the folder where to save results
 		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		W_act_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		images (numpy array): image to normalize
-		rActions_z (numpy array of str): reward actions associated with each of the classes of MNIST ('z' for '0')
-		nHidNeurons (int): number of hidden neurons
-		nDimStates (int) : number of dimensions of the states (size of images)
-		A (int): normalization constant
+		images_test (numpy array): test images
+		labels_test (numpy array): test labels
 		actions (bool, optional): whether to display actions (True) of labels (False) on the plot of the classification matrix 
 		ouput (bool, optional) : whether to generate print and figure output
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
+
+	runName = kwargs['runName']
+	classes = kwargs['classes']
+	rActions = kwargs['rActions']
+	nHidNeurons = kwargs['nHidNeurons']
+	t_hid = kwargs['t_hid']
 
 	if output: print "\nassessing performance..."
 
@@ -37,10 +38,10 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 	allPerf = []
 
 	""" process labels for plot """
-	rActions_uni, idx = np.unique(rActions_z, return_index=True)
+	rActions_uni, idx = np.unique(rActions, return_index=True)
 	sorter = idx.argsort()
 	rActions_uni = rActions_uni[sorter]
-	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions_z)
+	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions)
 	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
 	labels_print = np.array(labels_print)
 	labels_print[rActions_uni=='z'] = 'z'
@@ -51,15 +52,15 @@ def actionNeurons(runName, W_in_save, W_act_save, classes, rActions_z, nHidNeuro
 		W_act = W_act_save[iw]
 
 		""" testing of the classifier """
-		hidNeurons = ex.propL1(images_test, W_in)
+		hidNeurons = ex.propL1(images_test, W_in, t=t_hid)
 		actNeurons = ex.propL1(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
-		classResults = rActions_z[classIdx]
+		classResults = rActions[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions_z)))
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions)))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions_z), np.unique(rActions_z))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions), np.unique(rActions))
 		CM = CM[sorter,:]
 		CM = CM[:,sorter]
 		allCMs.append(CM)

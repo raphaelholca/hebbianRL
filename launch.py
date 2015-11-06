@@ -34,32 +34,32 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
+'nRun' 			: 5				,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 20				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 		digit: 0.1 	; gabor: 0.1
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 		digit: 0.1 	; gabor: 0.1
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-4'		,# name of the folder where to save results
+'runName' 		: 'gabor-4-4'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lr'			: 0.005 			,# learning rate during 'critica period' (pre-training, nEpiCrit)
+'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 0.01 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.01
+'noise_std'		: 0.5 			,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.01
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 2.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: -0.02 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-'dNeut' 		: -.1				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dHigh' 		: 1.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
+'dMid' 			: 0.002 			,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dNeut' 		: -0.002				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
+'dLow' 			: -2.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
 'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
 'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
-'noise_test'	: 0. 				,# noise injected in the gabor filter for the testing
+'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
 'pypet_xplr'	: False				,# whether to compute pypet-based parameter exploration
@@ -71,7 +71,7 @@ kwargs = {
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
-'seed' 			: 995#np.random.randint(1000) 	# seed of the random number generator
+'seed' 			: 997#np.random.randint(1000) 	# seed of the random number generator
 }
 
 """ parameters for exploration """

@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pypet
 
-# folder_path = '../output/pypet/'
-folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/dopa_L1_run3/'
+# folder_path = '../output/gabor_xplr-5/'
+folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/gabor_xplr-7/'
 
-traj_name = 'dMid'
+traj_name = 'xplr'
 traj = pypet.load_trajectory(traj_name, filename=folder_path + 'perf.hdf5', force=True)
 traj.v_auto_load = True
 
@@ -25,7 +25,9 @@ param_traj = traj.f_get_explored_parameters()
 param = {}
 for k in param_traj:
 	if k[11:] != 'runName':
-		param[k[11:]] = np.array(param_traj[k].f_get_range())[ok_runs]
+		xplr_values = np.array(param_traj[k].f_get_range())[ok_runs]
+		if len(np.unique(xplr_values)) >1:
+			param[k[11:]] = xplr_values
 
 arg_best = np.argmax(p_W_act)
 
@@ -36,7 +38,7 @@ print 'best parameters:'
 print '================'
 for k in param.keys():
 	best_param[k] = param[k][arg_best]
-	print k + ' : ' + str(param[k][arg_best]) + '\t\t' + str(np.round(np.unique(param[k]),2))
+	print k + ' : ' + str(param[k][arg_best]) + '\t\t' + str(np.round(np.unique(param[k]),3))
 
 keys = param.keys()
 for ik in range(len(keys)):
@@ -55,18 +57,31 @@ for ik in range(len(keys)):
 		pY = param[k][mask]
 		rC = np.array(p_W_act)[mask]
 
+		if True: #True: non-linear representation of results; False: linear representation 
+			ipX = np.zeros(len(pX))
+			ipY = np.zeros(len(pY))
+			for i in range(len(pX)):
+				ipX[i] = np.argwhere(pX[i]==np.sort(np.unique(pX)))
+				ipY[i] = np.argwhere(pY[i]==np.sort(np.unique(pY)))
+		else:
+			ipX = np.copy(pX)
+			ipY = np.copy(pY)
+
 		fig = plt.figure()
 		fig.patch.set_facecolor('white')
-		plt.scatter(pX, pY, c=rC, cmap='CMRmap', vmin=0.0, vmax=1.0, s=5000, marker='s')
+		plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(p_W_act), vmax=np.max(p_W_act), s=5000, marker='s')
 		# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 		for i in range(len(pX)):
-			plt.text(pX[i], pY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center')
-		plt.xticks(pX)
-		plt.yticks(pY)
+			if pX[i]==param[keys[ik]][arg_best] and pY[i]==param[k][arg_best]:
+				plt.text(ipX[i], ipY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center', weight='bold', bbox=dict(facecolor='red', alpha=0.5))
+			else:
+				plt.text(ipX[i], ipY[i], str(np.round(rC[i]*100,1)), horizontalalignment='center', verticalalignment='center')
+		plt.xticks(ipX, pX)
+		plt.yticks(ipY, pY)
 		plt.xlabel(keys[ik], fontsize=25)
 		plt.ylabel(k, fontsize=25)
 		plt.tick_params(axis='both', which='major', labelsize=18)
 		plt.tight_layout()
 		plt.savefig(folder_path + keys[ik] + '_' + k)
 
-plt.show()
+plt.show(block=False)

@@ -129,9 +129,6 @@ def perf_progress(perf, kwargs):
 	runName = kwargs['runName']
 	nEpiCrit = kwargs['nEpiCrit']
 	nEpiDopa = kwargs['nEpiDopa']
-	# runName = 'gabor-3'
-	# nEpiCrit = 5
-	# nEpiDopa = 10
 
 	fig, ax = plt.subplots()
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
@@ -143,6 +140,7 @@ def perf_progress(perf, kwargs):
 	ax.spines['right'].set_visible(False)
 	ax.spines['top'].set_visible(False)
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.set_ylim([50,100])
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
 	ax.set_xlabel('episodes after dopa', fontsize=18)

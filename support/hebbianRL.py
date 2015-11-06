@@ -66,11 +66,13 @@ def RLnetwork(	images, labels, orientations,
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = []
 		perf_epi = []
+		dW_save=np.array([])
 
 		# pbar_epi = ProgressBar()
 		# for e in pbar_epi(range(nEpiTot)):
 		for e in range(nEpiTot):
 			#shuffle input
+			if e==nEpiCrit: print '----------end crit-----------'
 			rndImages, rndLabels = ex.shuffle([images, labels])
 
 			#train network with mini-batches
@@ -102,7 +104,7 @@ def RLnetwork(	images, labels, orientations,
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if exploration and (e >= nEpiCrit):
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-					bHidNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bHidNeurons))[exploratory]
+					bHidNeurons[exploratory] += np.random.normal(0, noise_std, np.shape(bHidNeurons))[exploratory]
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
@@ -112,7 +114,7 @@ def RLnetwork(	images, labels, orientations,
 				if e < nEpiCrit:
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
 					# bActNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bActNeurons))[exploratory]
-					bActNeurons[exploratory] += np.random.normal(20, 4., np.shape(bActNeurons))[exploratory]
+					bActNeurons[exploratory] += np.random.normal(0, 4., np.shape(bActNeurons))[exploratory]
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
 				#take action - either deterministically (predicted best) or stochastically (additive noise)			
@@ -148,11 +150,11 @@ def RLnetwork(	images, labels, orientations,
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
+					dopa_save = np.append(dopa_save, dopa)
 					
 				#compute weight updates
 				dW_in 	= ex.learningStep(bImages, 		bHidNeurons, W_in, 		lr=lr, disinhib=disinhib_Hid)
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
-				dopa_save = np.append(dopa_save, dopa)
 
 				#update weights
 				W_in += dW_in
@@ -163,8 +165,6 @@ def RLnetwork(	images, labels, orientations,
 				W_act = np.clip(W_act, 1e-10, np.inf)
 
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
-
-			if e==nEpiCrit: print '----------end crit-----------'
 
 			#check Wact assignment after each episode:
 			if protocol=='digit':
@@ -181,7 +181,7 @@ def RLnetwork(	images, labels, orientations,
 
 			#check performance after each episode
 			if test_each_epi and classifier=='actionNeurons':
-				_, perf_tmp = cl.actionNeurons(runName, {'000':W_in}, {'000':W_act}, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=False, show=False)
+				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
 				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%' 
 			
@@ -241,7 +241,7 @@ def RLnetwork(	images, labels, orientations,
 			pl.perf_progress(perf_save, kwargs)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(runName, W_in_save, W_act_save, classes, rActions, nHidNeurons, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, output=createOutput, show=showPlots)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 
@@ -253,7 +253,7 @@ def RLnetwork(	images, labels, orientations,
 
 	print '\nrun: '+runName + '\n'
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
