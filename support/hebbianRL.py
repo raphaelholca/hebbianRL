@@ -173,12 +173,18 @@ def RLnetwork(	images, labels, orientations,
 			correct_W_act/=len(RFproba)
 
 			#check performance after each episode
+			if createOutput:
+				print ('correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + ';'),
+				if r==0 and e==nEpiCrit-1:
+					if protocol=='digit':
+						pl.plot_noise_proba(W_in, images, kwargs)
+					else:
+						pl.plot_noise_proba(W_in, images_task, kwargs)
 			if test_each_epi and classifier=='actionNeurons' and createOutput:
 				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
-				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%' 
-			elif createOutput:
-				print 'correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons))
+				print ' performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
+			else: print () 
 
 
 		#save weights
@@ -245,7 +251,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 

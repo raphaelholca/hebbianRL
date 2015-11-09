@@ -78,7 +78,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 			for i in range(n_bins):
 				bin_names[i] = str(int(bin_size*i + bin_size/2.))
 		fig = pl.plotHist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
-		pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.png')
+		pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.pdf')
 		if show:
 			pyplot.show(block=False)
 		else:
@@ -118,7 +118,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
 			notsame_pass = np.array([])
 
 		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
-		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3))
+		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3)+'.pdf')
 		pyplot.close(fig)
 
 def clockwise(r):

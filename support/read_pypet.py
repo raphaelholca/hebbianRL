@@ -83,6 +83,6 @@ for ik in range(len(keys)):
 		plt.ylabel(k, fontsize=25)
 		plt.tick_params(axis='both', which='major', labelsize=18)
 		plt.tight_layout()
-		plt.savefig(folder_path + keys[ik] + '_' + k)
+		plt.savefig(folder_path + keys[ik] + '_' + k + '.pdf')
 
 plt.show(block=False)

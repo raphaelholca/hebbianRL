@@ -46,7 +46,7 @@ kwargs = {
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 4.0,#0.1 			,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.01
+'noise_std'		: 4.0 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 1.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
@@ -62,11 +62,11 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'pypet_xplr'	: True 				,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'pypet_xplr'	: False 			,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: False				,# whether to create plots and save data
+'createOutput'	: True				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'

@@ -198,7 +198,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 	perf_file.close()
 
 	fig = pl.plotCM(avgCM, classes)
-	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.png')
+	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.pdf')
 	if show:
 		pyplot.show(block=False)
 	else:
