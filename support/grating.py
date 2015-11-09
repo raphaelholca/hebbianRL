@@ -121,7 +121,7 @@ def tuning_curves(W, params, method='basic', plot=True):
 				plt.tight_layout()
 		
 		if plot:
-			plt.savefig('output/' + runName + '/TCs/' + 'TCs_'  +runName+ '_' + str(r).zfill(3))
+			plt.savefig('output/' + runName + '/TCs/' + 'TCs_'  +runName+ '_' + str(r).zfill(3) + '.pdf')
 			plt.close(fig)
 
 	return curves
@@ -225,7 +225,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 		
-			plt.savefig('output/' + runName + '/TCs/' + 'slopes_' + runName+ '_' + str(r).zfill(3))
+			plt.savefig('output/' + runName + '/TCs/' + 'slopes_' + runName+ '_' + str(r).zfill(3) + '.pdf')
 			plt.close(fig)
 
 			""" plot of slope at target orientation """
@@ -241,7 +241,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 
-			plt.savefig('output/' + runName + '/TCs/' + 'slopes_at_target')
+			plt.savefig('output/' + runName + '/TCs/' + 'slopes_at_target' + '.pdf')
 			plt.close(fig)
 
 	return {'slopes':slopes, 'all_slopes':all_slopes, 'all_deg':all_deg, 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}

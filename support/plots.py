@@ -3,12 +3,15 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.cm as cm
+import external as ex
 import matplotlib.pyplot as plt
+ex = reload(ex)
 
 """ initialize color maps """
 NUM_COLORS = 9
 my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
+cm_pastel = [plt.get_cmap('Paired')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
 
 def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
 	""" 
@@ -147,13 +150,75 @@ def perf_progress(perf, kwargs):
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + runName + '/' + runName+ '_progress')
+	plt.savefig('output/' + runName + '/' + runName+ '_progress.pdf')
 	plt.close(fig)	
 
 
+def plot_noise_proba(W_in, images, kwargs):
+	"""
+	plots the probability that noise injection changes the most active hidden neurons.
+	"""
 
+	runName = kwargs['runName']
+	t_hid = kwargs['t_hid']
+	noise_std = kwargs['noise_std']
+	nHidNeurons = np.size(W_in,1)
 
+	hidNeurons = ex.propL1(images, W_in, SM=False)
+	hidNeurons = np.sort(hidNeurons,1)[:, ::-1]
+	hidNeurons_noise = hidNeurons + np.random.normal(0, noise_std, np.shape(hidNeurons))
 
+	hidNeurons = ex.softmax(hidNeurons, t=t_hid)
+	hidNeurons_noise = ex.softmax(hidNeurons_noise, t=t_hid)
+
+	proba_argmax = np.histogram(np.argmax(hidNeurons_noise,1), bins=nHidNeurons, range=(0,nHidNeurons))[0]
+	proba_argmax = proba_argmax / float(np.sum(proba_argmax))
+
+	hidNeurons_noise = np.sort(hidNeurons_noise,1)[:, ::-1]
+
+	mean_activ = np.mean(hidNeurons,0)
+	mean_activ_noise = np.mean(hidNeurons_noise,0)
+
+	""" plot of probability of most activated neuron after noise injection """
+	fig, ax = plt.subplots()
+
+	ax.bar(np.arange(nHidNeurons), proba_argmax, width=0.8, color=my_blues[6], edgecolor=my_blues[6])
+
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.set_xlim([0,nHidNeurons])
+	ax.set_ylim([0,1])
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('neuron sorted by activ. before noise', fontsize=18)
+	ax.set_ylabel('prob. most activ. neuron after noise', fontsize=18)
+	plt.tight_layout()
+
+	plt.savefig('output/' + runName + '/' + runName+ '_activ_prob.pdf')
+	plt.close(fig)
+
+	""" plot of distribution of activation in network after noise injection """
+	fig, ax = plt.subplots()
+
+	ax.bar(np.arange(nHidNeurons), mean_activ, width=0.4, color=my_blues[6], edgecolor=my_blues[6])
+	ax.bar(np.arange(nHidNeurons)+.5, mean_activ_noise, width=0.4, color=my_reds[6], edgecolor=my_reds[6])
+
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
+	ax.set_xlim([0,nHidNeurons])
+	ax.set_ylim([0,1])
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('neuron sorted by activation', fontsize=18)
+	ax.set_ylabel('activation', fontsize=18)
+	plt.tight_layout()
+
+	plt.savefig('output/' + runName + '/' + runName+ '_activation.pdf')
+	plt.close(fig)
 
 
 
