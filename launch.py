@@ -40,7 +40,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'digit-xplr'		,# name of the folder where to save results
+'runName' 		: 'digit-xplr-1'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -62,11 +62,11 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'pypet_xplr'	: False 			,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: True 				,# whether to test the network's performance at each episode
+'pypet_xplr'	: True 				,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: True				,# whether to create plots and save data
+'createOutput'	: False				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
@@ -77,9 +77,9 @@ kwargs = {
 """ parameters for exploration """
 explore_dict = {
 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dNeut'			:	np.round(np.arange(-0.3, 0.11, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dLow'			:	np.arange(-4., 0.1, 1.).tolist(),
+'dMid'			:	np.round(np.arange(0.0, 0.81, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dLow'			:	np.arange(-2., 0.1, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 }
 
@@ -156,7 +156,7 @@ else:
 							log_stdout=False,
 							add_time = False,
 							multiproc = True,
-							ncores = 12,
+							ncores = 8,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
 

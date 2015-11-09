@@ -184,7 +184,7 @@ def RLnetwork(	images, labels, orientations,
 				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
 				print ' performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
-			else: print () 
+			elif createOutput: print () 
 
 
 		#save weights
@@ -251,7 +251,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
