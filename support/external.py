@@ -493,6 +493,7 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['sort'] 				= settingFile['sort']
 		runs[k]['kwargs']['target'] 			= settingFile['target']
 		runs[k]['kwargs']['seed'] 				= int(settingFile['seed'])
+		runs[k]['kwargs']['comment'] 			= settingFile['comment']
 
 		runs[k]['kwargs']['classes'] 			= np.array(map(int, settingFile['classes']))
 		runs[k]['kwargs']['rActions'] 			= np.array(settingFile['rActions'])
