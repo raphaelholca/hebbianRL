@@ -40,9 +40,9 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'digit-xplr-1'		,# name of the folder where to save results
+'runName' 		: 'digit-xplr-3'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 16				,# number of hidden neurons
+'nHidNeurons'	: 49				,# number of hidden neurons
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
@@ -77,9 +77,9 @@ kwargs = {
 """ parameters for exploration """
 explore_dict = {
 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-'dMid'			:	np.round(np.arange(0.0, 0.81, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
 'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dLow'			:	np.arange(-2., 0.1, 0.5).tolist(),
+'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 }
 
@@ -156,7 +156,7 @@ else:
 							log_stdout=False,
 							add_time = False,
 							multiproc = True,
-							ncores = 8,
+							ncores = 6,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
 
