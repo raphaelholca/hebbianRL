@@ -26,7 +26,7 @@ gr = reload(gr)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -150,7 +150,11 @@ def RLnetwork(	images, labels, orientations,
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
 
 				#update weights
-				W_in += dW_in
+				if e<nEpiCrit:
+					W_in += dW_in
+				elif e>=nEpiCrit: #artificially prevents weight explosion; used to dissociate influences in parameter exploration
+					mask = np.logical_and(np.sum(W_in+dW_in,0)<940.8, np.min(W_in+dW_in,0)>0.5)
+					W_in[:,mask] += dW_in[:,mask]
 				W_act += dW_act
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
@@ -158,6 +162,8 @@ def RLnetwork(	images, labels, orientations,
 
 				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
+
+			print np.sum(W_in,0)
 
 			#check Wact assignment after each episode:
 			if protocol=='digit':
@@ -251,7 +257,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
