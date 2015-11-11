@@ -153,7 +153,7 @@ def RLnetwork(	images, labels, orientations,
 				if e<nEpiCrit or not lim_weights:
 					W_in += dW_in
 				elif e>=nEpiCrit: #artificially prevents weight explosion; used to dissociate influences in parameter exploration
-					mask = np.logical_and(np.sum(W_in+dW_in,0)<940.8, np.min(W_in+dW_in,0)>0.5)
+					mask = np.logical_and(np.sum(W_in+dW_in,0)<=940.801, np.min(W_in+dW_in,0)>0.2)
 					W_in[:,mask] += dW_in[:,mask]
 				W_act += dW_act
 
@@ -255,7 +255,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	# import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
