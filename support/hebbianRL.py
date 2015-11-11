@@ -150,7 +150,7 @@ def RLnetwork(	images, labels, orientations,
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
 
 				#update weights
-				if e<nEpiCrit:
+				if e<nEpiCrit or ~lim_weights:
 					W_in += dW_in
 				elif e>=nEpiCrit: #artificially prevents weight explosion; used to dissociate influences in parameter exploration
 					mask = np.logical_and(np.sum(W_in+dW_in,0)<940.8, np.min(W_in+dW_in,0)>0.5)
@@ -162,8 +162,6 @@ def RLnetwork(	images, labels, orientations,
 
 				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
-
-			print np.sum(W_in,0)
 
 			#check Wact assignment after each episode:
 			if protocol=='digit':
@@ -257,7 +255,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 

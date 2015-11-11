@@ -35,14 +35,15 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 4 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'digit-xplr-4'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
+'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
@@ -62,11 +63,11 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'pypet_xplr'	: False 				,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: True 			,# whether to test the network's performance at each episode
+'pypet_xplr'	: True 				,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: True				,# whether to create plots and save data
+'createOutput'	: False				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
