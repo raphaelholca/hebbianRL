@@ -40,7 +40,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'digit-xplr-4'		,# name of the folder where to save results
+'runName' 		: 'test-0'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -50,10 +50,10 @@ kwargs = {
 'noise_std'		: 4.0 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 3.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: -0.2 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-'dNeut' 		: -0.10				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -0.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
+'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
+'dLow' 			: -1.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -63,11 +63,11 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'pypet_xplr'	: True 				,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'pypet_xplr'	: False 				,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: True 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: False				,# whether to create plots and save data
+'createOutput'	: True				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
