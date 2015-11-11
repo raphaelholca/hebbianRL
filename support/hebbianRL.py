@@ -26,7 +26,7 @@ gr = reload(gr)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -150,7 +150,7 @@ def RLnetwork(	images, labels, orientations,
 				dW_act 	= ex.learningStep(bHidNeurons, 	bActNeurons, W_act, 	lr=lr*1e-4, disinhib=disinhib_Act)
 
 				#update weights
-				if e<nEpiCrit or ~lim_weights:
+				if e<nEpiCrit or not lim_weights:
 					W_in += dW_in
 				elif e>=nEpiCrit: #artificially prevents weight explosion; used to dissociate influences in parameter exploration
 					mask = np.logical_and(np.sum(W_in+dW_in,0)<940.8, np.min(W_in+dW_in,0)>0.5)
