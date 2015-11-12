@@ -27,7 +27,7 @@ def pypet_RLnetwork(traj):
 
 	traj.f_add_result('RLnetwork.$', 
 					perc_W_act=perc_correct_W_act, 
-					perf=np.mean(allPerf), 
+					perf=allPerf, 
 					comment='param exploration')
 
 	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
@@ -36,18 +36,18 @@ def pypet_RLnetwork(traj):
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test-0'		,# name of the folder where to save results
+'runName' 		: 'digit-xplr-11'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 49				,# number of hidden neurons
-'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
+'nHidNeurons'	: 4				,# number of hidden neurons
+'lim_weights'	: False  			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
-'e_greedy'		: True 				,# whether to use an epsilon-greedy approach to noise injection
+'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 4.0 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.2 (?)
+'noise_std'		: 8.0 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
@@ -63,15 +63,15 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass'
-'pypet_xplr'	: False 				,# whether to compute pypet-based parameter exploration
-'test_each_epi'	: True 			,# whether to test the network's performance at each episode
+'pypet_xplr'	: True				,# whether to compute pypet-based parameter exploration
+'test_each_epi'	: False				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
-'createOutput'	: True				,# whether to create plots and save data
+'createOutput'	: False				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
-'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
+'target'		: None				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
 
 'comment'		: ''
@@ -80,11 +80,11 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
-# 'noise_std'		:	[0.005, 0.01, 0.05]
+'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(), #np.arange(0., 4.1, 1.0).tolist(),
+'dMid'			:	np.round(np.arange(-0.04, 0.041, 0.02),2).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
+'dNeut'			:	np.round(np.arange(-0.2, 0.01, 0.05),2).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
+'dLow'			:	np.arange(-2, 0.1, 0.5).tolist(), #np.arange(-4, 0.1, 1.0).tolist(),
+# 'noise_std'		:	[0.5, 1.0, 4.0]
 }
 
 """ load and pre-process images """
@@ -98,8 +98,8 @@ global images_test, labels_test, orientations_test
 global images_task, labels_task, orientations_task
 
 if kwargs['protocol'] == 'digit':
-	kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-	kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+	# kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+	# kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
 	# kwargs['classes'] 	= np.array([ 0,  1 , 2 , 3 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b','c','d'], dtype='|S1')
@@ -107,8 +107,8 @@ if kwargs['protocol'] == 'digit':
 	# kwargs['classes'] 	= np.array([ 4 , 7 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b','c'], dtype='|S1')
 
-	# kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
-	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
+	kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
+	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 	print 'loading train images...'
@@ -160,7 +160,7 @@ else:
 							log_stdout=False,
 							add_time = False,
 							multiproc = True,
-							ncores = 6,
+							ncores = 10,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
 

@@ -255,7 +255,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if createOutput: print '\nrun: '+runName + '\n'
 
-	import pdb; pdb.set_trace()
+	# import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
 
