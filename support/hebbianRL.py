@@ -97,7 +97,7 @@ def RLnetwork(	images, labels, orientations,
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if exploration and (e >= nEpiCrit):
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-					bHidNeurons[exploratory] += np.random.normal(0, noise_std, np.shape(bHidNeurons))[exploratory]
+					bHidNeurons[exploratory] += np.random.normal(0, np.std(bHidNeurons)*noise_std, np.shape(bHidNeurons))[exploratory]
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
@@ -106,11 +106,11 @@ def RLnetwork(	images, labels, orientations,
 				#adds noise in W_act neurons
 				if e < nEpiCrit:
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-					# bActNeurons[exploratory] += np.random.normal(20, noise_std, np.shape(bActNeurons))[exploratory]
-					bActNeurons[exploratory] += np.random.normal(0, 4., np.shape(bActNeurons))[exploratory]
+					# bActNeurons[exploratory] += np.random.normal(0, noise_std, np.shape(bActNeurons))[exploratory]
+					bActNeurons[exploratory] += np.random.normal(0, 4.0, np.shape(bActNeurons))[exploratory]
 				bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					
-				#take action - either deterministically (predicted best) or stochastically (additive noise)			
+				#take action			
 				bActions = rActions[np.argmax(bActNeurons,1)]	
 				bActions_idx = ex.val2idx(bActions, lActions)
 

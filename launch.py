@@ -40,20 +40,20 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'digit-xplr-11'	,# name of the folder where to save results
+'runName' 		: 'digit-xplr-12'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 4				,# number of hidden neurons
+'nHidNeurons'	: 4					,# number of hidden neurons
 'lim_weights'	: False  			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 8.0 				,# standard deviation of the normal distribution from which noise is drawn										digit: 4.0 	; gabor: 0.2 (?)
+'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 0.2 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: 0.0 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -1.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dHigh' 		: 2.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
+'dMid' 			: -0.002 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dNeut' 		: 0.002				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
+'dLow' 			: -1.0				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -84,7 +84,7 @@ explore_dict = {
 'dMid'			:	np.round(np.arange(-0.04, 0.041, 0.02),2).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
 'dNeut'			:	np.round(np.arange(-0.2, 0.01, 0.05),2).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
 'dLow'			:	np.arange(-2, 0.1, 0.5).tolist(), #np.arange(-4, 0.1, 1.0).tolist(),
-# 'noise_std'		:	[0.5, 1.0, 4.0]
+'noise_std'		:	[0.2, 0.4, 0.6]
 }
 
 """ load and pre-process images """
@@ -101,8 +101,8 @@ if kwargs['protocol'] == 'digit':
 	# kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
-	# kwargs['classes'] 	= np.array([ 0,  1 , 2 , 3 ], dtype=int)
-	# kwargs['rActions'] 	= np.array(['a','b','c','d'], dtype='|S1')
+	# kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
+	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
 	# kwargs['classes'] 	= np.array([ 4 , 7 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b','c'], dtype='|S1')
