@@ -34,9 +34,9 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
+'nRun' 			: 3					,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 40				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
@@ -46,14 +46,14 @@ kwargs = {
 'lim_weights'	: False  			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
-'epsilon'		: 0.9 				,# probability of taking an exploratory decisions, range: [0,1]
+'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 0.2 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 2.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: -0.002 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dMid' 			: 0.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
 'dNeut' 		: 0.002				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -1.0				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dLow' 			: -2.0				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -135,7 +135,7 @@ elif kwargs['protocol'] == 'gabor':
 	kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
-	n_train = 10000
+	n_train = 50000
 	n_test = 1000
 
 	orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
