@@ -34,20 +34,20 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 3					,# number of runs
+'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 5				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'gabor-xplr-13'	,# name of the folder where to save results
+'runName' 		: 'digit-xplr-14'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-'nHidNeurons'	: 25					,# number of hidden neurons
+'nHidNeurons'	: 25				,# number of hidden neurons
 'lim_weights'	: False  			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
-'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 0.2 	; gabor: 0.2 (?)
+'noise_std'		: 0.4 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 0.2 	; gabor: 0.2 (?)
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 2.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
@@ -55,7 +55,7 @@ kwargs = {
 'dNeut' 		: 0.002				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -2.0				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
-'protocol'		: 'gabor'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
+'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
 'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
@@ -80,11 +80,11 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'dHigh'			:	np.arange(0., 4.1, 1.0).tolist(), #np.arange(0., 6.1, 1.5).tolist(),
-'dMid'			:	np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(), #np.round(np.arange(-0.04, 0.041, 0.02),2).tolist(),
-'dNeut'			:	np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(), #np.round(np.arange(-0.2, 0.01, 0.05),2).tolist(),
-'dLow'			:	np.arange(-4, 0.1, 1.0).tolist(), #np.arange(-2, 0.1, 0.5).tolist(),
-'noise_std'		:	[0.1, 0.2, 0.4]
+'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
+'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),2).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
+'dNeut'			:	np.round(np.arange(-0.2, 0.001, 0.05),3).tolist(), #np.round(np.arange(-0.004, 0.0041, 0.002),3).tolist(),
+'dLow'			:	np.arange(-2, 0.1, 0.5).tolist(), #np.arange(-6, 0.1, 1.5).tolist(),
+# 'noise_std'		:	[0.1, 0.2, 0.4]
 }
 
 """ load and pre-process images """
@@ -98,8 +98,8 @@ global images_test, labels_test, orientations_test
 global images_task, labels_task, orientations_task
 
 if kwargs['protocol'] == 'digit':
-	# kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-	# kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+	kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+	kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
 	# kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
@@ -107,8 +107,8 @@ if kwargs['protocol'] == 'digit':
 	# kwargs['classes'] 	= np.array([ 4 , 7 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b','c'], dtype='|S1')
 
-	kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
-	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
+	# kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
+	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 	print 'loading train images...'
