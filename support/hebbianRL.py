@@ -71,10 +71,6 @@ def RLnetwork(	images, labels, orientations,
 		for e in range(nEpiTot):
 			if e==nEpiCrit and createOutput: print '----------end crit-----------'
 
-			diff = 0
-			time_pdf = 0
-			time_decoder = 0
-
 			#shuffle input
 			if protocol=='digit' or (protocol=='gabor' and e < nEpiCrit):
 				rndImages, rndLabels = ex.shuffle([images, labels])
@@ -85,13 +81,11 @@ def RLnetwork(	images, labels, orientations,
 			for b in range(int(nImages/nBatch)):
 
 				#re-compute the pdf for bayesian inference if any weights have changed more than a threshold
-				if classifier=='bayesian' or True:
-					tic=time.time()
+				if classifier=='bayesian':
 					W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
-					if (W_mschange/940 > 0.01).any() or (e==0 and b==0): 
+					if (W_mschange/940 > 0.005).any() or (e==0 and b==0): 
 						W_in_since_update = np.copy(W_in)
 						pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs, pdf_method)
-					time_pdf += time.time()-tic
 				
 				#select batch training images (may leave a few training examples out (< nBatch))
 				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
@@ -110,13 +104,9 @@ def RLnetwork(	images, labels, orientations,
 				if train_class_layer: 
 					bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_hid), W_act, SM=False)
 					bPredictActions = rActions[np.argmax(bActNeurons,1)]
-				# else:
-				if True:
-					tic=time.time()
+				else:
 					posterior = bc.bayesian_decoder(ex.softmax(bHidNeurons, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
-					time_decoder += time.time()-tic
 					bPredictActions = rActions[np.argmax(posterior,1)]
-					diff += np.sum(np.argmax(bActNeurons,1) != np.argmax(posterior,1))
 
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if exploration and (e >= nEpiCrit):
@@ -126,7 +116,7 @@ def RLnetwork(	images, labels, orientations,
 					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
-				
+
 				if train_class_layer:
 					#adds noise in W_act neurons
 					if e < nEpiCrit:
@@ -138,10 +128,11 @@ def RLnetwork(	images, labels, orientations,
 					#take action			
 					bActions = rActions[np.argmax(bActNeurons,1)]	
 				else:
-					pass ##compute reward probability after noise
+					posterior = bc.bayesian_decoder(bHidNeurons, pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+					bActions = rActions[np.argmax(posterior,1)]
 
 				#compute reward and ach signal
-				bReward = ex.compute_reward(ex.label2idx(classes, bLabels), np.argmax(bActNeurons,1))
+				bReward = ex.compute_reward(rActions[bLabels], bActions)
 				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for exploration = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
@@ -206,17 +197,21 @@ def RLnetwork(	images, labels, orientations,
 			#check performance after each episode
 			if createOutput:
 				if train_class_layer:
-					print ('correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + ';'),
+					print ('correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; '),
 				if r==0 and e==nEpiCrit-1:
 					if protocol=='digit':
 						pl.plot_noise_proba(W_in, images, kwargs)
 					else:
 						pl.plot_noise_proba(W_in, images_task, kwargs)
-			if test_each_epi and classifier=='actionNeurons' and createOutput:
-				_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
+			if test_each_epi and createOutput:
+				if classifier=='bayesian':
+					rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
+					_, perf_tmp = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=False, show=False)
+				if classifier=='actionNeurons':
+					_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
-				print ' performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
-			elif createOutput: print () 
+				print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
+			elif createOutput and train_class_layer: print 
 
 		# pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs, pdf_method)
 		# posterior = bc.bayesian_decoder(ex.propL1(rndImages[:1000,:], W_in, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
@@ -277,6 +272,7 @@ def RLnetwork(	images, labels, orientations,
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, output=createOutput, show=showPlots)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
+	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=createOutput, show=showPlots)
 
 	if createOutput: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 

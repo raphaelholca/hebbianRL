@@ -5,11 +5,14 @@ import matplotlib.pyplot as pyplot
 import support.mnist as mnist
 import support.external as ex
 import support.plots as pl
+import support.bayesian_decoder as bc
 import pickle
 import re
 from sklearn.svm import SVC
+
 ex = reload(ex)
 pl = reload(pl)
+bc = reload(bc)
 
 def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actions=False, output=True, show=True):
 	"""
@@ -20,8 +23,9 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 		W_act_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
+		kwargs (dict): parameters of the model
 		actions (bool, optional): whether to display actions (True) of labels (False) on the plot of the classification matrix 
-		ouput (bool, optional) : whether to generate print and figure output
+		output (bool, optional) : whether to generate print and figure output
 		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
 	"""
 
@@ -162,6 +166,61 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 	""" print and save performance measures """
 	if output:
 		print_save(allCMs, allPerf, classes, runName, show)
+	return allCMs, allPerf
+
+def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=True, show=False):
+	"""
+	evaluates the performance of the newtork using a bayesian decoder
+
+	Args:
+		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
+		images_test (numpy array): test images
+		labels_test (numpy array): test labels
+		kwargs (dict): parameters of the model
+		output (bool, optional) : whether to generate print and figure output
+		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
+	"""
+
+	runName = kwargs['runName']
+	classes = kwargs['classes']
+	rActions = kwargs['rActions']
+	t_hid = kwargs['t_hid']
+
+	if output: print "\nassessing performance..."
+
+	""" variable initialization """
+	allCMs = []
+	allPerf = []
+
+	""" process labels for plot """
+	rActions_uni, idx = np.unique(rActions, return_index=True)
+	sorter = idx.argsort()
+	rActions_uni = rActions_uni[sorter]
+	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions)
+	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
+	labels_print = np.array(labels_print)
+	labels_print[rActions_uni=='z'] = 'z'
+
+	for iw in sorted(W_in_save.keys()):
+		if output: print 'run: ' + str(int(iw)+1)
+		W_in = W_in_save[iw]
+
+		""" testing of the classifier """
+		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+		classIdx = np.argmax(posterior, 1)
+		classResults = rActions[classIdx]
+		
+		""" compute classification performance """
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions)))
+		allPerf.append(correct_classif/len(labels_test))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions), np.unique(rActions))
+		CM = CM[sorter,:]
+		CM = CM[:,sorter]
+		allCMs.append(CM)
+
+	""" print and save performance measures """
+	if output:
+		print_save(allCMs, allPerf, rActions_uni, runName, show)
 	return allCMs, allPerf
 
 def print_save(allCMs, allPerf, classes, runName, show):
