@@ -538,7 +538,7 @@ def checkClassifier(classifier):
 		classifier (str): name of the classifier
 	"""
 
-	if classifier not in ['neuronClass', 'SVM', 'actionNeurons']:
+	if classifier not in ['neuronClass', 'SVM', 'actionNeurons', 'bayesian']:
 		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neuronClass\', \'SVM\', \'actionNeurons\'.')
 
 
