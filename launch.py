@@ -9,6 +9,7 @@ import pypet
 import support.hebbianRL as rl
 import support.external as ex
 import support.mnist as mnist
+from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
 ex = reload(ex)
@@ -23,7 +24,7 @@ def pypet_RLnetwork(traj):
 	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images, labels, orientations, 
 																			images_test, labels_test, orientations_test, 
 																			images_task, labels_task, orientations_task, 
-																			parameter_dict, **parameter_dict)
+																			None, parameter_dict, **parameter_dict)
 
 	traj.f_add_result('RLnetwork.$', 
 					perc_W_act=perc_correct_W_act, 
@@ -35,12 +36,12 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 5 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test_bayes'			,# name of the folder where to save results
+'runName' 		: 'test'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -65,8 +66,9 @@ kwargs = {
 'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
-'classifier'	: 'bayesian'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'pypet_xplr'	: False 			,# whether to compute pypet-based parameter exploration
+'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
+'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'pre_train'		: 'digit_479_16'	,#
 'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'createOutput'	: True				,# whether to create plots and save data
@@ -158,12 +160,13 @@ elif kwargs['protocol'] == 'gabor':
 	images_test, labels_test = ex.generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
 
 
-if not kwargs['pypet_xplr']:
+if kwargs['param_xplr'] == 'None':
 	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
 																				images_test, labels_test, orientations_test, 
 																				images_task, labels_task, orientations_task, 
-																				kwargs, **kwargs)
-else:
+																				None, kwargs, **kwargs)
+
+elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """
 	env = pypet.Environment(trajectory = 'xplr',
 							comment = 'testing with pypet...',
@@ -173,6 +176,20 @@ else:
 							ncores = 6,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
+
+elif kwargs['param_xplr'] == 'neural_net':
+	nn_regressor = Regressor(
+	    layers=[
+	        Layer("Rectifier", units=10),
+	        Layer("Linear")],
+	    learning_rate=0.02,
+	    n_iter=5)
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
+																				images_test, labels_test, orientations_test, 
+																				images_task, labels_task, orientations_task, 
+																				nn_regressor, kwargs, **kwargs)
+
+
 
 	traj = env.v_trajectory
 	ex.add_parameters(traj, kwargs)

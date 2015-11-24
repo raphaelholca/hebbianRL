@@ -16,6 +16,7 @@ import support.grating as gr
 import support.bayesian_decoder as bc
 import sys
 import time
+import pickle
 
 ex = reload(ex)
 pl = reload(pl)
@@ -28,8 +29,9 @@ bc = reload(bc)
 
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
-				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
+				images_task, labels_task, orientations_task,
+				nn_regressor, kwargs,
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, createOutput, showPlots, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -41,8 +43,9 @@ def RLnetwork(	images, labels, orientations,
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
-	train_class_layer = True if classifier!='bayesian' else False
+	train_class_layer = False if classifier=='bayesian' else True
 	show_W_act = False if classifier=='bayesian' else show_W_act
+	proba_predict = False if classifier!='bayesian' else proba_predict
 
 	""" training of the network """
 	if createOutput: print '\ntraining network...'
@@ -53,8 +56,20 @@ def RLnetwork(	images, labels, orientations,
 		#initialize network variables
 		ach = np.zeros(nBatch)
 		dopa = np.zeros(nBatch)
-		W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
-		W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+		""" load pre-trained weights """
+		
+		if pre_train!='' and pre_train!='None':
+			f_W_in = open('output/' + pre_train + '/W_in', 'r')
+			W_in = pickle.load(f_W_in)['000']
+			f_W_in.close()
+
+			f_W_act = open('output/' + pre_train + '/W_act', 'r')
+			W_act = pickle.load(f_W_act)['000']
+			f_W_act.close()
+		else:
+			W_in = np.random.random_sample(size=(nInpNeurons, nHidNeurons)) + 1.0
+			W_act = (np.random.random_sample(size=(nHidNeurons, nActNeurons))/1000+1.0)/nHidNeurons
+		
 		W_in_init = np.copy(W_in)
 		W_act_init = np.copy(W_act)
 		W_in_since_update = np.copy(W_in)
@@ -80,7 +95,7 @@ def RLnetwork(	images, labels, orientations,
 			for b in range(int(nImages/nBatch)):
 
 				#re-compute the pdf for bayesian inference if any weights have changed more than a threshold
-				if classifier=='bayesian':
+				if classifier=='bayesian' and (e >= nEpiCrit or test_each_epi):
 					W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
 					if (W_mschange/940 > 0.005).any() or (e==0 and b==0): 
 						W_in_since_update = np.copy(W_in)
@@ -103,7 +118,7 @@ def RLnetwork(	images, labels, orientations,
 				if train_class_layer: 
 					bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=t_hid), W_act, SM=False)
 					bPredictActions = rActions[np.argmax(bActNeurons,1)]
-				else:
+				elif e >= nEpiCrit:
 					posterior = bc.bayesian_decoder(ex.softmax(bHidNeurons, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
 					bPredictActions = rActions[np.argmax(posterior,1)]
 
@@ -123,15 +138,16 @@ def RLnetwork(	images, labels, orientations,
 						# bActNeurons[exploratory] += np.random.normal(0, noise_std, np.shape(bActNeurons))[exploratory]
 						bActNeurons[exploratory] += np.random.normal(0, 4.0, np.shape(bActNeurons))[exploratory]
 					bActNeurons = ex.softmax(bActNeurons, t=t_act)
-					
 					#take action			
 					bActions = rActions[np.argmax(bActNeurons,1)]	
-				else:
+					#compute reward
+					bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
+				elif e >= nEpiCrit:
 					posterior_noise = bc.bayesian_decoder(bHidNeurons, pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
 					bActions = rActions[np.argmax(posterior_noise,1)]
+					#compute reward
+					bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
 
-				#compute reward and ach signal
-				bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
 				# pred_bLabels_idx = ex.val2idx(bPredictActions) ##same as bActions_idx for exploration = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
@@ -139,10 +155,10 @@ def RLnetwork(	images, labels, orientations,
 				if e_greedy:
 					# predicted_reward = ~exploratory #doesn't predict a reward on all exploratory trials (slightly worse performance than next line; ~2%)
 					predicted_reward = np.logical_or(bPredictActions==bActions, ~exploratory) #doesn't predict a reward only on exploratory trials that lead to a different output
-				elif classifier=='bayesian':
-					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
-				else:
+				elif classifier!='bayesian':
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict)
+				elif classifier=='bayesian' and e >= nEpiCrit:
+					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit and train_class_layer:
