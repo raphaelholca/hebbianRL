@@ -29,7 +29,7 @@ bc = reload(bc)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task, 
-				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
+				kwargs,	classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pypet_xplr, test_each_epi, SVM, exploration, createOutput, showPlots, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -128,11 +128,11 @@ def RLnetwork(	images, labels, orientations,
 					#take action			
 					bActions = rActions[np.argmax(bActNeurons,1)]	
 				else:
-					posterior = bc.bayesian_decoder(bHidNeurons, pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
-					bActions = rActions[np.argmax(posterior,1)]
+					posterior_noise = bc.bayesian_decoder(bHidNeurons, pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+					bActions = rActions[np.argmax(posterior_noise,1)]
 
 				#compute reward and ach signal
-				bReward = ex.compute_reward(rActions[bLabels], bActions)
+				bReward = ex.reward_delivery(ex.labels2actionVal(bLabels, classes, rActions), bActions)
 				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for exploration = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
@@ -140,8 +140,10 @@ def RLnetwork(	images, labels, orientations,
 				if e_greedy:
 					# predicted_reward = ~exploratory #doesn't predict a reward on all exploratory trials (slightly worse performance than next line; ~2%)
 					predicted_reward = np.logical_or(bPredictActions==bActions, ~exploratory) #doesn't predict a reward only on exploratory trials that lead to a different output
+				elif classifier=='bayesian' and False:
+					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 				else:
-					predicted_reward = bPredictActions==bActions
+					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict)
 
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit:
@@ -213,10 +215,6 @@ def RLnetwork(	images, labels, orientations,
 				print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 			elif createOutput and train_class_layer: print 
 
-		# pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs, pdf_method)
-		# posterior = bc.bayesian_decoder(ex.propL1(rndImages[:1000,:], W_in, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
-		# import pdb; pdb.set_trace()
-
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
 		W_act_save[str(r).zfill(3)] = np.copy(W_act)
@@ -246,13 +244,14 @@ def RLnetwork(	images, labels, orientations,
 		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
 
 	#compute correct weight assignment in the action layer
-	correct_W_act = 0.
-	notsame = {}
-	for k in W_act_save.keys():
-		same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
-		notsame[k] = np.argwhere(~same)
-		correct_W_act += np.sum(same)
-	correct_W_act/=len(RFproba)
+	if train_class_layer:
+		correct_W_act = 0.
+		notsame = {}
+		for k in W_act_save.keys():
+			same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
+			notsame[k] = np.argwhere(~same)
+			correct_W_act += np.sum(same)
+		correct_W_act/=len(RFproba)
 
 	# plot the weights
 	if createOutput:

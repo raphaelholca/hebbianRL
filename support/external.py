@@ -253,7 +253,7 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def compute_reward(labels, actions):
+def reward_delivery(labels, actions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
 
@@ -269,6 +269,28 @@ def compute_reward(labels, actions):
 	reward[labels==actions] = 1
 
 	return reward
+
+def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
+	"""
+	Computes reward prediction based on the best (greedy) action and the action taken
+
+	Args:
+		best_action (numpy array): best (greedy) action for each trial of a batch
+		action_taken (numpy array): action taken for each trial of a batch
+		proba_predict (boolean): whether reward prediction is probabilistic (i.e., the expected value of the reward) or deterministic (i.e., binary)
+		posterior (numpy array): posterior probability of the bayesian decoder 
+
+	returns:
+		numpy array: reward prediction
+	"""
+
+	if not proba_predict:
+		reward_prediction = best_action==action_taken
+	else:
+
+		reward_prediction = 0
+
+	return reward_prediction
 
 def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 	"""
@@ -288,10 +310,10 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(~predicted_reward, bReward==1)] = dHigh			#unpredicted reward
-	dopa[np.logical_and(predicted_reward, bReward==1)] = dMid			#correct reward prediction
-	dopa[np.logical_and(~predicted_reward, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[np.logical_and(predicted_reward, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dHigh			#unpredicted reward
+	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dMid			#correct reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dLow			#incorrect reward prediction
 
 	return dopa
 

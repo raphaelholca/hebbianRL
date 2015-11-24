@@ -22,6 +22,7 @@ def pdf_estimate(images, labels, W, kwargs, method='fit'):
 		(numpy array): labels of the data points used to compute the pdf (useful to compute prior)
 	"""
 
+	classes = np.unique(labels)
 	n_classes = len(np.unique(labels))
 	n_trials = len(labels)
 
@@ -40,23 +41,23 @@ def pdf_estimate(images, labels, W, kwargs, method='fit'):
 		pdf_labels = np.copy(labels)
 		pdf_evidence = KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ)
 		pdf_marginals = []
-		for i in range(n_classes):
-			pdf_marginals.append(KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ[pdf_labels==i]))
+		for c in classes:
+			pdf_marginals.append(KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ[pdf_labels==c]))
 
 	if method=='subsample':
 		pdf_labels = labels[subsample_idx]
 		pdf_evidence = KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs)
 		pdf_marginals = []
-		for i in range(n_classes):
-			pdf_marginals.append(KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs[pdf_labels==i]))
+		for c in classes:
+			pdf_marginals.append(KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs[pdf_labels==c]))
 
 	if method=='fit':
 		pdf_labels = labels[subsample_idx]
 		pdf_evidence_full = KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs)
 		pdf_evidence = KNeighborsRegressor().fit(activ_fit, pdf_evidence_full.score_samples(activ_fit))
 		pdf_marginals = []
-		for i in range(n_classes):
-			pdf_marginal_full = KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs[pdf_labels==i])
+		for c in classes:
+			pdf_marginal_full = KernelDensity(bandwidth=5e-1, kernel='gaussian', rtol=1e-100).fit(activ_subs[pdf_labels==c])
 			pdf_marginals.append(KNeighborsRegressor().fit(activ_fit, pdf_marginal_full.score_samples(activ_fit)))
 
 	return pdf_marginals, pdf_evidence, pdf_labels

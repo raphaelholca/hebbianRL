@@ -48,6 +48,7 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
+'proba_predict'	: False 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
@@ -99,14 +100,14 @@ global images_test, labels_test, orientations_test
 global images_task, labels_task, orientations_task
 
 if kwargs['protocol'] == 'digit':
-	kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-	kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
+	# kwargs['classes'] 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+	# kwargs['rActions'] 	= np.array(['a','b','c','d','e','f','g','h','i','j'], dtype='|S1')
 
 	# kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
-	# kwargs['classes'] 	= np.array([ 4 , 7 , 9 ], dtype=int)
-	# kwargs['rActions'] 	= np.array(['a','b','c'], dtype='|S1')
+	kwargs['classes'] 	= np.array([ 4 , 7 , 9 ], dtype=int)
+	kwargs['rActions'] 	= np.array(['a','b','c'], dtype='|S1')
 
 	# kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
