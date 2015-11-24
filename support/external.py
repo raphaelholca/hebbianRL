@@ -322,28 +322,28 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_2(rPredicted, rActual, dHigh, dMid, dLow):
+def compute_dopa_proba(predicted, actual, dopa_function=np.expm1):
 	"""
-	Computes the dopa signal based on the difference between predicted and actual rewards
+	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
 	Args:
-		rPredicted (numpy array): predicted rewards for current batch
-		rActual (numpy array): received rewards for current batch
-		dHigh (numpy array): dopa value for unpredicted reward
-		dMid (numpy array): dopa value for correct reward prediction
-		dLow (numpy array): dopa value for incorrect reward prediction
+		predicted (numpy array): predicted rewards for current batch
+		actual (numpy array): received rewards for current batch
+		dopa_function (callable function, optional): function to converting prediction error to dopa value; should be a function for range [0,1]; suggested function: np.sign, np.expm1, np.tanh
 
 	returns:
 		numpy array: array of dopamine release value
 	"""
 
-	error = np.round(rActual-rPredicted)
+	prediction_error = actual-predicted
 
-	dopa = np.zeros(len(rActual))
-
-	dopa[error  > 0] = dHigh		#unpredicted reward
-	dopa[error == 0] = dMid			#correct reward prediction
-	dopa[error  < 0] = dLow			#incorrect reward prediction
+	# dopa = dopa_function(prediction_error)
+	
+	##
+	dopa = np.zeros(len(prediction_error))
+	dopa[prediction_error < -0.5] = -1.
+	dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
+	dopa[prediction_error >= 0.5] = +3.
 
 	return dopa
 

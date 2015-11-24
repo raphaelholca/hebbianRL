@@ -49,13 +49,14 @@ kwargs = {
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'proba_predict'	: True 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 'dHigh' 		: 3.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
 'dMid' 			: 0.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-'dNeut' 		: -0.2				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -0.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
+'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -68,7 +69,6 @@ kwargs = {
 'pypet_xplr'	: False 			,# whether to compute pypet-based parameter exploration
 'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'createOutput'	: True				,# whether to create plots and save data
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots

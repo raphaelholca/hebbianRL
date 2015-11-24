@@ -156,7 +156,10 @@ def RLnetwork(	images, labels, orientations,
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					if proba_predict:
+						dopa = ex.compute_dopa_proba(predicted_reward, bReward, dopa_function=np.sign)
+					else:
+						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
