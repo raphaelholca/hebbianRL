@@ -15,6 +15,14 @@ import grating as gr
 
 gr = reload(gr)
 
+def set_global(lActions_pass, rActions_pass, classes_pass):
+	global lActions
+	global rActions
+	global classes
+	lActions = lActions_pass
+	rActions = rActions_pass
+	classes = classes_pass
+
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
@@ -132,14 +140,13 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def evenLabels(images, labels, classes):
+def evenLabels(images, labels):
 	"""
 	Even out images and labels distribution so that they are evenly distributed over the labels.
 
 	Args:
 		images (numpy array): images
 		labels (numpy array): labels constant
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 
 	returns:
 		numpy array: evened-out images
@@ -226,13 +233,12 @@ def regularization(dot, postNeurons, W, sum_ar):
 
 	return dot
 
-def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
+def track_perf(perf, bLabels, pred_bLabels, decay_param=0.001):
 	"""
 	Tracks performance for all classes using a weighted average
 
 	Args:
 		perf (numpy array): matrix of performances of shape (nClasses x 2), containing in perf[:,0] the number of correct trials and in perf[:,1] the number of all trials
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 		bLabels (numpy array): image labels
 		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
 		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
@@ -281,14 +287,13 @@ def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
 		posterior (numpy array): posterior probability of the bayesian decoder 
 
 	returns:
-		numpy array: reward prediction
+		numpy array: reward prediction, either deterministic or expected value (depending on proba_predict)
 	"""
 
 	if not proba_predict:
 		reward_prediction = best_action==action_taken
 	else:
-
-		reward_prediction = 0
+		reward_prediction = posterior[range(np.size(action_taken,0)), val2idx(action_taken)] #expected value of the reward for the action taken
 
 	return reward_prediction
 
@@ -343,7 +348,7 @@ def compute_dopa_2(rPredicted, rActual, dHigh, dMid, dLow):
 	return dopa
 
 
-def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
+def compute_ach(perf, pred_bLabels_idx, aHigh, aPairing=1.):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)
 
@@ -351,7 +356,6 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 		perf (numpy array): average performance over n batches
 		pred_bLabels_idx (numpy array): index of predictated stimulus class (i.e., index of the predicted digit label)
 		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
-		rActions (numpy array): rewarded action
 		aPairing (float) : strength of ACh release for stimulus pairing protocol; ach_labels is set to aPairing for capital letters in rActions
 
 	returns:
@@ -367,7 +371,7 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 	else: 
 		perc_mean =  perf_ratio/np.mean(perf_ratio)
 		ach_labels = np.exp(aHigh*(-perc_mean+1))
-	if rActions!=None and aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
+	if aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
 	return ach_labels[pred_bLabels_idx], ach_labels
 
 def Q_learn(Q, state, action, reward, Q_LR=0.01):
@@ -587,13 +591,12 @@ def shuffle(arrays):
 
 	return shuffled_arrays#, rndIdx
 
-def val2idx(actionVal, lActions):
+def val2idx(actionVal):
 	"""
 	Returns the index of the action (int) for each provided value (str)
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-		lActions (numpy array): possible legal actions
 
 	returns:
 		numpy array of int: array of int representing the index of the chosen action for an input image
@@ -605,14 +608,12 @@ def val2idx(actionVal, lActions):
 
 	return actionIdx
 
-def labels2actionVal(labels, classes, rActions):
+def labels2actionVal(labels):
 	"""
 	returns the the correct action value (str) for each provided label (int)
 
 	Args:
 		labels (numpy array): labels of the input images
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		rActions (numpy array of str): reward actions associated with each of the classes of MNIST
 
 	returns:
 		numpy array str: rewarded action value for each images. Returns empty space ' ' if provided label is not part of the considered classes
@@ -624,14 +625,12 @@ def labels2actionVal(labels, classes, rActions):
 	actionVal[actionVal=='']=' '
 	return actionVal
 
-def actionVal2labels(actionVal, classes, rActions):
+def actionVal2labels(actionVal):
 	"""
 	returns the class labels (int) for each action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		rActions (numpy array): rewarded actions for each class (may be rActions_z)
 
 	returns:
 		list: label associated with each action value
@@ -642,12 +641,11 @@ def actionVal2labels(actionVal, classes, rActions):
 		labels.append(list(classes[act==rActions]))
 	return labels
 
-def label2idx(classes, labels):
+def label2idx(labels):
 	"""
 	Creates a vector of length identical to labels but with the index of the label rather than its class label (int)
 
 	Args:
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 		labels (numpy array): labels of the input images
 
 	returns:
@@ -698,28 +696,6 @@ def conv_bool(bool_str):
 	if bool_str=='True': return True
 	elif bool_str=='False': return False
 	else: return None
-
-def rand_ACh(nClasses):
-	"""
-	Randommly assigns a class to ACh release (creates an array of lower case characters of length nClasses and randomly sets one character to upper case, which triggers ACh release).
-
-	Args:
-		nClasses (int): number of digit classes
-
-	returns:
-		int: target digit class
-		numpy array: array of rewarded actions
-		numpy array: array of rewarded actions
-		numpy array: array of legal actions
-	"""
-	target = np.random.randint(nClasses)
-	rActions = np.array(list(string.ascii_lowercase)[:nClasses])
-	rActions[target] = rActions[target].upper()
-	rActions_z = np.copy(rActions)
-	lActions = np.copy(rActions)
-	print 'target digit: ' + str(target)
-
-	return target, rActions, rActions_z, lActions
 
 """ pypet-specific support functions """
 def add_parameters(traj, kwargs):

@@ -45,7 +45,7 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 	rActions_uni, idx = np.unique(rActions, return_index=True)
 	sorter = idx.argsort()
 	rActions_uni = rActions_uni[sorter]
-	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions)
+	labels_print = ex.actionVal2labels(rActions_uni)
 	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
 	labels_print = np.array(labels_print)
 	labels_print[rActions_uni=='z'] = 'z'
@@ -62,9 +62,9 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 		classResults = rActions[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions)))
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test)))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions), np.unique(rActions))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test), np.unique(rActions))
 		CM = CM[sorter,:]
 		CM = CM[:,sorter]
 		allCMs.append(CM)
@@ -196,7 +196,7 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 	rActions_uni, idx = np.unique(rActions, return_index=True)
 	sorter = idx.argsort()
 	rActions_uni = rActions_uni[sorter]
-	labels_print = ex.actionVal2labels(rActions_uni, classes, rActions)
+	labels_print = ex.actionVal2labels(rActions_uni)
 	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
 	labels_print = np.array(labels_print)
 	labels_print[rActions_uni=='z'] = 'z'
@@ -211,9 +211,9 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 		classResults = rActions[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test, classes, rActions)))
+		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test)))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test, classes, rActions), np.unique(rActions))
+		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test), np.unique(rActions))
 		CM = CM[sorter,:]
 		CM = CM[:,sorter]
 		allCMs.append(CM)

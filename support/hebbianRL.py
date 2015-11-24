@@ -37,13 +37,12 @@ def RLnetwork(	images, labels, orientations,
 	W_act_save = {}
 	perf_save = {}
 	nClasses = len(classes)
-	_, idx = np.unique(rActions, return_index=True)
-	lActions = rActions[np.sort(idx)]
 	nEpiTot = nEpiCrit + nEpiDopa
 	nImages = np.size(images,0)
 	nInpNeurons = np.size(images,1)
 	nActNeurons = nClasses
 	train_class_layer = True if classifier!='bayesian' else False
+	show_W_act = False if classifier=='bayesian' else show_W_act
 
 	""" training of the network """
 	if createOutput: print '\ntraining network...'
@@ -132,21 +131,21 @@ def RLnetwork(	images, labels, orientations,
 					bActions = rActions[np.argmax(posterior_noise,1)]
 
 				#compute reward and ach signal
-				bReward = ex.reward_delivery(ex.labels2actionVal(bLabels, classes, rActions), bActions)
-				# pred_bLabels_idx = ex.val2idx(bPredictActions, lActions) ##same as bActions_idx for exploration = True ??
+				bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
+				# pred_bLabels_idx = ex.val2idx(bPredictActions) ##same as bActions_idx for exploration = True ??
 				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
 
 				#determine predicted reward
 				if e_greedy:
 					# predicted_reward = ~exploratory #doesn't predict a reward on all exploratory trials (slightly worse performance than next line; ~2%)
 					predicted_reward = np.logical_or(bPredictActions==bActions, ~exploratory) #doesn't predict a reward only on exploratory trials that lead to a different output
-				elif classifier=='bayesian' and False:
+				elif classifier=='bayesian':
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 				else:
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict)
 
 				#compute dopa signal and disinhibition based on training period
-				if e < nEpiCrit:
+				if e < nEpiCrit and train_class_layer:
 					""" critical period """
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
@@ -190,7 +189,7 @@ def RLnetwork(	images, labels, orientations,
 				RFproba = np.zeros((1, nHidNeurons, nClasses), dtype=int)
 				RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
 				RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
-			same = ex.labels2actionVal(np.argmax(RFproba[0],1), classes, rActions) == rActions[np.argmax(W_act,1)]
+			same = ex.labels2actionVal(np.argmax(RFproba[0],1)) == rActions[np.argmax(W_act,1)]
 			if train_class_layer:
 				correct_W_act = 0.
 				correct_W_act += np.sum(same)
@@ -248,10 +247,13 @@ def RLnetwork(	images, labels, orientations,
 		correct_W_act = 0.
 		notsame = {}
 		for k in W_act_save.keys():
-			same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1), classes, rActions) == rActions[np.argmax(W_act_save[k],1)]
+			same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1)) == rActions[np.argmax(W_act_save[k],1)]
 			notsame[k] = np.argwhere(~same)
 			correct_W_act += np.sum(same)
 		correct_W_act/=len(RFproba)
+	else:
+		notsame = None
+		correct_W_act = 0.
 
 	# plot the weights
 	if createOutput:
@@ -273,7 +275,7 @@ def RLnetwork(	images, labels, orientations,
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
 	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=createOutput, show=showPlots)
 
-	if createOutput: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
+	if createOutput and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	#save data
 	if createOutput:

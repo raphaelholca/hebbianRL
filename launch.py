@@ -48,7 +48,7 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: False 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: True 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
@@ -112,16 +112,20 @@ if kwargs['protocol'] == 'digit':
 	# kwargs['classes'] 	= np.array([ 4 , 9 ], dtype=int)
 	# kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
 
+	_, idx = np.unique(kwargs['rActions'], return_index=True)
+	lActions = kwargs['rActions'][np.sort(idx)]
+	ex.set_global(lActions, kwargs['rActions'], kwargs['classes'])
+
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 	print 'loading train images...'
 	images, labels = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = kwargs['dataset'], path = imPath)
-	images, labels = ex.evenLabels(images, labels, kwargs['classes'])
+	images, labels = ex.evenLabels(images, labels)
 	images = ex.normalize(images, kwargs['A']*np.size(images,1))
 
 	print 'loading test images...'
 	test_dataset='test' if kwargs['dataset']=='train' else 'train'
 	images_test, labels_test = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = test_dataset, path = imPath)
-	images_test, labels_test = ex.evenLabels(images_test, labels_test, kwargs['classes'])
+	images_test, labels_test = ex.evenLabels(images_test, labels_test)
 	images_test, labels_test = ex.shuffle([images_test, labels_test])
 	images_test = ex.normalize(images_test, kwargs['A']*np.size(images_test,1))
 	
@@ -136,6 +140,10 @@ elif kwargs['protocol'] == 'gabor':
 	
 	kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
+
+	_, idx = np.unique(kwargs['rActions'], return_index=True)
+	lActions = kwargs['rActions'][np.sort(idx)]
+	ex.set_global(lActions, kwargs['rActions'], kwargs['classes'])
 
 	n_train = 50000
 	n_test = 1000
