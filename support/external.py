@@ -15,6 +15,38 @@ import grating as gr
 
 gr = reload(gr)
 
+def set_global(lActions_pass, rActions_pass, classes_pass):
+	global lActions
+	global rActions
+	global classes
+	lActions = lActions_pass
+	rActions = rActions_pass
+	classes = classes_pass
+
+def set_global_noise():##
+	global xplr_noise 
+	xplr_noise = np.random.uniform(0,1)
+
+def set_polynomial_params(a_0_pass,a_1_pass,a_2_pass,a_3_pass):##
+	global a_0, a_1, a_2, a_3
+	a_0 = a_0_pass
+	a_1 = a_1_pass
+	a_2 = a_2_pass
+	a_3 = a_3_pass
+
+def polynomial(X):
+	"""
+	function to relate prediction error to DA
+
+	Args:
+		X (numpy array): prediction error: actual - predicted rewards
+
+	returns:
+		(numpy array): DA value
+	"""
+	
+	return a_0 + a_1*X + a_2*(X**2) + a_3*(X**3)
+
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
@@ -132,14 +164,13 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def evenLabels(images, labels, classes):
+def evenLabels(images, labels):
 	"""
 	Even out images and labels distribution so that they are evenly distributed over the labels.
 
 	Args:
 		images (numpy array): images
 		labels (numpy array): labels constant
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 
 	returns:
 		numpy array: evened-out images
@@ -226,13 +257,12 @@ def regularization(dot, postNeurons, W, sum_ar):
 
 	return dot
 
-def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
+def track_perf(perf, bLabels, pred_bLabels, decay_param=0.001):
 	"""
 	Tracks performance for all classes using a weighted average
 
 	Args:
 		perf (numpy array): matrix of performances of shape (nClasses x 2), containing in perf[:,0] the number of correct trials and in perf[:,1] the number of all trials
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 		bLabels (numpy array): image labels
 		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
 		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
@@ -253,7 +283,7 @@ def track_perf(perf, classes, bLabels, pred_bLabels, decay_param=0.001):
 			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
 	return perf
 
-def compute_reward(labels, actions):
+def reward_delivery(labels, actions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
 
@@ -269,6 +299,27 @@ def compute_reward(labels, actions):
 	reward[labels==actions] = 1
 
 	return reward
+
+def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
+	"""
+	Computes reward prediction based on the best (greedy) action and the action taken
+
+	Args:
+		best_action (numpy array): best (greedy) action for each trial of a batch
+		action_taken (numpy array): action taken for each trial of a batch
+		proba_predict (boolean): whether reward prediction is probabilistic (i.e., the expected value of the reward) or deterministic (i.e., binary)
+		posterior (numpy array): posterior probability of the bayesian decoder 
+
+	returns:
+		numpy array: reward prediction, either deterministic or expected value (depending on proba_predict)
+	"""
+
+	if not proba_predict:
+		reward_prediction = best_action==action_taken
+	else:
+		reward_prediction = posterior[range(np.size(action_taken,0)), val2idx(action_taken)] #expected value of the reward for the action taken
+
+	return reward_prediction
 
 def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 	"""
@@ -288,40 +339,60 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(~predicted_reward, bReward==1)] = dHigh			#unpredicted reward
-	dopa[np.logical_and(predicted_reward, bReward==1)] = dMid			#correct reward prediction
-	dopa[np.logical_and(~predicted_reward, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[np.logical_and(predicted_reward, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dHigh			#unpredicted reward
+	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dMid			#correct reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dNeut			#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dLow			#incorrect reward prediction
 
 	return dopa
 
-def compute_dopa_2(rPredicted, rActual, dHigh, dMid, dLow):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None'):
 	"""
-	Computes the dopa signal based on the difference between predicted and actual rewards
+	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
 	Args:
-		rPredicted (numpy array): predicted rewards for current batch
-		rActual (numpy array): received rewards for current batch
-		dHigh (numpy array): dopa value for unpredicted reward
-		dMid (numpy array): dopa value for correct reward prediction
-		dLow (numpy array): dopa value for incorrect reward prediction
+		predicted (numpy array): predicted rewards for current batch
+		actual (numpy array): received rewards for current batch
+		nn_regressor (sknn regressor): neural network regressor object
+		dopa_function (callable function, optional): function to converting prediction error to dopa value; should be a function for range [0,1]; suggested function: np.sign, np.expm1, np.tanh
+		param_xplr (str, optional): method for parameter exploration
 
 	returns:
 		numpy array: array of dopamine release value
 	"""
 
-	error = np.round(rActual-rPredicted)
+	prediction_error = actual-predicted
+	dopa = np.zeros(len(prediction_error))
 
-	dopa = np.zeros(len(rActual))
+	if nn_regressor is None:
+		dopa = dopa_function(prediction_error)
+		##
+		# dopa[prediction_error < -0.5] = -1.
+		# dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
+		# dopa[prediction_error >= 0.5] = +3.
+	else: #uses a neural network regressor to compute DA value
+		DA_min = -6.
+		DA_max = +6.
+		step = 0.1
+		tried_DA_values = np.arange(DA_min,DA_max,step)
 
-	dopa[error  > 0] = dHigh		#unpredicted reward
-	dopa[error == 0] = dMid			#correct reward prediction
-	dopa[error  < 0] = dLow			#incorrect reward prediction
+		nn_input = np.zeros((len(tried_DA_values), 2))
+		nn_input[:,1] = tried_DA_values
+		for i in range(len(prediction_error)):
+			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
+			perf_predict = nn_regressor.predict(nn_input)
+			if param_xplr=='neural_net' and False:
+				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1e-20)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
+				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, varying noise
+				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, constant noise
+			else:
+				chosen_idx = np.argmax(perf_predict) #greedy algorithm
+			dopa[i] = tried_DA_values[chosen_idx]
+		# import pdb; pdb.set_trace()
 
-	return dopa
+	return dopa, prediction_error
 
-
-def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
+def compute_ach(perf, pred_bLabels_idx, aHigh, aPairing=1.):
 	"""
 	Computes the ach signal based on stimulus difficulty (average classification performance)
 
@@ -329,7 +400,6 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 		perf (numpy array): average performance over n batches
 		pred_bLabels_idx (numpy array): index of predictated stimulus class (i.e., index of the predicted digit label)
 		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
-		rActions (numpy array): rewarded action
 		aPairing (float) : strength of ACh release for stimulus pairing protocol; ach_labels is set to aPairing for capital letters in rActions
 
 	returns:
@@ -345,7 +415,7 @@ def compute_ach(perf, pred_bLabels_idx, aHigh, rActions=None, aPairing=1.):
 	else: 
 		perc_mean =  perf_ratio/np.mean(perf_ratio)
 		ach_labels = np.exp(aHigh*(-perc_mean+1))
-	if rActions!=None and aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
+	if aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
 	return ach_labels[pred_bLabels_idx], ach_labels
 
 def Q_learn(Q, state, action, reward, Q_LR=0.01):
@@ -400,10 +470,11 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
-	for k in sorted(args.keys()):
-		if type(args[k]) == type(np.array(0)): #convert numpy array to list
-			args[k] = list(args[k])
-		settingFile[k] = args[k]
+	args_save = args.copy()
+	for k in sorted(args_save.keys()):
+		if type(args_save[k]) == type(np.array(0)): #convert numpy array to list
+			args_save[k] = list(args_save[k])
+		settingFile[k] = args_save[k]
 	
 	settingFile.write()
 
@@ -469,6 +540,9 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['e_greedy'] 			= conv_bool(settingFile['e_greedy'])
 		runs[k]['kwargs']['epsilon'] 			= float(settingFile['epsilon'])
 		runs[k]['kwargs']['noise_std'] 			= float(settingFile['noise_std'])
+		runs[k]['kwargs']['proba_predict'] 		= conv_bool(settingFile['proba_predict'])
+		runs[k]['kwargs']['exploration'] 		= conv_bool(settingFile['exploration'])
+		runs[k]['kwargs']['pdf_method'] 		= settingFile['pdf_method']
 		runs[k]['kwargs']['aHigh'] 				= float(settingFile['aHigh'])
 		runs[k]['kwargs']['aPairing'] 			= float(settingFile['aPairing'])
 		runs[k]['kwargs']['dHigh'] 				= float(settingFile['dHigh'])
@@ -484,16 +558,17 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['noise_test'] 		= float(settingFile['noise_test'])
 		runs[k]['kwargs']['im_size'] 			= int(settingFile['im_size'])
 		runs[k]['kwargs']['classifier'] 		= settingFile['classifier']
-		runs[k]['kwargs']['pypet_xplr'] 		= conv_bool(settingFile['pypet_xplr'])
+		runs[k]['kwargs']['param_xplr'] 		= settingFile['param_xplr']
+		runs[k]['kwargs']['pre_train'] 			= settingFile['pre_train']
 		runs[k]['kwargs']['test_each_epi']	 	= conv_bool(settingFile['test_each_epi'])
 		runs[k]['kwargs']['SVM'] 				= conv_bool(settingFile['SVM'])
-		runs[k]['kwargs']['exploration'] 		= conv_bool(settingFile['exploration'])
-		runs[k]['kwargs']['createOutput'] 		= conv_bool(settingFile['createOutput'])
-		runs[k]['kwargs']['showPlots'] 			= conv_bool(settingFile['showPlots'])
+		runs[k]['kwargs']['save_data'] 			= conv_bool(settingFile['save_data'])
+		runs[k]['kwargs']['verbose'] 			= conv_bool(settingFile['verbose'])
 		runs[k]['kwargs']['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
 		runs[k]['kwargs']['sort'] 				= settingFile['sort']
 		runs[k]['kwargs']['target'] 			= settingFile['target']
 		runs[k]['kwargs']['seed'] 				= int(settingFile['seed'])
+
 		runs[k]['kwargs']['comment'] 			= settingFile['comment']
 
 		runs[k]['kwargs']['classes'] 			= np.array(map(int, settingFile['classes']))
@@ -527,7 +602,7 @@ def checkdir(runName, OW_bool=True):
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
 	os.makedirs('output/' + runName + '/TCs')
-	print 'run:  ' + runName
+
 	return runName
 
 def checkClassifier(classifier):
@@ -538,7 +613,7 @@ def checkClassifier(classifier):
 		classifier (str): name of the classifier
 	"""
 
-	if classifier not in ['neuronClass', 'SVM', 'actionNeurons']:
+	if classifier not in ['neuronClass', 'SVM', 'actionNeurons', 'bayesian']:
 		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neuronClass\', \'SVM\', \'actionNeurons\'.')
 
 
@@ -565,13 +640,12 @@ def shuffle(arrays):
 
 	return shuffled_arrays#, rndIdx
 
-def val2idx(actionVal, lActions):
+def val2idx(actionVal):
 	"""
 	Returns the index of the action (int) for each provided value (str)
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-		lActions (numpy array): possible legal actions
 
 	returns:
 		numpy array of int: array of int representing the index of the chosen action for an input image
@@ -583,14 +657,12 @@ def val2idx(actionVal, lActions):
 
 	return actionIdx
 
-def labels2actionVal(labels, classes, rActions):
+def labels2actionVal(labels):
 	"""
 	returns the the correct action value (str) for each provided label (int)
 
 	Args:
 		labels (numpy array): labels of the input images
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		rActions (numpy array of str): reward actions associated with each of the classes of MNIST
 
 	returns:
 		numpy array str: rewarded action value for each images. Returns empty space ' ' if provided label is not part of the considered classes
@@ -602,14 +674,12 @@ def labels2actionVal(labels, classes, rActions):
 	actionVal[actionVal=='']=' '
 	return actionVal
 
-def actionVal2labels(actionVal, classes, rActions):
+def actionVal2labels(actionVal):
 	"""
 	returns the class labels (int) for each action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
 
 	Args:
 		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		rActions (numpy array): rewarded actions for each class (may be rActions_z)
 
 	returns:
 		list: label associated with each action value
@@ -620,12 +690,11 @@ def actionVal2labels(actionVal, classes, rActions):
 		labels.append(list(classes[act==rActions]))
 	return labels
 
-def label2idx(classes, labels):
+def label2idx(labels):
 	"""
 	Creates a vector of length identical to labels but with the index of the label rather than its class label (int)
 
 	Args:
-		classes (numpy array): all classes of the MNIST dataset used in the current run
 		labels (numpy array): labels of the input images
 
 	returns:
@@ -676,28 +745,6 @@ def conv_bool(bool_str):
 	if bool_str=='True': return True
 	elif bool_str=='False': return False
 	else: return None
-
-def rand_ACh(nClasses):
-	"""
-	Randommly assigns a class to ACh release (creates an array of lower case characters of length nClasses and randomly sets one character to upper case, which triggers ACh release).
-
-	Args:
-		nClasses (int): number of digit classes
-
-	returns:
-		int: target digit class
-		numpy array: array of rewarded actions
-		numpy array: array of rewarded actions
-		numpy array: array of legal actions
-	"""
-	target = np.random.randint(nClasses)
-	rActions = np.array(list(string.ascii_lowercase)[:nClasses])
-	rActions[target] = rActions[target].upper()
-	rActions_z = np.copy(rActions)
-	lActions = np.copy(rActions)
-	print 'target digit: ' + str(target)
-
-	return target, rActions, rActions_z, lActions
 
 """ pypet-specific support functions """
 def add_parameters(traj, kwargs):
