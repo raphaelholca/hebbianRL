@@ -21,10 +21,10 @@ def pypet_RLnetwork(traj):
 	images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task = get_images()
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(images, labels, orientations, 
-																			images_test, labels_test, orientations_test, 
-																			images_task, labels_task, orientations_task, 
-																			None, parameter_dict, **parameter_dict)
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
+																						images_test, labels_test, orientations_test, 
+																						images_task, labels_task, orientations_task, 
+																						None, parameter_dict, **parameter_dict)
 
 	traj.f_add_result('RLnetwork.$', 
 					perc_W_act=perc_correct_W_act, 
@@ -37,11 +37,11 @@ def pypet_RLnetwork(traj):
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 1					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test'			,# name of the folder where to save results
+'runName' 		: 'test_none'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -67,11 +67,12 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
-'pre_train'		: 'digit_479_16'	,#
-'test_each_epi'	: True 				,# whether to test the network's performance at each episode
+'param_xplr'	: 'neural_net' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
+'test_each_epi'	: False 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'createOutput'	: True				,# whether to create plots and save data
+'save_data'		: True				,# whether to save data to disk
+'verbose'		: False				,# whether to create text output
 'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
@@ -94,7 +95,7 @@ explore_dict = {
 """ load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
 print 'seed: ' + str(kwargs['seed']) + '\n'
-if not kwargs['createOutput']: print " !!! ----- not saving data ----- !!! "
+if not kwargs['save_data']: print " !!! ----- not saving data ----- !!! "
 np.random.seed(kwargs['seed'])
 
 global images, labels, orientations
@@ -119,12 +120,12 @@ if kwargs['protocol'] == 'digit':
 	ex.set_global(lActions, kwargs['rActions'], kwargs['classes'])
 
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
-	print 'loading train images...'
+	if kwargs['verbose']: print 'loading train images...'
 	images, labels = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = kwargs['dataset'], path = imPath)
 	images, labels = ex.evenLabels(images, labels)
 	images = ex.normalize(images, kwargs['A']*np.size(images,1))
 
-	print 'loading test images...'
+	if kwargs['verbose']: print 'loading test images...'
 	test_dataset='test' if kwargs['dataset']=='train' else 'train'
 	images_test, labels_test = mnist.read_images_from_mnist(classes = kwargs['classes'], dataset = test_dataset, path = imPath)
 	images_test, labels_test = ex.evenLabels(images_test, labels_test)
@@ -138,7 +139,7 @@ if kwargs['protocol'] == 'digit':
 	orientations_test = None
 
 elif kwargs['protocol'] == 'gabor':
-	print 'creating gabor training images...'
+	if kwargs['verbose']: print 'creating gabor training images...'
 	
 	kwargs['classes'] 	= np.array([ 0 , 1 ], dtype=int)
 	kwargs['rActions'] 	= np.array(['a','b'], dtype='|S1')
@@ -161,10 +162,38 @@ elif kwargs['protocol'] == 'gabor':
 
 
 if kwargs['param_xplr'] == 'None':
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
-																				images_test, labels_test, orientations_test, 
-																				images_task, labels_task, orientations_task, 
-																				None, kwargs, **kwargs)
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
+																						images_test, labels_test, orientations_test, 
+																						images_task, labels_task, orientations_task, 
+																						None, kwargs, **kwargs)
+
+elif kwargs['param_xplr'] == 'neural_net':
+	nn_regressor = Regressor(
+	    layers=[
+	        Layer("Rectifier", 	units=10),
+	        Layer("Linear", 	units=1)],
+	    learning_rate=0.02,
+	    n_iter=1)
+
+	n_iter = 20
+	n_sample = 100
+	sample_input = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
+	for i_iter in range(n_iter):
+		print "training hebbian network..."
+		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
+																							images_test, labels_test, orientations_test, 
+																							images_task, labels_task, orientations_task, 
+																							nn_regressor, kwargs, **kwargs)
+
+		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%'
+		print "training regressor neural net... \n"
+		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
+		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
+		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
+		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
+
+	pickle.dump(sample_input, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
+	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
 
 elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """
@@ -176,20 +205,6 @@ elif kwargs['param_xplr'] == 'pypet':
 							ncores = 6,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
-
-elif kwargs['param_xplr'] == 'neural_net':
-	nn_regressor = Regressor(
-	    layers=[
-	        Layer("Rectifier", units=10),
-	        Layer("Linear")],
-	    learning_rate=0.02,
-	    n_iter=5)
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba = rl.RLnetwork(	images, labels, orientations, 
-																				images_test, labels_test, orientations_test, 
-																				images_task, labels_task, orientations_task, 
-																				nn_regressor, kwargs, **kwargs)
-
-
 
 	traj = env.v_trajectory
 	ex.add_parameters(traj, kwargs)

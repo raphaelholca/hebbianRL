@@ -30,11 +30,11 @@ bc = reload(bc)
 def RLnetwork(	images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
-				nn_regressor, kwargs,
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, createOutput, showPlots, show_W_act, sort, target, seed, comment):
+				nn_regressor, kwargs, 
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, showPlots, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
-	if createOutput: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
+	if save_data: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -46,12 +46,13 @@ def RLnetwork(	images, labels, orientations,
 	train_class_layer = False if classifier=='bayesian' else True
 	show_W_act = False if classifier=='bayesian' else show_W_act
 	proba_predict = False if classifier!='bayesian' else proba_predict
+	nn_input = np.empty((0,2), dtype=float) #input to the regressor neural net; nn_input[:,0] is prediction_error; nn_input[:,1] is tried DA value 
 
 	""" training of the network """
-	if createOutput: print '\ntraining network...'
+	if verbose or param_xplr=='neural_net': print '\ntraining network...'
 	for r in range(nRun):
 		np.random.seed(seed+r)
-		if createOutput: print '\nrun: ' + str(r+1)
+		if verbose: print '\nrun: ' + str(r+1)
 
 		#initialize network variables
 		ach = np.zeros(nBatch)
@@ -83,7 +84,7 @@ def RLnetwork(	images, labels, orientations,
 		# pbar_epi = ProgressBar()
 		# for e in pbar_epi(range(nEpiTot)):
 		for e in range(nEpiTot):
-			if e==nEpiCrit and createOutput: print '----------end crit-----------'
+			if e==nEpiCrit and verbose: print '----------end crit-----------'
 
 			#shuffle input
 			if protocol=='digit' or (protocol=='gabor' and e < nEpiCrit):
@@ -173,7 +174,11 @@ def RLnetwork(	images, labels, orientations,
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					if proba_predict:
-						dopa = ex.compute_dopa_proba(predicted_reward, bReward, dopa_function=np.sign)
+						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=np.sign, param_xplr=param_xplr)
+						tmp_input = np.zeros((nBatch, 2))
+						tmp_input[:,0] = prediction_error
+						tmp_input[:,1] = dopa
+						nn_input = np.append(nn_input, tmp_input, axis=0)
 					else:
 						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 
@@ -215,15 +220,16 @@ def RLnetwork(	images, labels, orientations,
 				correct_W_act/=len(RFproba)
 
 			#check performance after each episode
-			if createOutput:
+			if verbose:
 				if train_class_layer:
 					print ('correct action weights: ' + str(int(correct_W_act)) + '/' + str(int(nHidNeurons)) + '; '),
+			if save_data:
 				if r==0 and e==nEpiCrit-1:
 					if protocol=='digit':
 						pl.plot_noise_proba(W_in, images, kwargs)
 					else:
 						pl.plot_noise_proba(W_in, images_task, kwargs)
-			if test_each_epi and createOutput:
+			if test_each_epi and (verbose or save_data):
 				if classifier=='bayesian':
 					rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
 					_, perf_tmp = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=False, show=False)
@@ -231,7 +237,7 @@ def RLnetwork(	images, labels, orientations,
 					_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
 				perf_epi.append(perf_tmp[0])
 				print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
-			elif createOutput and train_class_layer: print 
+			elif verbose and train_class_layer: print 
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -242,7 +248,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if protocol=='digit':
 		#compute histogram of RF classes
-		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=createOutput, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=save_data, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 
 	elif protocol=='gabor':
 		#compute histogram of RF classes
@@ -253,13 +259,12 @@ def RLnetwork(	images, labels, orientations,
 			mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
 			orientations_bin[mask_bin] = i
 
-		# RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, n_bins=10, SVM=SVM, output=False, show=False)
 		pref_ori = gr.preferred_orientations(W_in_save, params=kwargs)
 		RFproba = np.zeros((nRun, nHidNeurons, nClasses), dtype=int)
 		for r in pref_ori.keys():
 			RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
-		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=createOutput, show=showPlots)
+		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=save_data, show=showPlots)
 
 	#compute correct weight assignment in the action layer
 	if train_class_layer:
@@ -275,7 +280,7 @@ def RLnetwork(	images, labels, orientations,
 		correct_W_act = 0.
 
 	# plot the weights
-	if createOutput:
+	if save_data:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
 		if protocol=='digit':
@@ -289,22 +294,21 @@ def RLnetwork(	images, labels, orientations,
 			pl.perf_progress(perf_save, kwargs)
 
 	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, output=createOutput, show=showPlots)
-	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=createOutput, show=showPlots)
-	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=createOutput, show=showPlots)
-	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=createOutput, show=showPlots)
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, output=(save_data or verbose), show=showPlots)
+	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=(save_data or verbose), show=showPlots)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=(save_data or verbose), show=showPlots)
+	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=(save_data or verbose), show=showPlots)
 
-	if createOutput and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
+	if verbose and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
 	#save data
-	if createOutput:
-		ex.save_data(W_in_save, W_act_save, perf_save, slopes, kwargs)
+	if save_data: ex.save_data(W_in_save, W_act_save, perf_save, slopes, kwargs)
 
-	if createOutput: print '\nrun: '+runName + '\n'
+	if verbose: print '\nrun: '+runName + '\n'
 
-	import pdb; pdb.set_trace()
+	if param_xplr=='None': import pdb; pdb.set_trace()
 
-	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba
+	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input
 
 
 

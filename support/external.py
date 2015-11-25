@@ -322,30 +322,49 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, dopa_function=np.expm1):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None'):
 	"""
 	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
 	Args:
 		predicted (numpy array): predicted rewards for current batch
 		actual (numpy array): received rewards for current batch
+		nn_regressor (sknn regressor): neural network regressor object
 		dopa_function (callable function, optional): function to converting prediction error to dopa value; should be a function for range [0,1]; suggested function: np.sign, np.expm1, np.tanh
+		param_xplr (str, optional): method for parameter exploration
 
 	returns:
 		numpy array: array of dopamine release value
 	"""
 
 	prediction_error = actual-predicted
-
-	# dopa = dopa_function(prediction_error)
-	
-	##
 	dopa = np.zeros(len(prediction_error))
-	dopa[prediction_error < -0.5] = -1.
-	dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
-	dopa[prediction_error >= 0.5] = +3.
 
-	return dopa
+	if nn_regressor is None:
+		# dopa = dopa_function(prediction_error)
+		##
+		dopa[prediction_error < -0.5] = -1.
+		dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
+		dopa[prediction_error >= 0.5] = +3.
+	else: #uses a neural network regressor to compute DA value
+		DA_min = -6.
+		DA_max = +6.
+		step = 0.1
+		tried_DA_values = np.arange(DA_min,DA_max,step)
+
+		nn_input = np.zeros((len(tried_DA_values), 2))
+		nn_input[:,1] = tried_DA_values
+		for i in range(len(prediction_error)):
+			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
+			perf_predict = nn_regressor.predict(nn_input)
+			if param_xplr=='neural_net' and False:
+				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1.)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration)
+				chosen_idx = np.argmin(Y_cs <= np.random.uniform(0,1)) #probability matching
+			else:
+				chosen_idx = np.argmax(perf_predict) #greedy algorithm
+			dopa[i] = tried_DA_values[chosen_idx]
+
+	return dopa, prediction_error
 
 
 def compute_ach(perf, pred_bLabels_idx, aHigh, aPairing=1.):
@@ -426,10 +445,11 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
-	for k in sorted(args.keys()):
-		if type(args[k]) == type(np.array(0)): #convert numpy array to list
-			args[k] = list(args[k])
-		settingFile[k] = args[k]
+	args_save = args.copy()
+	for k in sorted(args_save.keys()):
+		if type(args_save[k]) == type(np.array(0)): #convert numpy array to list
+			args_save[k] = list(args_save[k])
+		settingFile[k] = args_save[k]
 	
 	settingFile.write()
 
