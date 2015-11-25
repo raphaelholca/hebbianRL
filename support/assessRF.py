@@ -9,7 +9,7 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, output=True, show=True, lr_ratio=1.0, rel_classes=np.array([False])):
+def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -21,7 +21,8 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 		labels (numpy array) : labels corresponding to the images of the MNIST dataset
 		n_bins (int, optional): number of bins in the histogram
 		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
-		show (bool, optional) : whether to the histogram of the weight class distribution (True) or not (False)
+		save_data (bool, optional) : whether save data
+		verbose (bool, optional) : whether to display text ouput
 		lr_ratio (float, optional) : the ratio between ach signal and normal learning rate
 		rel_classes (numpy array, optional) : the classes relevant in the training protocol (i.e., those not equal to '0')
 
@@ -31,7 +32,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
-	if output: print "\ncomputing RF classes..."
+	if verbose: print "\ncomputing RF classes..."
 	nRun = len(W.keys())
 	nNeurons = np.size(W['000'],1)
 
@@ -47,7 +48,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 	RFclass = np.zeros((nRun,n_bins))
 	RFselec = np.zeros((nRun,n_bins))
 	for i,r in enumerate(sorted(W.keys())):
-		if output: print 'run: ' + str(i+1)
+		if verbose: print 'run: ' + str(i+1)
 		if SVM:
 			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r].T),2)
 		else:
@@ -65,7 +66,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 
 	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
-	if output:
+	if save_data:
 		pfile = open('output/'+runName+'/RFclass', 'w')
 		pickle.dump(pRFclass, pfile)
 		pfile.close()
@@ -79,15 +80,12 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, out
 				bin_names[i] = str(int(bin_size*i + bin_size/2.))
 		fig = pl.plotHist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
 		pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.pdf')
-		if show:
-			pyplot.show(block=False)
-		else:
-			pyplot.close(fig)
+		pyplot.close(fig)
 
 	return RFproba, RFclass, RFselec
 
-def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
-	print "\nploting RFs..."
+def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None, verbose=True):
+	if verbose: print "\nploting RFs..."
 
 	if sort=='tSNE':
 		if np.mod(np.sqrt(np.size(W['000'],1)),1)!=0:
@@ -96,7 +94,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None):
 
 	for i,r in enumerate(sorted(W.keys())):
 		W_sort = np.copy(W[r])
-		print 'run: ' + str(i+1)
+		if verbose: print 'run: ' + str(i+1)
 		if sort=='class': #sort weights according to their class
 			RFclass = np.argmax(RFproba[i],1)
 			sort_idx = np.array([x for (y,x) in sorted(zip(RFclass, np.arange(len(RFclass))), key=lambda pair: pair[0])])

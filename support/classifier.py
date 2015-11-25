@@ -14,7 +14,7 @@ ex = reload(ex)
 pl = reload(pl)
 bc = reload(bc)
 
-def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actions=False, output=True, show=True):
+def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -24,9 +24,8 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
 		kwargs (dict): parameters of the model
-		actions (bool, optional): whether to display actions (True) of labels (False) on the plot of the classification matrix 
-		output (bool, optional) : whether to generate print and figure output
-		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
+		save_data (bool, optional) : whether save data
+		verbose (bool, optional) : whether to display text ouput
 	"""
 
 	runName = kwargs['runName']
@@ -35,7 +34,7 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 	nHidNeurons = kwargs['nHidNeurons']
 	t_hid = kwargs['t_hid']
 
-	if output: print "\nassessing performance..."
+	if verbose: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -51,7 +50,7 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 	labels_print[rActions_uni=='z'] = 'z'
 
 	for iw in sorted(W_in_save.keys()):
-		if output: print 'run: ' + str(int(iw)+1)
+		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw]
 		W_act = W_act_save[iw]
 
@@ -70,11 +69,11 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, actio
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	if output:
-		print_save(allCMs, allPerf, rActions_uni, runName, show)
+	if save_data:
+		print_save(allCMs, allPerf, rActions_uni, runName, verbose)
 	return allCMs, allPerf
 
-def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, output=True, show=True, SM=True):
+def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, save_data, verbose, SM=True):
 	"""
 	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
 
@@ -87,15 +86,15 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
 		train_dataset (str): name of the dataset used for training
-		ouput (bool, optional) : whether to generate print and figure output
-		show (bool, optional): whether to display the confusion matrix (True) or not (False)
+		save_data (bool, optional) : whether save data
+		verbose (bool, optional) : whether to display text ouput
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 	"""
 
-	if output: print "\nassessing performance..."
+	if verbose: print "\nassessing performance..."
 
 	""" load and pre-process images """
-	if output: print 'assessing performance with SVM...'
+	if verbose: print 'assessing performance with SVM...'
 	if  train_dataset=='train': test_dataset='test'
 	else: test_dataset='train'
 	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
@@ -125,11 +124,11 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	if output:
-		print_save(allCMs, allPerf, classes, runName, show)
+	if save_data:
+		print_save(allCMs, allPerf, classes, runName, verbose)
 	return allCMs, allPerf
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test, labels_test, output=True, show=True):
+def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test, labels_test, save_data, verbose):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
@@ -140,11 +139,11 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		RFproba (numpy array) : probability of that a RF belongs to a certain class (of the MNIST dataset)
 		nDimStates (int) : number of dimensions of the states (size of images)
 		A (int): normalization constant
-		ouput (bool, optional) : whether to generate print and figure output
-		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
+		save_data (bool, optional) : whether save data
+		verbose (bool, optional) : whether to display text ouput
 	"""
 
-	if output: print "\nassessing performance..."
+	if verbose: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -153,7 +152,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 	""" make image class prediction based on the class of most activated neuron """
 	for i, iw in enumerate(sorted(W_in_save.keys())):
 		""" load weight matrix and find most activated neuron """
-		if output: print 'run: ' + str(int(iw)+1)
+		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
 		neuronC = np.argmax(RFproba[i],1) #class of each neuron
 		argmaxActiv = np.argmax(ex.propL1(images_test, W_in, SM=False),1)
@@ -164,11 +163,11 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	if output:
-		print_save(allCMs, allPerf, classes, runName, show)
+	if save_data:
+		print_save(allCMs, allPerf, classes, runName, verbose)
 	return allCMs, allPerf
 
-def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=True, show=False):
+def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data, verbose):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
@@ -177,8 +176,8 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
 		kwargs (dict): parameters of the model
-		output (bool, optional) : whether to generate print and figure output
-		show (bool, optional) : whether to display the confusion matrix (True) or not (False)
+		save_data (bool, optional) : whether save data
+		verbose (bool, optional) : whether to display text ouput
 	"""
 
 	runName = kwargs['runName']
@@ -186,7 +185,7 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 	rActions = kwargs['rActions']
 	t_hid = kwargs['t_hid']
 
-	if output: print "\nassessing performance..."
+	if verbose: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
@@ -202,7 +201,7 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 	labels_print[rActions_uni=='z'] = 'z'
 
 	for iw in sorted(W_in_save.keys()):
-		if output: print 'run: ' + str(int(iw)+1)
+		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw]
 
 		""" testing of the classifier """
@@ -219,11 +218,11 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	if output:
-		print_save(allCMs, allPerf, rActions_uni, runName, show)
+	if verbose:
+		print_save(allCMs, allPerf, rActions_uni, runName, verbose)
 	return allCMs, allPerf
 
-def print_save(allCMs, allPerf, classes, runName, show):
+def print_save(allCMs, allPerf, classes, runName, verbose):
 	""" print and save performance measures """
 	avgCM = np.mean(allCMs,0)
 	steCM = np.std(allCMs,0)/np.sqrt(np.shape(allCMs)[0])
@@ -250,7 +249,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 		perf_print += 'and worse performance is:' + '\n'
 		perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
 
-	print perf_print
+	if verbose: print perf_print
 
 	perf_file = open('./output/' + runName + '/' +runName+ '_perf.txt', 'w')
 	perf_file.write(perf_print)
@@ -258,10 +257,7 @@ def print_save(allCMs, allPerf, classes, runName, show):
 
 	fig = pl.plotCM(avgCM, classes)
 	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.pdf')
-	if show:
-		pyplot.show(block=False)
-	else:
-		pyplot.close(fig)
+	pyplot.close(fig)
 
 
 

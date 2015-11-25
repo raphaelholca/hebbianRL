@@ -31,7 +31,7 @@ def RLnetwork(	images, labels, orientations,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, showPlots, show_W_act, sort, target, seed, comment):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	if save_data: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -49,7 +49,9 @@ def RLnetwork(	images, labels, orientations,
 	nn_input = np.empty((0,2), dtype=float) #input to the regressor neural net; nn_input[:,0] is prediction_error; nn_input[:,1] is tried DA value 
 
 	""" training of the network """
-	if verbose or param_xplr=='neural_net': print '\ntraining network...'
+	if verbose: 
+		print 'run:  ' + runName
+		print '\ntraining network...'
 	for r in range(nRun):
 		np.random.seed(seed+r)
 		if verbose: print '\nrun: ' + str(r+1)
@@ -207,7 +209,7 @@ def RLnetwork(	images, labels, orientations,
 
 			#check Wact assignment after each episode:
 			if protocol=='digit':
-				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, output=False, show=False)
+				RFproba, _, _ = rf.hist(runName, {'000':W_in}, classes, images, labels, protocol, SVM=SVM, save_data=False, verbose=False)
 			elif protocol=='gabor':
 				pref_ori = gr.preferred_orientations({'000':W_in}, params=kwargs)
 				RFproba = np.zeros((1, nHidNeurons, nClasses), dtype=int)
@@ -232,11 +234,11 @@ def RLnetwork(	images, labels, orientations,
 			if test_each_epi and (verbose or save_data):
 				if classifier=='bayesian':
 					rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-					_, perf_tmp = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=False, show=False)
+					_, perf_tmp = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data=False, verbose=False)
 				if classifier=='actionNeurons':
-					_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, output=False, show=False)
+					_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, save_data=False, verbose=False)
 				perf_epi.append(perf_tmp[0])
-				print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
+				if verbose: print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 			elif verbose and train_class_layer: print 
 
 		#save weights
@@ -244,14 +246,11 @@ def RLnetwork(	images, labels, orientations,
 		W_act_save[str(r).zfill(3)] = np.copy(W_act)
 		perf_save[str(r).zfill(3)] = np.copy(perf_epi)
 
-	""" compute network statistics and performance """
-
+	""" compute histogram of RF classes """
 	if protocol=='digit':
-		#compute histogram of RF classes
-		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, output=save_data, show=showPlots, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+		RFproba, RFclass, _ = rf.hist(runName, W_in_save, classes, images, labels, protocol, SVM=SVM, save_data=save_data, verbose=verbose, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
 
 	elif protocol=='gabor':
-		#compute histogram of RF classes
 		n_bins = 10
 		bin_size = 180./n_bins
 		orientations_bin = np.zeros(len(orientations), dtype=int)
@@ -264,9 +263,9 @@ def RLnetwork(	images, labels, orientations,
 		for r in pref_ori.keys():
 			RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 			RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
-		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, output=save_data, show=showPlots)
+		_, _, _ = rf.hist(runName, W_in_save, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, SVM=SVM, save_data=save_data, verbose=verbose)
 
-	#compute correct weight assignment in the action layer
+	""" compute correct weight assignment in the ouput layer """
 	if train_class_layer:
 		correct_W_act = 0.
 		notsame = {}
@@ -279,29 +278,29 @@ def RLnetwork(	images, labels, orientations,
 		notsame = None
 		correct_W_act = 0.
 
-	# plot the weights
+	""" plot weights """
 	if save_data:
 		if show_W_act: W_act_pass=W_act_save
 		else: W_act_pass=None
 		if protocol=='digit':
-			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame)
+			rf.plot(runName, W_in_save, RFproba, target=target, W_act=W_act_pass, sort=sort, notsame=notsame, verbose=verbose)
 			slopes = {}
 		elif protocol=='gabor':
-			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame)
+			rf.plot(runName, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame, verbose=verbose)
 			curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True) #basic, no_softmax, with_noise
 			slopes = gr.slopes(W_in_save, curves, pref_ori, kwargs)
 		if test_each_epi:
 			pl.perf_progress(perf_save, kwargs)
 
-	#assess classification performance with neural classifier or SVM 
-	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, output=(save_data or verbose), show=showPlots)
-	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, output=(save_data or verbose), show=showPlots)
-	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, output=(save_data or verbose), show=showPlots)
-	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, output=(save_data or verbose), show=showPlots)
+	""" compute network performance """
+	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose)
+	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, save_data, verbose)
+	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, save_data, verbose)
+	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data, verbose)
 
 	if verbose and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
-	#save data
+	"""" save data """
 	if save_data: ex.save_data(W_in_save, W_act_save, perf_save, slopes, kwargs)
 
 	if verbose: print '\nrun: '+runName + '\n'

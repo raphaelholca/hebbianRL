@@ -69,11 +69,10 @@ kwargs = {
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
 'param_xplr'	: 'neural_net' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: False 				,# whether to test the network's performance at each episode
+'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'save_data'		: True				,# whether to save data to disk
 'verbose'		: False				,# whether to create text output
-'showPlots'		: False				,# whether to display plots
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
@@ -175,7 +174,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 20
+	n_iter = 10
 	n_sample = 100
 	sample_input = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	for i_iter in range(n_iter):

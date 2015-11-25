@@ -357,9 +357,9 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 		for i in range(len(prediction_error)):
 			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
 			perf_predict = nn_regressor.predict(nn_input)
-			if param_xplr=='neural_net' and False:
+			if param_xplr=='neural_net':
 				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1.)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration)
-				chosen_idx = np.argmin(Y_cs <= np.random.uniform(0,1)) #probability matching
+				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching
 			else:
 				chosen_idx = np.argmax(perf_predict) #greedy algorithm
 			dopa[i] = tried_DA_values[chosen_idx]
@@ -537,8 +537,8 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['pre_train'] 			= settingFile['pre_train']
 		runs[k]['kwargs']['test_each_epi']	 	= conv_bool(settingFile['test_each_epi'])
 		runs[k]['kwargs']['SVM'] 				= conv_bool(settingFile['SVM'])
-		runs[k]['kwargs']['createOutput'] 		= conv_bool(settingFile['createOutput'])
-		runs[k]['kwargs']['showPlots'] 			= conv_bool(settingFile['showPlots'])
+		runs[k]['kwargs']['save_data'] 			= conv_bool(settingFile['save_data'])
+		runs[k]['kwargs']['verbose'] 			= conv_bool(settingFile['verbose'])
 		runs[k]['kwargs']['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
 		runs[k]['kwargs']['sort'] 				= settingFile['sort']
 		runs[k]['kwargs']['target'] 			= settingFile['target']
@@ -577,7 +577,7 @@ def checkdir(runName, OW_bool=True):
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
 	os.makedirs('output/' + runName + '/TCs')
-	print 'run:  ' + runName
+	
 	return runName
 
 def checkClassifier(classifier):
