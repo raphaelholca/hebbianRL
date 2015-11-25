@@ -23,6 +23,30 @@ def set_global(lActions_pass, rActions_pass, classes_pass):
 	rActions = rActions_pass
 	classes = classes_pass
 
+def set_global_noise():##
+	global xplr_noise 
+	xplr_noise = np.random.uniform(0,1)
+
+def set_polynomial_params(a_0_pass,a_1_pass,a_2_pass,a_3_pass):##
+	global a_0, a_1, a_2, a_3
+	a_0 = a_0_pass
+	a_1 = a_1_pass
+	a_2 = a_2_pass
+	a_3 = a_3_pass
+
+def polynomial(X):
+	"""
+	function to relate prediction error to DA
+
+	Args:
+		X (numpy array): prediction error: actual - predicted rewards
+
+	returns:
+		(numpy array): DA value
+	"""
+	
+	return a_0 + a_1*X + a_2*(X**2) + a_3*(X**3)
+
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
@@ -341,11 +365,11 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 	dopa = np.zeros(len(prediction_error))
 
 	if nn_regressor is None:
-		# dopa = dopa_function(prediction_error)
+		dopa = dopa_function(prediction_error)
 		##
-		dopa[prediction_error < -0.5] = -1.
-		dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
-		dopa[prediction_error >= 0.5] = +3.
+		# dopa[prediction_error < -0.5] = -1.
+		# dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
+		# dopa[prediction_error >= 0.5] = +3.
 	else: #uses a neural network regressor to compute DA value
 		DA_min = -6.
 		DA_max = +6.
@@ -357,15 +381,16 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 		for i in range(len(prediction_error)):
 			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
 			perf_predict = nn_regressor.predict(nn_input)
-			if param_xplr=='neural_net':
-				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1.)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration)
-				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching
+			if param_xplr=='neural_net' and False:
+				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1e-20)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
+				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, varying noise
+				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, constant noise
 			else:
 				chosen_idx = np.argmax(perf_predict) #greedy algorithm
 			dopa[i] = tried_DA_values[chosen_idx]
+		# import pdb; pdb.set_trace()
 
 	return dopa, prediction_error
-
 
 def compute_ach(perf, pred_bLabels_idx, aHigh, aPairing=1.):
 	"""
@@ -577,7 +602,7 @@ def checkdir(runName, OW_bool=True):
 	os.makedirs('output/' + runName)
 	os.makedirs('output/' + runName + '/RFs')
 	os.makedirs('output/' + runName + '/TCs')
-	
+
 	return runName
 
 def checkClassifier(classifier):

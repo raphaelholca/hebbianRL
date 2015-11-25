@@ -31,10 +31,12 @@ def RLnetwork(	images, labels, orientations,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment, a_0, a_1, a_2, a_3):
 
 	""" variable initialization """
 	if save_data: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
+	# ex.set_global_noise() ##
+	ex.set_polynomial_params(a_0, a_1, a_2, a_3) ##
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -47,6 +49,7 @@ def RLnetwork(	images, labels, orientations,
 	show_W_act = False if classifier=='bayesian' else show_W_act
 	proba_predict = False if classifier!='bayesian' else proba_predict
 	nn_input = np.empty((0,2), dtype=float) #input to the regressor neural net; nn_input[:,0] is prediction_error; nn_input[:,1] is tried DA value 
+	nn_input_save = np.empty((0,2), dtype=float)
 
 	""" training of the network """
 	if verbose: 
@@ -86,7 +89,7 @@ def RLnetwork(	images, labels, orientations,
 		# pbar_epi = ProgressBar()
 		# for e in pbar_epi(range(nEpiTot)):
 		for e in range(nEpiTot):
-			if e==nEpiCrit and verbose: print '----------end crit-----------'
+			if verbose and e==nEpiCrit: print '----------end crit-----------'
 
 			#shuffle input
 			if protocol=='digit' or (protocol=='gabor' and e < nEpiCrit):
@@ -96,14 +99,13 @@ def RLnetwork(	images, labels, orientations,
 
 			#train network with mini-batches
 			for b in range(int(nImages/nBatch)):
-
 				#re-compute the pdf for bayesian inference if any weights have changed more than a threshold
 				if classifier=='bayesian' and (e >= nEpiCrit or test_each_epi):
 					W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
-					if (W_mschange/940 > 0.005).any() or (e==0 and b==0): 
+					if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
 						W_in_since_update = np.copy(W_in)
 						pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs, pdf_method)
-				
+			
 				#select batch training images (may leave a few training examples out (< nBatch))
 				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
 				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
@@ -176,11 +178,12 @@ def RLnetwork(	images, labels, orientations,
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					if proba_predict:
-						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=np.sign, param_xplr=param_xplr)
+						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=ex.polynomial, param_xplr=param_xplr)
 						tmp_input = np.zeros((nBatch, 2))
 						tmp_input[:,0] = prediction_error
 						tmp_input[:,1] = dopa
 						nn_input = np.append(nn_input, tmp_input, axis=0)
+						nn_input_save = np.append(nn_input_save, tmp_input, axis=0)
 					else:
 						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 
@@ -206,6 +209,28 @@ def RLnetwork(	images, labels, orientations,
 
 				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
+
+				#fit regressor neural net during training
+				# if param_xplr=='neural_net' and b%5==0:
+				# 	rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
+				# 	batch_perf = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data=False, verbose=False)[1]
+				# 	nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*batch_perf)
+
+				# 	X = np.ones((120, 2))*0.5
+				# 	X[:,0]=np.arange(-6,6,0.1)
+				# 	best_X = np.argmax(nn_regressor.predict(X))
+					
+				# 	X_ = np.ones((120, 2))*-0.5
+				# 	X_[:,0]=np.arange(-6,6,0.1)
+				# 	best_X_ = np.argmax(nn_regressor.predict(X_))
+
+				# 	print 'batch perf: ' + str(np.round(batch_perf[0],3)*100) + '%' + '   ; best_DA err=0.5: ' + str(X[best_X][0]) + ' ; err=-0.5: ' + str(X_[best_X_][0])
+
+				# 	import pdb; pdb.set_trace()
+
+				# 	nn_input = np.empty((0,2), dtype=float)
+
+			""" end of mini-batch """
 
 			#check Wact assignment after each episode:
 			if protocol=='digit':
@@ -240,6 +265,8 @@ def RLnetwork(	images, labels, orientations,
 				perf_epi.append(perf_tmp[0])
 				if verbose: print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 			elif verbose and train_class_layer: print 
+
+		""" end of episode """
 
 		#save weights
 		W_in_save[str(r).zfill(3)] = np.copy(W_in)
@@ -307,7 +334,7 @@ def RLnetwork(	images, labels, orientations,
 
 	if param_xplr=='None': import pdb; pdb.set_trace()
 
-	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input
+	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
 
 
 

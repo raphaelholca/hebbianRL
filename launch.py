@@ -37,7 +37,7 @@ def pypet_RLnetwork(traj):
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 1					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
@@ -67,16 +67,21 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'neural_net' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'None' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'test_each_epi'	: True 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'save_data'		: True				,# whether to save data to disk
-'verbose'		: False				,# whether to create text output
+'save_data'		: False				,# whether to save data to disk
+'verbose'		: True				,# whether to create text output
 'show_W_act'	: True				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
+
+'a_0'			: 0.,
+'a_1'			: 0.,
+'a_2'			: 1.0,
+'a_3'			: 8.,
 
 'comment'		: ''
 
@@ -84,17 +89,21 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
+'a_0'			:	np.arange(-0.1, 0.11, 0.05).tolist(),
+'a_1'			:	np.arange(-2., 2.1, 1.0).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'a_2'			:	np.arange(-1., 1.1, 0.5).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'a_3'			:	np.arange(0., 8.1, 2.0).tolist(),
+# 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
+# 'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+# 'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+# 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 }
 
 """ load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
 print 'seed: ' + str(kwargs['seed']) + '\n'
-if not kwargs['save_data']: print " !!! ----- not saving data ----- !!! "
+if not kwargs['save_data']: print "!!! ----- not saving data ----- !!! \n"
 np.random.seed(kwargs['seed'])
 
 global images, labels, orientations
@@ -159,6 +168,7 @@ elif kwargs['protocol'] == 'gabor':
 	orientations_test = np.random.random(n_test)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
 	images_test, labels_test = ex.generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
 
+""" parameter exploration """
 
 if kwargs['param_xplr'] == 'None':
 	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
@@ -169,12 +179,12 @@ if kwargs['param_xplr'] == 'None':
 elif kwargs['param_xplr'] == 'neural_net':
 	nn_regressor = Regressor(
 	    layers=[
-	        Layer("Rectifier", 	units=10),
+	        Layer("Rectifier", 	units=5),
 	        Layer("Linear", 	units=1)],
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 10
+	n_iter = 200
 	n_sample = 100
 	sample_input = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	for i_iter in range(n_iter):
@@ -184,12 +194,19 @@ elif kwargs['param_xplr'] == 'neural_net':
 																							images_task, labels_task, orientations_task, 
 																							nn_regressor, kwargs, **kwargs)
 
-		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%'
-		print "training regressor neural net... \n"
+		best_DA = np.array([])
+		for i in np.arange(-1,1.1,0.2):
+			X = np.ones((120, 2))*i
+			X[:,0]=np.arange(-6,6,0.1)
+			best_DA = np.append(best_DA, X[ np.argmax( nn_regressor.predict(X) ), 0 ] )
+		
+		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; best_DA: ' + str(np.round(best_DA,1))
 		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
 		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
 		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
+		print "training regressor neural net... \n"
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
+		# import pdb; pdb.set_trace()
 
 	pickle.dump(sample_input, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
 	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
