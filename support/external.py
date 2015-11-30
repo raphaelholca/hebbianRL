@@ -467,10 +467,12 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_value', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
 	args_save = args.copy()
-	for k in sorted(args_save.keys()):
+	for k in param_keys:
 		if type(args_save[k]) == type(np.array(0)): #convert numpy array to list
 			args_save[k] = list(args_save[k])
 		settingFile[k] = args_save[k]
@@ -549,6 +551,12 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['dMid'] 				= float(settingFile['dMid'])
 		runs[k]['kwargs']['dNeut'] 				= float(settingFile['dNeut'])
 		runs[k]['kwargs']['dLow'] 				= float(settingFile['dLow'])
+
+		runs[k]['kwargs']['a_0'] 				= float(settingFile['a_0'])
+		runs[k]['kwargs']['a_1'] 				= float(settingFile['a_1'])
+		runs[k]['kwargs']['a_2'] 				= float(settingFile['a_2'])
+		runs[k]['kwargs']['a_3'] 				= float(settingFile['a_3'])
+
 		runs[k]['kwargs']['nBatch'] 			= int(settingFile['nBatch'])
 		runs[k]['kwargs']['protocol'] 			= settingFile['protocol']
 		runs[k]['kwargs']['target_ori'] 		= float(settingFile['target_ori'])
