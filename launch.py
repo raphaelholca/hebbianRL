@@ -41,7 +41,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_polynomial_noExplr_noProba'	,# name of the folder where to save results
+'runName' 		: 'xplr_polynomial_noProba'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -74,7 +74,7 @@ kwargs = {
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'save_data'		: False				,# whether to save data to disk
 'verbose'		: False				,# whether to create text output
-'show_W_act'	: True				,# whether to display W_act weights on the weight plots
+'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
@@ -219,7 +219,7 @@ elif kwargs['param_xplr'] == 'pypet':
 							log_stdout=False,
 							add_time = False,
 							multiproc = True,
-							ncores = 9,
+							ncores = 10,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
 
