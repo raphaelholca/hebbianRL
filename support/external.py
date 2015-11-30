@@ -1,4 +1,3 @@
-
 """ support functions for hebbian network and neural classifier """
 
 import numpy as np
@@ -315,7 +314,7 @@ def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
 	"""
 
 	if not proba_predict:
-		reward_prediction = best_action==action_taken
+		reward_prediction = best_action==action_taken #binary reward prediction
 	else:
 		reward_prediction = posterior[range(np.size(action_taken,0)), val2idx(action_taken)] #expected value of the reward for the action taken
 
@@ -542,6 +541,7 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['noise_std'] 			= float(settingFile['noise_std'])
 		runs[k]['kwargs']['proba_predict'] 		= conv_bool(settingFile['proba_predict'])
 		runs[k]['kwargs']['exploration'] 		= conv_bool(settingFile['exploration'])
+		runs[k]['kwargs']['RPE_value'] 			= settingFile['RPE_value']
 		runs[k]['kwargs']['pdf_method'] 		= settingFile['pdf_method']
 		runs[k]['kwargs']['aHigh'] 				= float(settingFile['aHigh'])
 		runs[k]['kwargs']['aPairing'] 			= float(settingFile['aPairing'])

@@ -41,7 +41,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test_none'			,# name of the folder where to save results
+'runName' 		: 'test'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -49,8 +49,9 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: True 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: False 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
+'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
@@ -67,9 +68,9 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'None' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: True 			,# whether to test the network's performance at each episode
+'test_each_epi'	: True 				,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'save_data'		: False				,# whether to save data to disk
 'verbose'		: True				,# whether to create text output
@@ -78,10 +79,10 @@ kwargs = {
 'target'		: None 				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
 
-'a_0'			: 0.,
+'a_0'			: -.1,
 'a_1'			: 0.,
 'a_2'			: 1.0,
-'a_3'			: 8.,
+'a_3'			: 6.,
 
 'comment'		: ''
 
