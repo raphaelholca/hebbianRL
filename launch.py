@@ -49,8 +49,9 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: False 			,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
-'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
+'proba_predict'	: False 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
+'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
@@ -78,10 +79,10 @@ kwargs = {
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
 
-'a_0'			: 0.,
-'a_1'			: 0.,
-'a_2'			: 1.0,
-'a_3'			: 8.,
+'a_0'			: -.1 				,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
+'a_1'			: 0. 				,
+'a_2'			: 1.0				,
+'a_3'			: 6.				,
 
 'comment'		: ''
 
