@@ -49,16 +49,23 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: False 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: True 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
+
 'dHigh' 		: 3.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
 'dMid' 			: 0.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
 'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+
+'a_0'			: -.1 				,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
+'a_1'			: 0. 				,
+'a_2'			: 1.0				,
+'a_3'			: 6.				,
+
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -78,11 +85,6 @@ kwargs = {
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
 'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
-
-'a_0'			: -.1 				,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
-'a_1'			: 0. 				,
-'a_2'			: 1.0				,
-'a_3'			: 6.				,
 
 'comment'		: ''
 
