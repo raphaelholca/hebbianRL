@@ -21,35 +21,39 @@ def pypet_RLnetwork(traj):
 	images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task = get_images()
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
+	try:
+		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
 																						None, parameter_dict, **parameter_dict)
+	except ValueError:
+		allPerf = np.ones(kwargs['nRun'])*-1
+		perc_correct_W_act = np.ones(kwargs['nRun'])*-1
 
 	traj.f_add_result('RLnetwork.$', 
 					perc_W_act=perc_correct_W_act, 
-					perf=np.mean(allPerf), 
+					perf=allPerf, 
 					comment='param exploration')
 
 	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
+'nRun' 			: 10					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test'			,# name of the folder where to save results
+'runName' 		: 'test+proba'			,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
+'lim_weights'	: True 			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: True 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: False				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
@@ -61,10 +65,10 @@ kwargs = {
 'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
-'a_0'			: -.1 				,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
-'a_1'			: 0. 				,
-'a_2'			: 1.0				,
-'a_3'			: 6.				,
+'a_0'			: -.05,	#0; -.05		,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
+'a_1'			: 0.0,	#2; 0		,
+'a_2'			: 0.0				,
+'a_3'			: 8.0,	#4; 8		,
 
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)

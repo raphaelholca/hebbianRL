@@ -167,23 +167,26 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		print_save(allCMs, allPerf, classes, runName, verbose)
 	return allCMs, allPerf
 
-def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data, verbose):
+def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
 	Args:
 		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
+		images (numpy array): train images
+		labels (numpy array): train labels
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
 		kwargs (dict): parameters of the model
-		save_data (bool, optional) : whether save data
-		verbose (bool, optional) : whether to display text ouput
 	"""
 
 	runName = kwargs['runName']
 	classes = kwargs['classes']
 	rActions = kwargs['rActions']
 	t_hid = kwargs['t_hid']
+	pdf_method = kwargs['pdf_method']
+	if verbose is None: verbose = kwargs['verbose']
+	if save_data is None: save_data = kwargs['save_data']
 
 	if verbose: print "\nassessing performance..."
 
@@ -203,6 +206,9 @@ def bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, p
 	for iw in sorted(W_in_save.keys()):
 		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw]
+
+		""" compute pdf """
+		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in, kwargs)
 
 		""" testing of the classifier """
 		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
