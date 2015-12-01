@@ -9,11 +9,13 @@ import pypet
 import time
 import support.hebbianRL as rl
 import support.external as ex
+import support.plots as pl
 import support.mnist as mnist
 from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
 ex = reload(ex)
+pl = reload(pl)
 
 def get_images():
 	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
@@ -42,20 +44,20 @@ def pypet_RLnetwork(traj):
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 2					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_polynomial_lim_weights_3'	,# name of the folder where to save results
+'runName' 		: 'test-proba'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
+'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
-'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
+'proba_predict'	: False				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
 'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -66,10 +68,10 @@ kwargs = {
 'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
-'a_0'			: -.05,	#0; -.05		,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
-'a_1'			: 0.0,	#2; 0		,
-'a_2'			: 0.0				,
-'a_3'			: 8.0,	#4; 8		,
+'a_0'			: .1,	#0; -.05	,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
+'a_1'			: 1.0,	#2; 0		,
+'a_2'			: -1.0				,
+'a_3'			: 4.0,	#4; 8		,
 
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
@@ -80,12 +82,12 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'pypet' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'neural_net' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'test_each_epi'	: True 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'save_data'		: False				,# whether to save data to disk
-'verbose'		: False				,# whether to create text output
+'save_data'		: True				,# whether to save data to disk
+'verbose'		: True				,# whether to create text output
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
@@ -192,31 +194,42 @@ elif kwargs['param_xplr'] == 'neural_net':
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 200
-	n_sample = 100
-	sample_input = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
+	n_iter = 1000 # number of training iterations
+	n_sample = 100 # number of sample input to save 
+	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
+	perf_save = np.array([])
+	best_DA_save = np.zeros((0,11))
 	for i_iter in range(n_iter):
 		print "training hebbian network..."
-		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
+		try:
+			allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
 																							images_test, labels_test, orientations_test, 
 																							images_task, labels_task, orientations_task, 
 																							nn_regressor, kwargs, **kwargs)
+		except ValueError: 
+			allPerf = np.zeros(1)
+			# import pdb; pdb.set_trace()
 
+		perf_save = np.append(perf_save, allPerf[0])
 		best_DA = np.array([])
 		for i in np.arange(-1,1.1,0.2):
 			X = np.ones((120, 2))*i
 			X[:,0]=np.arange(-6,6,0.1)
 			best_DA = np.append(best_DA, X[ np.argmax( nn_regressor.predict(X) ), 0 ] )
-		
+		best_DA_save = np.append(best_DA_save, best_DA[np.newaxis, :], 0)
+
 		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; best_DA: ' + str(np.round(best_DA,1))
 		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
-		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
-		sample_input[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
+		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
+		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
 		print "training regressor neural net... \n"
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
 		# import pdb; pdb.set_trace()
 
-	pickle.dump(sample_input, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
+	pl.perf_progress({'000': perf_save}, kwargs)
+	pickle.dump(sample_input_save, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
+	pickle.dump(best_DA_save, open('output/' + kwargs['runName'] + '/best_DA_epi', 'w'))
+	pickle.dump(perf_save, open('output/' + kwargs['runName'] + '/perf_epi', 'w'))
 	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
 
 elif kwargs['param_xplr'] == 'pypet':

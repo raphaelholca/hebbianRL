@@ -54,7 +54,7 @@ def RLnetwork(	images, labels, orientations,
 	""" training of the network """
 	if verbose: 
 		print 'run:  ' + runName
-		print '\ntraining network...'
+		print '\ntraining hebbian network...'
 	for r in range(nRun):
 		np.random.seed(seed+r)
 		if verbose: print '\nrun: ' + str(r+1)
@@ -215,9 +215,9 @@ def RLnetwork(	images, labels, orientations,
 				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
 
 				#fit regressor neural net during training
-				# if param_xplr=='neural_net' and b%5==0:
+				# if param_xplr=='neural_net' and b%5==0 anf False:
 				# 	rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-				# 	batch_perf = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data=False, verbose=False)[1]
+				# 	batch_perf = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], kwargs, save_data=False, verbose=False)[1]
 				# 	nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*batch_perf)
 
 				# 	X = np.ones((120, 2))*0.5
