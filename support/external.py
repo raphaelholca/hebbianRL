@@ -373,17 +373,17 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 		DA_min = -6.
 		DA_max = +6.
 		step = 0.1
-		tried_DA_values = np.arange(DA_min,DA_max,step)
+		tried_DA_values = np.arange(DA_min, DA_max, step)
 
 		nn_input = np.zeros((len(tried_DA_values), 2))
 		nn_input[:,1] = tried_DA_values
 		for i in range(len(prediction_error)):
 			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
 			perf_predict = nn_regressor.predict(nn_input)
-			if param_xplr=='neural_net' and False:
-				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1e-20)) ## <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
-				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, varying noise
-				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, constant noise
+			if param_xplr=='neural_net':
+				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1e-3)) # <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
+				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, stimulus-wise noise injection
+				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, trial-wise noise injection (i.e., constant noise for a trial, prob. not ideal)
 			else:
 				chosen_idx = np.argmax(perf_predict) #greedy algorithm
 			dopa[i] = tried_DA_values[chosen_idx]

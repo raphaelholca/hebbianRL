@@ -125,7 +125,7 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
-def perf_progress(perf, kwargs):
+def perf_progress(perf, kwargs, nEpi=None):
 	"""
 	plots the progression of the error rate over training episodes
 	"""
@@ -137,7 +137,7 @@ def perf_progress(perf, kwargs):
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
 	for r in perf.keys():
-		ax.plot(np.arange(nEpiDopa)+1, perf[r][nEpiCrit:]*100, lw=3)
+		ax.plot(np.arange( len(perf[r][nEpiCrit:]) )+1, perf[r][nEpiCrit:]*100, lw=3)
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
