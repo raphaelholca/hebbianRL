@@ -42,11 +42,11 @@ def pypet_RLnetwork(traj):
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_polynomial_lim_weights_3'	,# name of the folder where to save results
+'runName' 		: 'xplr_polynomial_noExplr_lim_weights'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -55,7 +55,7 @@ kwargs = {
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
-'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
+'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
 'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -97,7 +97,7 @@ kwargs = {
 
 """ parameters for exploration """
 explore_dict = {
-'a_0'			:	np.arange(-0.1, 0.11, 0.05).tolist(),
+'a_0'			:	np.arange(-0.2, 0.21, 0.1).tolist(),
 'a_1'			:	np.arange(-2., 6.1, 2.0).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
 'a_2'			:	np.arange(-1., 1.1, 0.5).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
 'a_3'			:	np.arange(0., 8.1, 2.0).tolist(),
