@@ -6,6 +6,7 @@ import pickle
 import os
 import struct
 import pypet
+import time
 import support.hebbianRL as rl
 import support.external as ex
 import support.mnist as mnist
@@ -21,10 +22,14 @@ def pypet_RLnetwork(traj):
 	images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task = get_images()
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
+	try:
+		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
 																						None, parameter_dict, **parameter_dict)
+	except ValueError:
+		allPerf = np.ones(kwargs['nRun'])*-1
+		perc_correct_W_act = np.ones(kwargs['nRun'])*-1
 
 	traj.f_add_result('RLnetwork.$', 
 					perc_W_act=perc_correct_W_act, 
@@ -35,21 +40,21 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 1					,# number of runs
+'nRun' 			: 3					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_polynomial_noProba'	,# name of the folder where to save results
+'runName' 		: 'xplr_polynomial_lim_weights_3'	,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
+'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: True 				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
@@ -93,7 +98,7 @@ kwargs = {
 """ parameters for exploration """
 explore_dict = {
 'a_0'			:	np.arange(-0.1, 0.11, 0.05).tolist(),
-'a_1'			:	np.arange(-2., 2.1, 1.0).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'a_1'			:	np.arange(-2., 6.1, 2.0).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
 'a_2'			:	np.arange(-1., 1.1, 0.5).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
 'a_3'			:	np.arange(0., 8.1, 2.0).tolist(),
 # 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
@@ -216,6 +221,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 
 elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """
+	pypet_tic = time.time()
 	env = pypet.Environment(trajectory = 'xplr',
 							comment = 'testing with pypet...',
 							log_stdout=False,
@@ -245,6 +251,10 @@ elif kwargs['param_xplr'] == 'pypet':
 	env.f_run(pypet_RLnetwork)
 
 	env.f_disable_logging() #disable logging and close all log-files
+
+	print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(pypet_tic))
+	print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
+	print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-pypet_tic))
 
 
 
