@@ -40,9 +40,9 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 3					,# number of runs
+'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 3					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
@@ -66,10 +66,10 @@ kwargs = {
 'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
-'a_0'			: -.1 				,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
-'a_1'			: 0. 				,
-'a_2'			: 1.0				,
-'a_3'			: 6.				,
+'a_0'			: -.05,	#0; -.05		,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
+'a_1'			: 0.0,	#2; 0		,
+'a_2'			: 0.0				,
+'a_3'			: 8.0,	#4; 8		,
 
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)

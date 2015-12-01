@@ -167,7 +167,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		print_save(allCMs, allPerf, classes, runName, verbose)
 	return allCMs, allPerf
 
-def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs):
+def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
@@ -184,8 +184,9 @@ def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs):
 	classes = kwargs['classes']
 	rActions = kwargs['rActions']
 	t_hid = kwargs['t_hid']
-	verbose = kwargs['verbose']
-	save_data = kwargs['save_data']
+	pdf_method = kwargs['pdf_method']
+	if verbose is None: verbose = kwargs['verbose']
+	if save_data is None: save_data = kwargs['save_data']
 
 	if verbose: print "\nassessing performance..."
 

@@ -83,6 +83,7 @@ def RLnetwork(	images, labels, orientations,
 
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = []
+		predicted_reward_save = []
 		perf_epi = []
 		dW_save=np.array([])
 
@@ -104,7 +105,7 @@ def RLnetwork(	images, labels, orientations,
 					W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
 					if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
 						W_in_since_update = np.copy(W_in)
-						pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs, pdf_method)
+						pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs)
 			
 				#select batch training images (may leave a few training examples out (< nBatch))
 				bImages = rndImages[b*nBatch:(b+1)*nBatch,:]
@@ -132,7 +133,8 @@ def RLnetwork(	images, labels, orientations,
 					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
 					bHidNeurons[exploratory] += np.random.normal(0, np.std(bHidNeurons)*noise_std, np.shape(bHidNeurons))[exploratory]
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
-					bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
+					if train_class_layer:
+						bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
 				else:
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 
@@ -165,9 +167,11 @@ def RLnetwork(	images, labels, orientations,
 				elif classifier=='bayesian' and e >= nEpiCrit:
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 
+				predicted_reward_save.append(predicted_reward)
+
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit and train_class_layer:
-					""" critical period """
+					""" critical period; trains class layer """
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
@@ -259,7 +263,7 @@ def RLnetwork(	images, labels, orientations,
 			if test_each_epi and (verbose or save_data):
 				if classifier=='bayesian':
 					rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-					_, perf_tmp = cl.bayesian({'000':W_in}, images_test[rdn_idx], labels_test[rdn_idx], pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data=False, verbose=False)
+					_, perf_tmp = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], kwargs, save_data=False, verbose=False)
 				if classifier=='actionNeurons':
 					_, perf_tmp = cl.actionNeurons({'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, save_data=False, verbose=False)
 				perf_epi.append(perf_tmp[0])
@@ -323,7 +327,7 @@ def RLnetwork(	images, labels, orientations,
 	if classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose)
 	if classifier=='SVM': 			allCMs, allPerf = cl.SVM(runName, W_in_save, images, labels, classes, nInpNeurons, A, dataset, save_data, verbose)
 	if classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(runName, W_in_save, classes, RFproba, nInpNeurons, A, images_test, labels_test, save_data, verbose)
-	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images_test, labels_test, pdf_marginals, pdf_evidence, pdf_labels, kwargs, pdf_method, save_data, verbose)
+	if classifier=='bayesian':		allCMs, allPerf = cl.bayesian(W_in_save, images, labels, images_test, labels_test, kwargs)
 
 	if verbose and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(nHidNeurons)
 
