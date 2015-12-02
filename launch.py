@@ -48,10 +48,10 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor'		,# name of the folder where to save results
+'runName' 		: 'xplr_regressor_2'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
+'lim_weights'	: True 			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
@@ -194,11 +194,11 @@ elif kwargs['param_xplr'] == 'neural_net':
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 1000 # number of training iterations
+	n_iter = 150 # number of training iterations
 	n_sample = 100 # number of sample input to save 
 	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	perf_save = np.array([])
-	best_DA_save = np.zeros((0,11))
+	best_DA_save = np.zeros((120,105,n_iter))
 	for i_iter in range(n_iter):
 		print "training hebbian network..."
 		try:
@@ -208,17 +208,17 @@ elif kwargs['param_xplr'] == 'neural_net':
 																							nn_regressor, kwargs, **kwargs)
 		except ValueError: 
 			allPerf = np.zeros(1)
-			# import pdb; pdb.set_trace()
 
 		perf_save = np.append(perf_save, allPerf[0])
 		best_DA = np.array([])
-		for i in np.arange(-1,1.1,0.2):
+		for i in np.arange(-1,1.1,0.02):
 			X = np.ones((120, 2))*i
 			X[:,0]=np.arange(-6,6,0.1)
 			best_DA = np.append(best_DA, X[ np.argmax( nn_regressor.predict(X) ), 0 ] )
-		best_DA_save = np.append(best_DA_save, best_DA[np.newaxis, :], 0)
+		import pdb; pdb.set_trace()
+		best_DA_save[:,:,i_iter] = best_DA
 
-		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; best_DA: ' + str(np.round(best_DA,1))
+		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; best_DA: ' + str(np.round(best_DA[::10],1))
 		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
 		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
 		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
@@ -226,11 +226,12 @@ elif kwargs['param_xplr'] == 'neural_net':
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
 		# import pdb; pdb.set_trace()
 
-	pl.perf_progress({'000': perf_save}, kwargs)
+	if not os.path.exists('output/' + kwargs['runName']): os.mkdir('output/' + kwargs['runName'])
 	pickle.dump(sample_input_save, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
 	pickle.dump(best_DA_save, open('output/' + kwargs['runName'] + '/best_DA_epi', 'w'))
 	pickle.dump(perf_save, open('output/' + kwargs['runName'] + '/perf_epi', 'w'))
 	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
+	pl.perf_progress({'000': perf_save}, kwargs)
 
 elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """
