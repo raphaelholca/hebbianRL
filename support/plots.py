@@ -220,8 +220,35 @@ def plot_noise_proba(W_in, images, kwargs):
 	plt.savefig('output/' + runName + '/' + runName+ '_activation.pdf')
 	plt.close(fig)
 
+def regressor_prediction(all_DA_save, kwargs):
+	"""
+	plot performance prediction by neural regressor
 
+	Args:
+		all_DA_save (numpy array): array of saved performance predictions of size ( n_DA x n_RPE x n_episode )
+	"""
 
+	n_epi = np.size(all_DA_save,2)
+	vmax = np.max(all_DA_save)
+	vmin = np.min(all_DA_save)
+
+	for epi in range(n_epi):
+		plt.figure()
+		plt.imshow(all_DA_save[:,:,epi], vmin=vmin, vmax=vmax, origin='lower')
+		plt.plot(np.argmax(all_DA_save[:,:,epi],0), c='k', lw=3)
+
+		plt.xticks([0,25,50,75,100], ['-1', '-0.5', '0', '+0.5', '+1'])
+		plt.yticks([0,30,60,90,120], ['-6', '-3', '0', '+3', '+6'])
+
+		plt.xlim(0,100)
+		plt.ylim(0,120)
+
+		plt.title('epi ' + str(epi))
+		plt.xlabel('RPE')
+		plt.ylabel('DA')
+
+		plt.savefig('output/' + kwargs['runName'] + '/regressor_prediction/epi_' + str(epi) + '.png')
+		plt.close()
 
 
 
