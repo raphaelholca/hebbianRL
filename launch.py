@@ -12,6 +12,7 @@ import support.hebbianRL as rl
 import support.external as ex
 import support.plots as pl
 import support.mnist as mnist
+from scipy.optimize import basinhopping
 from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
@@ -26,7 +27,7 @@ def pypet_RLnetwork(traj):
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 
 	try:
-		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(images, labels, orientations, 
+		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(None, images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
 																						None, parameter_dict, **parameter_dict)
@@ -49,7 +50,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor_test_3'		,# name of the folder where to save results
+'runName' 		: 'xplr_regressor_test_5'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -83,8 +84,8 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'neural_net' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
-'temp_xplr'		: 1e-5				,# temperature for exploration in neural network-based parameter exploration
+'param_xplr'	: 'basinhopping' 	,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -181,26 +182,46 @@ elif kwargs['protocol'] == 'gabor':
 	images_test, labels_test = ex.generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
 
 """ parameter exploration """
+tic = time.time()
 
 if kwargs['param_xplr'] == 'None':
 	if kwargs['save_data']: kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True) #create saving directory
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	None, images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
 																						None, kwargs, **kwargs)
 
+elif kwargs['param_xplr'] == 'basinhopping':
+	func = rl.RLnetwork
+	opti_params_0 = [0,0,0,0]
+
+	all_args = kwargs.copy()
+	all_args.update({	'images':images, 'labels':labels, 'orientations':orientations, 
+						'images_test':images_test, 'labels_test':labels_test, 'orientations_test':orientations_test, 
+						'images_task':images_task, 'labels_task':labels_task, 'orientations_task':orientations_task, 
+						'nn_regressor':None, 'kwargs':kwargs})
+
+	import pdb; pdb.set_trace()
+	
+
+	fit = basinhopping( func, 
+						opti_params_0,
+						T=1.0, 
+						niter=1,
+						minimizer_kwargs={'args':all_args})
+
+
 elif kwargs['param_xplr'] == 'neural_net':
-	nn_tic = time.time()
 	nn_regressor = Regressor(		#[prediction_error, tried_DA_values]
 	    layers=[
 	        Layer("Rectifier", 	units=5),
 	        Layer("Linear", 	units=1)],
-	    learning_rate=0.02,
+	    learning_rate=1e-8,
 	    n_iter=1)
 
 	# import pdb;pdb.set_trace()
 
-	n_iter = 12 # number of training iterations
+	n_iter = 15 # number of training iterations
 	n_sample = 1000 # number of sample input to save 
 	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	perf_save = np.array([])
@@ -212,7 +233,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 	for i_iter in range(n_iter):
 		print "training hebbian network..."
 		try:
-			allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
+			allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	None, images, labels, orientations, 
 																							images_test, labels_test, orientations_test, 
 																							images_task, labels_task, orientations_task, 
 																							nn_regressor, kwargs, **kwargs)
@@ -224,8 +245,8 @@ elif kwargs['param_xplr'] == 'neural_net':
 		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
 			X = np.ones((121, 2))*rpe
 			X[:,1]=np.arange(-6,6.1,0.1)
-			if i_iter==0: all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
-		if i_iter==0: pl.regressor_prediction(all_DA, i_iter, kwargs)
+			all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
+		pl.regressor_prediction(all_DA, i_iter, kwargs, perf=allPerf[0], nn_input=nn_input)
 		all_DA_save[:,:,i_iter] = all_DA
 
 		
@@ -236,16 +257,16 @@ elif kwargs['param_xplr'] == 'neural_net':
 		print "training regressor neural net..."
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
 		
-		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
-			X = np.ones((121, 2))*rpe
-			X[:,1]=np.arange(-6,6.1,0.1)
-			all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
-		pl.regressor_prediction(all_DA, i_iter+1, kwargs)
+		if i_iter+1==n_iter:
+			for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
+				X = np.ones((121, 2))*rpe
+				X[:,1]=np.arange(-6,6.1,0.1)
+				all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
+			pl.regressor_prediction(all_DA, i_iter+1, kwargs)
 
 		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 1],1)) + ' \n'
 
 		pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_' + str(i_iter+1), 'w'))
-		pl.regressor_prediction(all_DA, i_iter+1, kwargs)
 
 	#save results to file
 	pickle.dump(sample_input_save, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
@@ -254,13 +275,8 @@ elif kwargs['param_xplr'] == 'neural_net':
 	pl.perf_progress({'000': perf_save}, kwargs)
 	ex.save_data(None, None, None, None, kwargs, save_weights=False)
 
-	print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(nn_tic))
-	print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
-	print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-nn_tic))
-
 elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """
-	pypet_tic = time.time()
 	env = pypet.Environment(trajectory = 'xplr',
 							comment = 'testing with pypet...',
 							log_stdout=False,
@@ -291,9 +307,9 @@ elif kwargs['param_xplr'] == 'pypet':
 
 	env.f_disable_logging() #disable logging and close all log-files
 
-	print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(pypet_tic))
-	print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
-	print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-pypet_tic))
+print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
+print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
+print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-pypet_tic))
 
 
 

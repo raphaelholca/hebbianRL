@@ -137,7 +137,11 @@ def perf_progress(perf, kwargs, nEpi=None):
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
 	for r in perf.keys():
-		ax.plot(np.arange( len(perf[r][nEpiCrit:]) )+1, perf[r][nEpiCrit:]*100, lw=3)
+		if kwargs['param_xplr'] == 'neural_net':
+			X = np.arange( len(perf[r][nEpiCrit:]) )
+		else:
+			X = np.arange( len(perf[r][nEpiCrit:]) )+1
+		ax.plot(X, perf[r][nEpiCrit:]*100, lw=3)
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
@@ -146,7 +150,10 @@ def perf_progress(perf, kwargs, nEpi=None):
 	ax.set_ylim([50,100])
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_xlabel('episodes after dopa', fontsize=18)
+	if kwargs['param_xplr'] == 'neural_net':
+		ax.set_xlabel('training episodes', fontsize=18)
+	else:
+		ax.set_xlabel('episodes after dopa', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 
@@ -220,15 +227,15 @@ def plot_noise_proba(W_in, images, kwargs):
 	plt.savefig('output/' + runName + '/' + runName+ '_activation.pdf')
 	plt.close(fig)
 
-def regressor_prediction(all_DA, epi, kwargs):
+def regressor_prediction(all_DA, epi, kwargs, perf=None, nn_input=None):
 	"""
 	plot performance prediction by neural regressor
 
 	Args:
-		all_DA (numpy array): array of saved performance predictions of size ( n_DA x n_RPE x n_episode )
+		all_DA (numpy array): array of saved performance predictions, size: ( n_DA x n_RPE )
 	"""
 
-	if epi!=0:
+	if epi!=0 or True:
 		vmax = 1.0
 		vmin = 0.0
 	else:
@@ -239,6 +246,8 @@ def regressor_prediction(all_DA, epi, kwargs):
 	plt.imshow(all_DA[:,:], vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap='autumn')
 	plt.colorbar(orientation='vertical')
 	plt.plot(np.argmax(all_DA[:,:],0), c='k', lw=3)
+	if nn_input is not None:
+		plt.scatter((nn_input[:,0]+1)*50, (nn_input[:,1]+6)*10, marker='x', color='w', s=15)
 
 	plt.xticks([0,25,50,75,100], ['-1', '-0.5', '0', '+0.5', '+1'])
 	plt.yticks([0,30,60,90,120], ['-6', '-3', '0', '+3', '+6'])
@@ -246,7 +255,10 @@ def regressor_prediction(all_DA, epi, kwargs):
 	plt.xlim(0,100)
 	plt.ylim(0,120)
 
-	plt.title('epi ' + str(epi))
+	if perf is not None:
+		plt.title('epi ' + str(epi) + ' -- ' + str(np.round(perf,3)*100))
+	else:
+		plt.title('epi ' + str(epi))
 	plt.xlabel('RPE')
 	plt.ylabel('DA')
 

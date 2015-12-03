@@ -27,7 +27,8 @@ gr = reload(gr)
 bc = reload(bc)
 
 
-def RLnetwork(	images, labels, orientations, 
+def RLnetwork(	opti_params,
+				images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
@@ -35,7 +36,8 @@ def RLnetwork(	images, labels, orientations,
 
 	""" variable initialization """
 	# ex.set_global_noise() ##
-	ex.set_polynomial_params(a_0, a_1, a_2, a_3) ##
+	# ex.set_polynomial_params(a_0, a_1, a_2, a_3) ##
+	ex.set_polynomial_params(opti_params[0], opti_params[1], opti_params[2], opti_params[3]) ##
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -337,7 +339,10 @@ def RLnetwork(	images, labels, orientations,
 
 	if param_xplr=='None': import pdb; pdb.set_trace()
 
-	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
+	if param_xplr=='basinhopper':
+		return 1. - allPerf[0]
+	else:
+		return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
 
 
 
