@@ -49,7 +49,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor_2'		,# name of the folder where to save results
+'runName' 		: 'xplr_regressor_test'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 			,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -83,7 +83,8 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'neural_net' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'neural_net' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'temp_xplr'		: 1e-5				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
@@ -188,6 +189,7 @@ if kwargs['param_xplr'] == 'None':
 																						None, kwargs, **kwargs)
 
 elif kwargs['param_xplr'] == 'neural_net':
+	nn_tic = time.time()
 	nn_regressor = Regressor(
 	    layers=[
 	        Layer("Rectifier", 	units=5),
@@ -195,7 +197,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 75 # number of training iterations
+	n_iter = 2 # number of training iterations
 	n_sample = 100 # number of sample input to save 
 	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	perf_save = np.array([])
@@ -225,6 +227,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 		print "training regressor neural net... \n"
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
 
+	#save results to file
 	if not os.path.exists('output/' + kwargs['runName']): 
 		os.mkdir('output/' + kwargs['runName'])
 		os.mkdir('output/' + kwargs['runName']  + '/regressor_prediction')
@@ -234,6 +237,11 @@ elif kwargs['param_xplr'] == 'neural_net':
 	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
 	pl.perf_progress({'000': perf_save}, kwargs)
 	pl.regressor_prediction(all_DA_save, kwargs)
+	ex.save_data(None, None, None, None, kwargs, save_weights=False)
+
+	print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(nn_tic))
+	print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
+	print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-nn_tic))
 
 elif kwargs['param_xplr'] == 'pypet':
 	""" launch simulation with pypet for parameter exploration """

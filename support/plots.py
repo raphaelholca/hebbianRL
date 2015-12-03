@@ -234,7 +234,8 @@ def regressor_prediction(all_DA_save, kwargs):
 
 	for epi in range(n_epi):
 		plt.figure()
-		plt.imshow(all_DA_save[:,:,epi], vmin=vmin, vmax=vmax, origin='lower')
+		plt.imshow(all_DA_save[:,:,epi], vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap='autumn')
+		plt.colorbar(orientation='vertical')
 		plt.plot(np.argmax(all_DA_save[:,:,epi],0), c='k', lw=3)
 
 		plt.xticks([0,25,50,75,100], ['-1', '-0.5', '0', '+0.5', '+1'])

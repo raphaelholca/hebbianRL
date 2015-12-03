@@ -31,7 +31,7 @@ def RLnetwork(	images, labels, orientations,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_value, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment, a_0, a_1, a_2, a_3):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_value, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment, a_0, a_1, a_2, a_3):
 
 	""" variable initialization """
 	if save_data: runName = ex.checkdir(runName, OW_bool=True) #create saving directory
@@ -182,7 +182,7 @@ def RLnetwork(	images, labels, orientations,
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
 					if RPE_value=='continuous':
-						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=ex.polynomial, param_xplr=param_xplr)
+						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=ex.polynomial, param_xplr=param_xplr, temp_xplr=temp_xplr)
 						tmp_input = np.zeros((nBatch, 2))
 						tmp_input[:,0] = prediction_error
 						tmp_input[:,1] = dopa

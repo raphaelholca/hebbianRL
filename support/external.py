@@ -345,7 +345,7 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None'):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None', temp_xplr=0.0):
 	"""
 	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
@@ -381,7 +381,7 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
 			perf_predict = nn_regressor.predict(nn_input)
 			if param_xplr=='neural_net':
-				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=1e-3)) # <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
+				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=temp_xplr)) # <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
 				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, stimulus-wise noise injection
 				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, trial-wise noise injection (i.e., constant noise for a trial, prob. not ideal)
 			else:
@@ -467,7 +467,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_value', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_value', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
