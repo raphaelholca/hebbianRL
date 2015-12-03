@@ -49,25 +49,25 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor_test'		,# name of the folder where to save results
+'runName' 		: 'xplr_regressor_test_3'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
-'lim_weights'	: True 			,# whether to artificially limit the value of weights. Used during parameter exploration
+'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
-'RPE_value' 	: 'continuous'		,# RPE value; valid: 'continuous' (function relation RPE to DA) or 'discrete' (specific values for RPE to DA)
+'RPE_function' 	: 'neural'			,# RPE value; valid: 'neural' (function approx.), 'polynomial', 'discrete'
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 
-'dHigh' 		: 3.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-'dMid' 			: 0.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-'dNeut' 		: -0.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-'dLow' 			: -1.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+'dHigh' 		: 6.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
+'dMid' 			: 6.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
+'dNeut' 		: 6.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
+'dLow' 			: 6.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
 'a_0'			: .1,	#0; -.05	,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
 'a_1'			: 1.0,	#2; 0		,
@@ -83,12 +83,12 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'neural_net' 		,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'neural_net' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
 'temp_xplr'		: 1e-5				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'save_data'		: False				,# whether to save data to disk
+'save_data'		: True				,# whether to save data to disk
 'verbose'		: False				,# whether to create text output
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
@@ -183,6 +183,7 @@ elif kwargs['protocol'] == 'gabor':
 """ parameter exploration """
 
 if kwargs['param_xplr'] == 'None':
+	if kwargs['save_data']: kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True) #create saving directory
 	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
@@ -197,11 +198,15 @@ elif kwargs['param_xplr'] == 'neural_net':
 	    learning_rate=0.02,
 	    n_iter=1)
 
-	n_iter = 2 # number of training iterations
+	n_iter = 12 # number of training iterations
 	n_sample = 100 # number of sample input to save 
 	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	perf_save = np.array([])
 	all_DA_save = np.zeros((121,105,n_iter))
+
+	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
+	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_0', 'w'))
+
 	for i_iter in range(n_iter):
 		print "training hebbian network..."
 		try:
@@ -214,29 +219,37 @@ elif kwargs['param_xplr'] == 'neural_net':
 
 		perf_save = np.append(perf_save, allPerf[0])
 		all_DA = np.zeros(shape=(121,105))
-		for i_idx, i in enumerate(np.arange(-1,1.1,0.02)):
-			X = np.ones((121, 2))*i
+		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
+			X = np.ones((121, 2))*rpe
 			X[:,0]=np.arange(-6,6.1,0.1)
-			all_DA[:, i_idx] = nn_regressor.predict(X)[:,0]
+			if i_iter==0: all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
+		if i_iter==0: pl.regressor_prediction(all_DA, i_iter, kwargs)
 		all_DA_save[:,:,i_iter] = all_DA
 
-		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 0],1))
+		
 		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
 		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
 		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
-		print "training regressor neural net... \n"
+		
+		print "training regressor neural net..."
 		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
+		
+		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
+			X = np.ones((121, 2))*rpe
+			X[:,0]=np.arange(-6,6.1,0.1)
+			all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
+		pl.regressor_prediction(all_DA, i_iter+1, kwargs)
+
+		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 0],1)) + ' \n'
+
+		pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_' + str(i_iter+1), 'w'))
+		pl.regressor_prediction(all_DA, i_iter+1, kwargs)
 
 	#save results to file
-	if not os.path.exists('output/' + kwargs['runName']): 
-		os.mkdir('output/' + kwargs['runName'])
-		os.mkdir('output/' + kwargs['runName']  + '/regressor_prediction')
 	pickle.dump(sample_input_save, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
 	pickle.dump(all_DA_save, open('output/' + kwargs['runName'] + '/best_DA_epi', 'w'))
 	pickle.dump(perf_save, open('output/' + kwargs['runName'] + '/perf_epi', 'w'))
-	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor', 'wb'))
 	pl.perf_progress({'000': perf_save}, kwargs)
-	pl.regressor_prediction(all_DA_save, kwargs)
 	ex.save_data(None, None, None, None, kwargs, save_weights=False)
 
 	print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(nn_tic))

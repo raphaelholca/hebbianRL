@@ -467,7 +467,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_value', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
@@ -543,7 +543,7 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['noise_std'] 			= float(settingFile['noise_std'])
 		runs[k]['kwargs']['proba_predict'] 		= conv_bool(settingFile['proba_predict'])
 		runs[k]['kwargs']['exploration'] 		= conv_bool(settingFile['exploration'])
-		runs[k]['kwargs']['RPE_value'] 			= settingFile['RPE_value']
+		runs[k]['kwargs']['RPE_function'] 			= settingFile['RPE_function']
 		runs[k]['kwargs']['pdf_method'] 		= settingFile['pdf_method']
 		runs[k]['kwargs']['aHigh'] 				= float(settingFile['aHigh'])
 		runs[k]['kwargs']['aPairing'] 			= float(settingFile['aPairing'])
@@ -584,13 +584,15 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 
 	return runs
 
-def checkdir(runName, OW_bool=True):
+def checkdir(kwargs, OW_bool=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
 
 	Args:
-		runName (str): name of the folder where to save the data
+		kwargs (dict): parameters of the model
 	"""
+
+	runName = kwargs['runName']
 
 	if os.path.exists('output/' + runName):
 		if OW_bool: overwrite='yes'
@@ -598,18 +600,19 @@ def checkdir(runName, OW_bool=True):
 		if overwrite in ['n', 'no', 'not', ' ', '']:
 			sys.exit('Folder exits - not overwritten')
 		elif overwrite in ['y', 'yes']:
-			if os.path.exists('output/' + runName + '/RFs'):
-				shutil.rmtree('output/' + runName + '/RFs')
-			if os.path.exists('output/' + runName + '/TCs'):
-				shutil.rmtree('output/' + runName + '/TCs')
 			shutil.rmtree('output/' + runName)
 		else:
 			runName = overwrite
 			checkdir(runName)
 			return runName
 	os.makedirs('output/' + runName)
-	os.makedirs('output/' + runName + '/RFs')
-	os.makedirs('output/' + runName + '/TCs')
+	if kwargs['protocol']=='digit' and kwargs['save_data']==True:
+		os.makedirs('output/' + runName + '/RFs')
+	if kwargs['protocol']=='gabor' and kwargs['save_data']==True:
+		os.makedirs('output/' + runName + '/TCs')
+	if kwargs['param_xplr']=='neural_net':
+		os.makedirs('output/' + runName + '/regressor_prediction')
+		os.makedirs('output/' + runName + '/nn_regressor')
 
 	return runName
 
