@@ -88,7 +88,7 @@ kwargs = {
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'save_data'		: True				,# whether to save data to disk
+'save_data'		: False				,# whether to save data to disk
 'verbose'		: False				,# whether to create text output
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
@@ -191,15 +191,17 @@ if kwargs['param_xplr'] == 'None':
 
 elif kwargs['param_xplr'] == 'neural_net':
 	nn_tic = time.time()
-	nn_regressor = Regressor(
+	nn_regressor = Regressor(		#[prediction_error, tried_DA_values]
 	    layers=[
 	        Layer("Rectifier", 	units=5),
 	        Layer("Linear", 	units=1)],
 	    learning_rate=0.02,
 	    n_iter=1)
 
+	# import pdb;pdb.set_trace()
+
 	n_iter = 12 # number of training iterations
-	n_sample = 100 # number of sample input to save 
+	n_sample = 1000 # number of sample input to save 
 	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
 	perf_save = np.array([])
 	all_DA_save = np.zeros((121,105,n_iter))
@@ -221,7 +223,7 @@ elif kwargs['param_xplr'] == 'neural_net':
 		all_DA = np.zeros(shape=(121,105))
 		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
 			X = np.ones((121, 2))*rpe
-			X[:,0]=np.arange(-6,6.1,0.1)
+			X[:,1]=np.arange(-6,6.1,0.1)
 			if i_iter==0: all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
 		if i_iter==0: pl.regressor_prediction(all_DA, i_iter, kwargs)
 		all_DA_save[:,:,i_iter] = all_DA
@@ -236,11 +238,11 @@ elif kwargs['param_xplr'] == 'neural_net':
 		
 		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
 			X = np.ones((121, 2))*rpe
-			X[:,0]=np.arange(-6,6.1,0.1)
+			X[:,1]=np.arange(-6,6.1,0.1)
 			all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
 		pl.regressor_prediction(all_DA, i_iter+1, kwargs)
 
-		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 0],1)) + ' \n'
+		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 1],1)) + ' \n'
 
 		pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_' + str(i_iter+1), 'w'))
 		pl.regressor_prediction(all_DA, i_iter+1, kwargs)

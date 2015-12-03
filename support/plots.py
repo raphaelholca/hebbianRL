@@ -220,21 +220,25 @@ def plot_noise_proba(W_in, images, kwargs):
 	plt.savefig('output/' + runName + '/' + runName+ '_activation.pdf')
 	plt.close(fig)
 
-def regressor_prediction(all_DA_save, epi, kwargs):
+def regressor_prediction(all_DA, epi, kwargs):
 	"""
 	plot performance prediction by neural regressor
 
 	Args:
-		all_DA_save (numpy array): array of saved performance predictions of size ( n_DA x n_RPE x n_episode )
+		all_DA (numpy array): array of saved performance predictions of size ( n_DA x n_RPE x n_episode )
 	"""
 
-	vmax = 1.0
-	vmin = 0.0
+	if epi!=0:
+		vmax = 1.0
+		vmin = 0.0
+	else:
+		vmax = np.max(all_DA)
+		vmin = np.min(all_DA)
 
 	plt.figure()
-	plt.imshow(all_DA_save[:,:], vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap='autumn')
+	plt.imshow(all_DA[:,:], vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap='autumn')
 	plt.colorbar(orientation='vertical')
-	plt.plot(np.argmax(all_DA_save[:,:],0), c='k', lw=3)
+	plt.plot(np.argmax(all_DA[:,:],0), c='k', lw=3)
 
 	plt.xticks([0,25,50,75,100], ['-1', '-0.5', '0', '+0.5', '+1'])
 	plt.yticks([0,30,60,90,120], ['-6', '-3', '0', '+3', '+6'])

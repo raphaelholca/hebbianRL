@@ -345,7 +345,7 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None', temp_xplr=0.0):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None', temp_xplr=1e-3):
 	"""
 	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
@@ -371,7 +371,7 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 		# dopa[prediction_error >= 0.5] = +3.
 	else: #uses a neural network regressor to compute DA value
 		DA_min = -6.
-		DA_max = +6.
+		DA_max = +6.1
 		step = 0.1
 		tried_DA_values = np.arange(DA_min, DA_max, step)
 
