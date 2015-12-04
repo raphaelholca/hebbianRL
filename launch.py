@@ -50,7 +50,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor_test_5'		,# name of the folder where to save results
+'runName' 		: 'xplr_regressor_test_6'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -60,21 +60,13 @@ kwargs = {
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
-'RPE_function' 	: 'neural'			,# RPE value; valid: 'neural' (function approx.), 'polynomial', 'discrete'
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
 'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
-
 'dHigh' 		: 6.0 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
 'dMid' 			: 6.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
 'dNeut' 		: 6.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: 6.				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
-
-'a_0'			: .1,	#0; -.05	,# parameter of the polynomial function relating RPE to DA (when RPE_value = 'continuous')
-'a_1'			: 1.0,	#2; 0		,
-'a_2'			: -1.0				,
-'a_3'			: 4.0,	#4; 8		,
-
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
 'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
@@ -84,7 +76,7 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'basinhopping' 	,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net'
+'param_xplr'	: 'basinhopping' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
@@ -100,16 +92,16 @@ kwargs = {
 
 }
 
+""" parameters of the RPE function """
+kwargs['RPE_function'] = ex.polynomial 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function
+RPE_function_params = [0,0,0,0]				# parameters of the RPE function, if RPE_function is a callable function
+
 """ parameters for exploration """
 explore_dict = {
-'a_0'			:	np.arange(-0.2, 0.21, 0.1).tolist(),
-'a_1'			:	np.arange(-2., 6.1, 2.0).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'a_2'			:	np.arange(-1., 1.1, 0.5).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-'a_3'			:	np.arange(0., 8.1, 2.0).tolist(),
-# 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-# 'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-# 'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-# 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
+'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
+'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
+'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 }
 
@@ -186,29 +178,33 @@ tic = time.time()
 
 if kwargs['param_xplr'] == 'None':
 	if kwargs['save_data']: kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True) #create saving directory
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	None, images, labels, orientations, 
+	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	RPE_function_params, 
+																						images, labels, orientations, 
 																						images_test, labels_test, orientations_test, 
 																						images_task, labels_task, orientations_task, 
 																						None, kwargs, **kwargs)
 
 elif kwargs['param_xplr'] == 'basinhopping':
+	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
+
 	func = rl.RLnetwork
-	opti_params_0 = [0,0,0,0]
+	RPE_function_params_0 = [0.1, 1.0, -1., 4.] # <-- the number of parameters sets the order of the polynomial function to use
 
-	all_args = kwargs.copy()
-	all_args.update({	'images':images, 'labels':labels, 'orientations':orientations, 
-						'images_test':images_test, 'labels_test':labels_test, 'orientations_test':orientations_test, 
-						'images_task':images_task, 'labels_task':labels_task, 'orientations_task':orientations_task, 
-						'nn_regressor':None, 'kwargs':kwargs})
+	args_tuple = (images, labels, orientations, 
+					images_test, labels_test, orientations_test, 
+					images_task, labels_task, orientations_task, 
+					None, kwargs)
 
-	import pdb; pdb.set_trace()
-	
+	for k in ['classes', 'rActions', 'nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'comment']:
+		args_tuple += (kwargs[k],)
 
 	fit = basinhopping( func, 
-						opti_params_0,
+						RPE_function_params_0,
 						T=1.0, 
 						niter=1,
-						minimizer_kwargs={'args':all_args})
+						minimizer_kwargs={'args':args_tuple})
+
+	pickle.dump(fit, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_0', 'w'))
 
 
 elif kwargs['param_xplr'] == 'neural_net':
@@ -309,7 +305,7 @@ elif kwargs['param_xplr'] == 'pypet':
 
 print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
-print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-pypet_tic))
+print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
 
 
 

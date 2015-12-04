@@ -26,25 +26,25 @@ def set_global_noise():##
 	global xplr_noise 
 	xplr_noise = np.random.uniform(0,1)
 
-def set_polynomial_params(a_0_pass,a_1_pass,a_2_pass,a_3_pass):##
-	global a_0, a_1, a_2, a_3
-	a_0 = a_0_pass
-	a_1 = a_1_pass
-	a_2 = a_2_pass
-	a_3 = a_3_pass
-
-def polynomial(X):
+def polynomial(X, params):
 	"""
-	function to relate prediction error to DA
+	polynomial function to relate prediction error to DA; order of the polynomial is decided by the length of the parameters passed: order = len(params)-1
 
 	Args:
 		X (numpy array): prediction error: actual - predicted rewards
+		params (list): list of parameters for the function
 
 	returns:
 		(numpy array): DA value
 	"""
 	
-	return a_0 + a_1*X + a_2*(X**2) + a_3*(X**3)
+	func_value = 0.
+
+	for i in range(len(params)):
+		func_value += params[i]*(X**i)
+
+	return func_value
+	# return params[0] + params[1]*X + params[2]*(X**2) + params[3]*(X**3)
 
 def normalize(images, A):
 	"""
@@ -345,7 +345,7 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.expm1, param_xplr='None', temp_xplr=1e-3):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, RPE_function_params=[], param_xplr='None', temp_xplr=1e-3):
 	"""
 	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
@@ -353,7 +353,8 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 		predicted (numpy array): predicted rewards for current batch
 		actual (numpy array): received rewards for current batch
 		nn_regressor (sknn regressor): neural network regressor object
-		dopa_function (callable function, optional): function to converting prediction error to dopa value; should be a function for range [0,1]; suggested function: np.sign, np.expm1, np.tanh
+		RPE_function (callable function, optional): function to convert prediction error to dopa value; should be a function for range [-1,1]; suggested function: np.sign, np.expm1, np.tanh
+		RPE_function_params (list): list of parameters for the RPE function
 		param_xplr (str, optional): method for parameter exploration
 
 	returns:
@@ -363,12 +364,9 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, dopa_function=np.ex
 	prediction_error = actual-predicted
 	dopa = np.zeros(len(prediction_error))
 
-	if nn_regressor is None:
-		dopa = dopa_function(prediction_error)
-		##
-		# dopa[prediction_error < -0.5] = -1.
-		# dopa[np.logical_and(prediction_error >= -0.5, prediction_error < 0.5)] = 0.
-		# dopa[prediction_error >= 0.5] = +3.
+	if nn_regressor is None: #uses a function to compute DA release
+		dopa = RPE_function(prediction_error, RPE_function_params)
+
 	else: #uses a neural network regressor to compute DA value
 		DA_min = -6.
 		DA_max = +6.1

@@ -5,6 +5,7 @@ Output is saved under RL/data/[runName]
 """
 
 # from progressbar import ProgressBar
+from inspect import isfunction
 import numpy as np
 import matplotlib.pyplot as pyplot
 import support.external as ex
@@ -27,17 +28,15 @@ gr = reload(gr)
 bc = reload(bc)
 
 
-def RLnetwork(	opti_params,
+def RLnetwork(	RPE_function_params,
 				images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment, a_0, a_1, a_2, a_3):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 	# ex.set_global_noise() ##
-	# ex.set_polynomial_params(a_0, a_1, a_2, a_3) ##
-	ex.set_polynomial_params(opti_params[0], opti_params[1], opti_params[2], opti_params[3]) ##
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -53,6 +52,8 @@ def RLnetwork(	opti_params,
 	nn_input_save = np.empty((0,2), dtype=float)
 
 	""" training of the network """
+	if param_xplr=='basinhopping':
+		print 'params of poly. func.: ' + str(RPE_function_params)
 	if verbose: 
 		print 'run:  ' + runName
 		print '\ntraining hebbian network...'
@@ -182,8 +183,8 @@ def RLnetwork(	opti_params,
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					if RPE_function=='polynomial' or RPE_function=='neural':
-						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, dopa_function=ex.polynomial, param_xplr=param_xplr, temp_xplr=temp_xplr)
+					if RPE_function=='neural' or isfunction(RPE_function) or param_xplr=='basinhopping':
+						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, RPE_function=RPE_function, RPE_function_params=RPE_function_params, param_xplr=param_xplr, temp_xplr=temp_xplr)
 						tmp_input = np.zeros((nBatch, 2))
 						tmp_input[:,0] = prediction_error
 						tmp_input[:,1] = dopa
@@ -339,7 +340,8 @@ def RLnetwork(	opti_params,
 
 	if param_xplr=='None': import pdb; pdb.set_trace()
 
-	if param_xplr=='basinhopper':
+	if param_xplr=='basinhopping':
+		print 'perc. correct: ' + str(np.round(allPerf[0]*100,1)) + '\n'
 		return 1. - allPerf[0]
 	else:
 		return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save

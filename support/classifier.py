@@ -69,8 +69,7 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	if save_data:
-		print_save(allCMs, allPerf, rActions_uni, runName, verbose)
+	print_save(allCMs, allPerf, rActions_uni, runName, verbose, save_data)
 	return allCMs, allPerf
 
 def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, save_data, verbose, SM=True):
@@ -124,8 +123,7 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	if save_data:
-		print_save(allCMs, allPerf, classes, runName, verbose)
+	print_save(allCMs, allPerf, classes, runName, verbose, save_data)
 	return allCMs, allPerf
 
 def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test, labels_test, save_data, verbose):
@@ -163,8 +161,7 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	if save_data:
-		print_save(allCMs, allPerf, classes, runName, verbose)
+	print_save(allCMs, allPerf, classes, runName, verbose, save_data)
 	return allCMs, allPerf
 
 def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
@@ -224,46 +221,47 @@ def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_d
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	if verbose:
-		print_save(allCMs, allPerf, rActions_uni, runName, verbose)
+	print_save(allCMs, allPerf, rActions_uni, runName, verbose, save_data)
 	return allCMs, allPerf
 
-def print_save(allCMs, allPerf, classes, runName, verbose):
+def print_save(allCMs, allPerf, classes, runName, verbose, save_data):
 	""" print and save performance measures """
 	avgCM = np.mean(allCMs,0)
 	steCM = np.std(allCMs,0)/np.sqrt(np.shape(allCMs)[0])
 	avgPerf = np.mean(allPerf)
 	stePerf = np.std(allPerf)/np.sqrt(len(allPerf))
 
-	pFile = open('output/' + runName + '/classResults', 'w')
-	pDict = {'allCMs':allCMs, 'avgCM':avgCM, 'steCM':steCM, 'allPerf':allPerf, 'avgPerf':avgPerf, 'stePerf':stePerf}
-	pickle.dump(pDict, pFile)
-	pFile.close()
+	if verbose:
+		perf_print = ''
+		perf_print += '\naverage confusion matrix:' + '\n'
+		c_str = ''
+		for c in classes: c_str += str(c).rjust(6)
+		perf_print += c_str + '\n'
+		perf_print += '-'*(len(c_str)+3) + '\n'
+		perf_print += str(np.round(avgCM,2)) + '\n'
+		perf_print += '\naverage correct classification:' + '\n'
+		perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + ' %' + '\n'
+		if len(allPerf)>1:
+			perf_print += '\nof which best performance is:' + '\n'
+			perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
+			perf_print += 'and worse performance is:' + '\n'
+			perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
 
-	perf_print = ''
-	perf_print += '\naverage confusion matrix:' + '\n'
-	c_str = ''
-	for c in classes: c_str += str(c).rjust(6)
-	perf_print += c_str + '\n'
-	perf_print += '-'*(len(c_str)+3) + '\n'
-	perf_print += str(np.round(avgCM,2)) + '\n'
-	perf_print += '\naverage correct classification:' + '\n'
-	perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + ' %' + '\n'
-	if len(allPerf)>1:
-		perf_print += '\nof which best performance is:' + '\n'
-		perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
-		perf_print += 'and worse performance is:' + '\n'
-		perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
+		print perf_print
 
-	if verbose: print perf_print
+	if save_data:
+		pFile = open('output/' + runName + '/classResults', 'w')
+		pDict = {'allCMs':allCMs, 'avgCM':avgCM, 'steCM':steCM, 'allPerf':allPerf, 'avgPerf':avgPerf, 'stePerf':stePerf}
+		pickle.dump(pDict, pFile)
+		pFile.close()
 
-	perf_file = open('./output/' + runName + '/' +runName+ '_perf.txt', 'w')
-	perf_file.write(perf_print)
-	perf_file.close()
+		perf_file = open('./output/' + runName + '/' +runName+ '_perf.txt', 'w')
+		perf_file.write(perf_print)
+		perf_file.close()
 
-	fig = pl.plotCM(avgCM, classes)
-	pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.pdf')
-	pyplot.close(fig)
+		fig = pl.plotCM(avgCM, classes)
+		pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.pdf')
+		pyplot.close(fig)
 
 
 
