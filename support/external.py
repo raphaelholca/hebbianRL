@@ -46,6 +46,21 @@ def polynomial(X, params):
 	return func_value
 	# return params[0] + params[1]*X + params[2]*(X**2) + params[3]*(X**3)
 
+def tanh(X, params):
+	"""
+	hyperbolic tangent function to relate prediction error to DA.
+
+	Args:
+		X (numpy array): prediction error: actual - predicted rewards
+		params (list): list of parameters for the function
+
+	returns:
+		(numpy array): DA value
+	"""
+
+	return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
+
+
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)

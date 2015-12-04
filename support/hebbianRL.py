@@ -192,6 +192,8 @@ def RLnetwork(	RPE_function_params,
 						nn_input_save = np.append(nn_input_save, tmp_input, axis=0)
 					elif RPE_function=='discrete':
 						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					else:
+						print "!! error in DA value computation !!"
 
 					disinhib_Hid = ach*dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
