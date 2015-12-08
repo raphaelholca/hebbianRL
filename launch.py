@@ -13,7 +13,7 @@ import support.external as ex
 import support.plots as pl
 import support.mnist as mnist
 from scipy.optimize import basinhopping
-# from scipy.optimize import minimize
+from scipy.optimize import minimize
 from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
@@ -51,7 +51,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'xplr_regressor_test_7'		,# name of the folder where to save results
+'runName' 		: 'bh_tanh_noProba_global'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -77,13 +77,13 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'None' 	,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping'
+'param_xplr'	: 'basinhopping' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: True 			,# whether to test the network's performance at each episode
+'test_each_epi'	: False 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'save_data'		: False				,# whether to save data to disk
-'verbose'		: True				,# whether to create text output
+'verbose'		: False				,# whether to create text output
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
@@ -185,12 +185,13 @@ if kwargs['param_xplr'] == 'None':
 																						images_task, labels_task, orientations_task, 
 																						None, kwargs, **kwargs)
 
-elif kwargs['param_xplr'] == 'basinhopping':
+elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize':
+	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'"
 	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
 
 	func = rl.RLnetwork
-	RPE_function_params_0 = [0.1, 1.0, -1., 4.] ## polynomial init # <-- the number of parameters sets the order of the polynomial function to use
-	# RPE_function_params_0 = [2., 100, 0.05., 0.5] ## tanh init
+	# RPE_function_params_0 = [0.1, 1.0, -1., 4.] ## polynomial init # <-- the number of parameters sets the order of the polynomial function to use
+	RPE_function_params_0 = [2., 10., 0.05, 0.5] ## tanh init
 
 	args_tuple = (images, labels, orientations, 
 					images_test, labels_test, orientations_test, 
@@ -200,14 +201,33 @@ elif kwargs['param_xplr'] == 'basinhopping':
 	for k in ['classes', 'rActions', 'nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'comment']:
 		args_tuple += (kwargs[k],)
 
-	fit = basinhopping( func, 
-						RPE_function_params_0,
-						T=0.1, 
-						stepsize=0.1,
-						niter=1,
-						minimizer_kwargs={'args':args_tuple})
+	if kwargs['param_xplr'] == 'basinhopping':
+		OptimizeResult = basinhopping( 	func, 
+										RPE_function_params_0,
+										# T=0.1, 
+										# stepsize=0.1,
+										niter=100,
+										callback=ex.callback_min,
+										minimizer_kwargs={
+											'args':args_tuple,
+											'method':'BFGS',
+											'bounds':[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)],
+											'options':{'eps':[0.1, 1., 0.01, 0.1]},
+											}
+										)
+	
+	elif kwargs['param_xplr'] == 'minimize':
+		OptimizeResult = minimize( 	func, 
+									RPE_function_params_0,
+									args_tuple,
+									method='BFGS',
+									callback=ex.callback_min,
+									bounds=[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)], 	#<- bounds
+									options={'eps':[0.1, 1., 0.01, 0.1]},						#<- step size
+									)
 
-	pickle.dump(fit, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_0', 'w'))
+	pickle.dump(OptimizeResult, open('output/' + kwargs['runName'] + '/param_optimization', 'w'))
+	ex.save_data(None, None, None, None, kwargs, save_weights=False)
 
 
 elif kwargs['param_xplr'] == 'neural_net':
@@ -217,8 +237,6 @@ elif kwargs['param_xplr'] == 'neural_net':
 	        Layer("Linear", 	units=1)],
 	    learning_rate=1e-8,
 	    n_iter=1)
-
-	# import pdb;pdb.set_trace()
 
 	n_iter = 15 # number of training iterations
 	n_sample = 1000 # number of sample input to save 

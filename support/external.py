@@ -480,7 +480,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
@@ -754,6 +754,27 @@ def computeCM(classResults, labels_test, classes):
 	# import pdb; pdb.set_trace()
 	
 	return confusMatrix
+
+def save_visited_params(visited_params, perf, kwargs):
+	"""
+	saves explorared parameters during opitmization; size of saved array: (#sample x #params + perf)
+	"""
+	file_name = 'output/' + kwargs['runName'] + '/visited_params'
+	
+	if not os.path.exists(file_name):
+		visited_params_save = np.zeros((1,len(visited_params)+1))
+		visited_params_save[0, :-1] = visited_params
+		visited_params_save[0, -1] = perf
+		pickle.dump(visited_params_save, open(file_name, 'w'))
+	else:
+		# import pdb;pdb.set_trace()
+		visited_params_saved = pickle.load(open(file_name, 'r'))
+		visited_params_saved_new = np.zeros((np.size(visited_params_saved,0)+1, np.size(visited_params_saved,1)))
+		visited_params_saved_new[:-1,:]=visited_params_saved
+		visited_params_saved_new[-1,:-1]=visited_params
+		visited_params_saved_new[-1,-1]=perf
+
+		pickle.dump(visited_params_saved_new, open(file_name, 'w'))
 
 def conv_bool(bool_str):
 	"""
