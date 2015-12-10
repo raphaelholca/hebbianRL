@@ -14,17 +14,15 @@ import grating as gr
 
 gr = reload(gr)
 
-def set_global(lActions_pass, rActions_pass, classes_pass):
+def set_global(lActions_pass, rActions_pass, classes_pass, kwargs_pass):
 	global lActions
 	global rActions
 	global classes
+	global kwargs
 	lActions = lActions_pass
 	rActions = rActions_pass
 	classes = classes_pass
-
-def set_global_noise():##
-	global xplr_noise 
-	xplr_noise = np.random.uniform(0,1)
+	kwargs = kwargs_pass
 
 def polynomial(X, params):
 	"""
@@ -58,7 +56,12 @@ def tanh(X, params):
 		(numpy array): DA value
 	"""
 
-	return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
+	if len(params)==4:
+		return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
+	elif len(params)==2:
+		return params[0] * np.tanh( X ) + params[1]
+	else:
+		return 0
 
 
 def normalize(images, A):
@@ -767,7 +770,6 @@ def save_visited_params(visited_params, perf, kwargs):
 		visited_params_save[0, -1] = perf
 		pickle.dump(visited_params_save, open(file_name, 'w'))
 	else:
-		# import pdb;pdb.set_trace()
 		visited_params_saved = pickle.load(open(file_name, 'r'))
 		visited_params_saved_new = np.zeros((np.size(visited_params_saved,0)+1, np.size(visited_params_saved,1)))
 		visited_params_saved_new[:-1,:]=visited_params_saved
@@ -775,6 +777,42 @@ def save_visited_params(visited_params, perf, kwargs):
 		visited_params_saved_new[-1,-1]=perf
 
 		pickle.dump(visited_params_saved_new, open(file_name, 'w'))
+
+def bh_callback(x, f, accept):
+	"""
+	callback function of the scipy's basinhopping optimization function; prints and saves param exploration info
+	"""
+
+	print "\n----------------------end of basinhopping iteration----------------------"
+	print "at param values: " + str(x) + " ; perf: " + str(f) + " ; accept: " + str(accept) + "\n"
+
+
+
+	file_name_local = 'output/' + kwargs['runName'] + '/visited_params'
+	visited_params_local = pickle.load(open(file_name_local, 'r'))
+	os.remove(file_name_local)
+
+	file_name_global = 'output/' + kwargs['runName'] + '/visited_params_global'
+	if not os.path.exists(file_name_global):
+		visited_params_global = []
+		visited_params_global.append(visited_params_local)
+		pickle.dump(visited_params_global, open(file_name_global, 'w'))
+	else:
+		visited_params_global = pickle.load(open(file_name_global, 'r'))
+		# import pdb; pdb.set_trace()
+		visited_params_global.append(visited_params_local)
+		pickle.dump(visited_params_global, open(file_name_global, 'w'))
+
+
+class basinhopping_bounds(object):
+    def __init__(self, xmax=[10.,5.], xmin=[1.,-2.] ):
+        self.xmax = np.array(xmax)
+        self.xmin = np.array(xmin)
+    def __call__(self, **kwargs):
+        x = kwargs["x_new"]
+        tmax = bool(np.all(x <= self.xmax))
+        tmin = bool(np.all(x >= self.xmin))
+        return tmax and tmin
 
 def conv_bool(bool_str):
 	"""

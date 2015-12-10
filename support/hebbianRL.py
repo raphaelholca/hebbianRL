@@ -36,7 +36,6 @@ def RLnetwork(	RPE_function_params,
 				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
-	# ex.set_global_noise() ##
 	W_in_save = {}
 	W_act_save = {}
 	perf_save = {}
@@ -343,7 +342,7 @@ def RLnetwork(	RPE_function_params,
 	if param_xplr=='None': import pdb; pdb.set_trace()
 
 	if param_xplr=='basinhopping' or param_xplr=='minimize':
-		print 'perc. correct: ' + str(np.round(allPerf[0]*100,1)) + '\n'
+		print 'perc. correct: ' + str(np.round(allPerf[0]*100,2)) + '\n'
 		ex.save_visited_params(RPE_function_params, 1. - allPerf[0], kwargs)
 		return 1. - allPerf[0]
 	else:

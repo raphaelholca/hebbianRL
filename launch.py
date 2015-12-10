@@ -51,7 +51,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'bh_tanh_noProba_global'		,# name of the folder where to save results
+'runName' 		: 'test_bounds'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -131,7 +131,7 @@ if kwargs['protocol'] == 'digit':
 
 	_, idx = np.unique(kwargs['rActions'], return_index=True)
 	lActions = kwargs['rActions'][np.sort(idx)]
-	ex.set_global(lActions, kwargs['rActions'], kwargs['classes'])
+	ex.set_global(lActions, kwargs['rActions'], kwargs['classes'], kwargs)
 
 	imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 	if kwargs['verbose']: print 'loading train images...'
@@ -186,12 +186,16 @@ if kwargs['param_xplr'] == 'None':
 																						None, kwargs, **kwargs)
 
 elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize':
-	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'"
+	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'\n"
+	print kwargs['runName'] + '\n'
 	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
 
 	func = rl.RLnetwork
 	# RPE_function_params_0 = [0.1, 1.0, -1., 4.] ## polynomial init # <-- the number of parameters sets the order of the polynomial function to use
-	RPE_function_params_0 = [2., 10., 0.05, 0.5] ## tanh init
+	# RPE_function_params_0 = [2., 10., 0.05, 0.5] ## tanh init
+	# RPE_function_params_0 = [3.114, 0.148] ## tanh_2d init; good init
+	# RPE_function_params_0 = [2.0, 0.5] ## tanh_2d init; OK init
+	RPE_function_params_0 = [3.25, 1.25] ## tanh_2d init; bad init
 
 	args_tuple = (images, labels, orientations, 
 					images_test, labels_test, orientations_test, 
@@ -202,31 +206,40 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 		args_tuple += (kwargs[k],)
 
 	if kwargs['param_xplr'] == 'basinhopping':
-		OptimizeResult = basinhopping( 	func, 
+		bounds_max = [10.,5.]
+		bounds_min = [1.,-2.] 
+		bounds_accept_test = ex.basinhopping_bounds(xmax=bounds_max, xmin=bounds_min)
+		optim_results = basinhopping( 	func, 
 										RPE_function_params_0,
 										# T=0.1, 
 										# stepsize=0.1,
-										niter=100,
-										callback=ex.callback_min,
-										minimizer_kwargs={
+										accept_test=bounds_accept_test,
+										niter_success=15,
+										disp=True,
+										callback=ex.bh_callback,
+										minimizer_kwargs={												# local minimizer options
 											'args':args_tuple,
-											'method':'BFGS',
-											'bounds':[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)],
-											'options':{'eps':[0.1, 1., 0.01, 0.1]},
+											'method':'Nelder-Mead',
+											'options':{	'disp':True,
+														'xtol': 0.01, 
+														'ftol': 0.01,
+													},	
 											}
 										)
 	
 	elif kwargs['param_xplr'] == 'minimize':
-		OptimizeResult = minimize( 	func, 
+		optim_results = minimize( 	func, 
 									RPE_function_params_0,
 									args_tuple,
-									method='BFGS',
-									callback=ex.callback_min,
-									bounds=[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)], 	#<- bounds
-									options={'eps':[0.1, 1., 0.01, 0.1]},						#<- step size
+									method='Nelder-Mead',			#<- Melder-Neav: doesn't rely on gradient evaluation; good for noisy functions
+									# bounds=[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)], 
+									options={	'disp':True,
+												'xtol': 0.01, 
+												'ftol': 0.01,
+											},	
 									)
 
-	pickle.dump(OptimizeResult, open('output/' + kwargs['runName'] + '/param_optimization', 'w'))
+	pickle.dump(optim_results, open('output/' + kwargs['runName'] + '/optim_results', 'w'))
 	ex.save_data(None, None, None, None, kwargs, save_weights=False)
 
 
