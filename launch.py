@@ -52,7 +52,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'tanh_2d_gridsearch_0'		,# name of the folder where to save results
+'runName' 		: 'noProba_2d_test_2'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -78,13 +78,13 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'gridsearch' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
+'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'test_each_epi'	: True 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
-'save_data'		: False				,# whether to save data to disk
-'verbose'		: False				,# whether to create text output
+'save_data'		: True				,# whether to save data to disk
+'verbose'		: True				,# whether to create text output
 'show_W_act'	: False				,# whether to display W_act weights on the weight plots
 'sort' 			: None				,# sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'
 'target'		: None				,# target digit (to be used to color plots). Use None if not desired
@@ -96,7 +96,8 @@ kwargs = {
 
 """ parameters of the RPE function """
 kwargs['RPE_function'] = ex.tanh 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function, e.g.: ex.polynomial, ex.tanh
-RPE_function_params = [2., 10000., 0.05, 0.5]				# parameters of the RPE function, if RPE_function is a callable function
+RPE_function_params = [3.11, 10000., 0.05, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
+# RPE_function_params = [3.11, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
 
 """ parameters for exploration """
 explore_dict = {
@@ -186,6 +187,7 @@ if kwargs['param_xplr'] == 'None':
 																						images_task, labels_task, orientations_task, 
 																						None, kwargs, **kwargs)
 
+
 elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize' or kwargs['param_xplr'] == 'gridsearch':
 	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'\n"
 	print kwargs['runName'] + '\n'
@@ -234,7 +236,8 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 								ranges=[(1., 10.), (-2., 5.)],
 								Ns=7,
 								full_output=True,
-								disp=True
+								disp=True,
+								finish=None
 								)
 
 	elif kwargs['param_xplr'] == 'minimize':
@@ -242,7 +245,6 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 									RPE_function_params_0,
 									args_tuple,
 									method='Nelder-Mead',			#<- Melder-Neav: doesn't rely on gradient evaluation; good for noisy functions
-									# bounds=[(1., 10.), (1., 100.), (-0.1, 0.1), (-2., 5.)], 
 									options={	'disp':True,
 												'xtol': 0.01, 
 												'ftol': 0.01,

@@ -59,7 +59,7 @@ def tanh(X, params):
 	if len(params)==4:
 		return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
 	elif len(params)==2:
-		return params[0] * np.tanh( X ) + params[1]
+		return params[0] * np.tanh( 1000. * (X + 0.05) ) + params[1]
 	else:
 		return 0
 
