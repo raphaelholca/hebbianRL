@@ -786,12 +786,17 @@ def bh_callback(x, f, accept):
 	print "\n----------------------end of basinhopping iteration----------------------"
 	print "at param values: " + str(x) + " ; perf: " + str(f) + " ; accept: " + str(accept) + "\n"
 
-
-
+	#load from file
 	file_name_local = 'output/' + kwargs['runName'] + '/visited_params'
 	visited_params_local = pickle.load(open(file_name_local, 'r'))
 	os.remove(file_name_local)
 
+	#add column indicating if basin hop was accepted
+	visited_params_local_accept = np.zeros((np.size(visited_params_local,0), np.size(visited_params_local,1)+1))
+	visited_params_local_accept[:,:-1] = visited_params_local
+	visited_params_local_accept[:,-1] = float(accept)
+
+	#save to file
 	file_name_global = 'output/' + kwargs['runName'] + '/visited_params_global'
 	if not os.path.exists(file_name_global):
 		visited_params_global = []
@@ -799,7 +804,6 @@ def bh_callback(x, f, accept):
 		pickle.dump(visited_params_global, open(file_name_global, 'w'))
 	else:
 		visited_params_global = pickle.load(open(file_name_global, 'r'))
-		# import pdb; pdb.set_trace()
 		visited_params_global.append(visited_params_local)
 		pickle.dump(visited_params_global, open(file_name_global, 'w'))
 

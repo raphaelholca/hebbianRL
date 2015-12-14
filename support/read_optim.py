@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-folder_path = '../output/tanh_2d_local_0/'
+folder_path = '../output/tanh_2d_global_0/'
 # folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/gabor_xplr-7/'
 
 
@@ -24,7 +24,8 @@ fig, ax = plt.subplots()
 fig.patch.set_facecolor('white')
 
 for i_basin, basin in enumerate(visited_params):
-	ax.plot(basin[:,0], basin[:,1], marker='.', c=c_list[i_basin])
+	alpha = np.clip(basin[:,3], 0.5, 1.0) if np.size(basin,1)>3 else 1.
+	ax.plot(basin[:,0], basin[:,1], marker='.', c=c_list[i_basin], alpha=alpha)
 
 ax.set_xlabel('param 0 value')
 ax.set_ylabel('param 1 value')
@@ -40,7 +41,8 @@ fig.patch.set_facecolor('white')
 for param in range(n_params):
 	len_basin_counter = 0
 	for i_basin, basin in enumerate(visited_params):
-		ax[param].plot(np.arange(len_basin_counter, len_basin_counter+np.size(basin,0)), basin[:,param], marker='.', c=c_list[i_basin])
+		alpha = np.clip(basin[:,3], 0.5, 1.0) if np.size(basin,1)>3 else 1.
+		ax[param].plot(np.arange(len_basin_counter, len_basin_counter+np.size(basin,0)), basin[:,param], marker='.', c=c_list[i_basin], alpha=alpha)
 		ax[param].set_ylabel('param ' + str(param) +' value')
 		len_basin_counter+=np.size(basin,0)
 
@@ -56,7 +58,8 @@ fig.patch.set_facecolor('white')
 
 len_basin_counter = 0
 for i_basin, basin in enumerate(visited_params):
-	ax.plot(np.arange(len_basin_counter, len_basin_counter+np.size(basin,0)), basin[:,-1], marker='.', c=c_list[i_basin])
+	alpha = np.clip(basin[:,3], 0.5, 1.0) if np.size(basin,1)>3 else 1.
+	ax.plot(np.arange(len_basin_counter, len_basin_counter+np.size(basin,0)), basin[:,-1], marker='.', c=c_list[i_basin], alpha=alpha)
 	len_basin_counter+=np.size(basin,0)
 
 ax.set_xlabel('iterations')

@@ -51,7 +51,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'test_bounds'		,# name of the folder where to save results
+'runName' 		: 'tanh_2d_global_1'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -212,7 +212,7 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 		optim_results = basinhopping( 	func, 
 										RPE_function_params_0,
 										# T=0.1, 
-										# stepsize=0.1,
+										stepsize=1.5,
 										accept_test=bounds_accept_test,
 										niter_success=15,
 										disp=True,
@@ -221,8 +221,8 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 											'args':args_tuple,
 											'method':'Nelder-Mead',
 											'options':{	'disp':True,
-														'xtol': 0.01, 
-														'ftol': 0.01,
+														'xtol': 0.05, 
+														'ftol': 0.05,
 													},	
 											}
 										)
