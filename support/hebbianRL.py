@@ -51,7 +51,7 @@ def RLnetwork(	RPE_function_params,
 	nn_input_save = np.empty((0,2), dtype=float)
 
 	""" training of the network """
-	if param_xplr=='basinhopping' or param_xplr=='minimize':
+	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
 		print 'params of RPE function: ' + str(RPE_function_params)
 	if verbose: 
 		print 'run:  ' + runName
@@ -182,7 +182,7 @@ def RLnetwork(	RPE_function_params,
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					if RPE_function=='neural' or isfunction(RPE_function) or param_xplr=='basinhopping' or param_xplr=='minimize':
+					if RPE_function=='neural' or isfunction(RPE_function) or param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
 						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, RPE_function=RPE_function, RPE_function_params=RPE_function_params, param_xplr=param_xplr, temp_xplr=temp_xplr)
 						tmp_input = np.zeros((nBatch, 2))
 						tmp_input[:,0] = prediction_error
@@ -339,13 +339,13 @@ def RLnetwork(	RPE_function_params,
 
 	if verbose: print '\nrun: '+runName + '\n'
 
-	if param_xplr=='None': import pdb; pdb.set_trace()
-
-	if param_xplr=='basinhopping' or param_xplr=='minimize':
+	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
+		# import pdb; pdb.set_trace()
 		print 'perc. correct: ' + str(np.round(allPerf[0]*100,2)) + '\n'
 		ex.save_visited_params(RPE_function_params, 1. - allPerf[0], kwargs)
 		return 1. - allPerf[0]
 	else:
+		import pdb; pdb.set_trace()
 		return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
 
 
