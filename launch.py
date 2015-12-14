@@ -14,6 +14,7 @@ import support.plots as pl
 import support.mnist as mnist
 from scipy.optimize import basinhopping
 from scipy.optimize import minimize
+from scipy.optimize import brute
 from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
@@ -51,7 +52,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'tanh_2d_global_1'		,# name of the folder where to save results
+'runName' 		: 'tanh_2d_gridsearch_0'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -77,7 +78,7 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'basinhopping' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'minimize'
+'param_xplr'	: 'gridsearch' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
@@ -185,7 +186,7 @@ if kwargs['param_xplr'] == 'None':
 																						images_task, labels_task, orientations_task, 
 																						None, kwargs, **kwargs)
 
-elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize':
+elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize' or kwargs['param_xplr'] == 'gridsearch':
 	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'\n"
 	print kwargs['runName'] + '\n'
 	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
@@ -227,6 +228,15 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 											}
 										)
 	
+	elif kwargs['param_xplr'] == 'gridsearch':
+		optim_results = brute(	func,
+								args=args_tuple,
+								ranges=[(1., 10.), (-2., 5.)],
+								Ns=7,
+								full_output=True,
+								disp=True
+								)
+
 	elif kwargs['param_xplr'] == 'minimize':
 		optim_results = minimize( 	func, 
 									RPE_function_params_0,
