@@ -83,7 +83,7 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'bayesian'		,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'minimize' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
+'param_xplr'	: 'pypet' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
 'test_each_epi'	: False 			,# whether to test the network's performance at each episode
@@ -100,7 +100,7 @@ kwargs = {
 }
 
 """ parameters of the RPE function """
-kwargs['RPE_function'] = ex.tanh 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function, e.g.: ex.polynomial, ex.tanh
+kwargs['RPE_function'] = 'tanh' 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function, e.g.: ex.polynomial, ex.tanh
 # RPE_function_params = [3.11, 10000., 0.05, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
 RPE_function_params = [3.11, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
 

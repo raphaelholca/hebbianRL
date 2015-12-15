@@ -37,7 +37,10 @@ def RLnetwork(	RPE_function_params,
 
 	""" variable initialization """
 
-	if param_xpl == 'pypet': RPE_function_params = [a_0, a_1]
+	if param_xplr == 'pypet': 
+		RPE_function_params = [a_0, a_1]
+		if RPE_function == 'tanh': RPE_function=ex.tanh
+		elif RPE_function == 'polynomial': RPE_function=ex.polynomial
 
 	W_in_save = {}
 	W_act_save = {}
@@ -343,13 +346,14 @@ def RLnetwork(	RPE_function_params,
 	if verbose: print '\nrun: '+runName + '\n'
 
 	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
-		# import pdb; pdb.set_trace()
 		print 'perc. correct: ' + str(np.round(allPerf[0]*100,2)) + '\n'
 		ex.save_visited_params(RPE_function_params, 1. - allPerf[0], kwargs)
 		return 1. - allPerf[0]
-	else:
+	
+	elif param_xplr=='None':
 		import pdb; pdb.set_trace()
-		return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
+
+	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
 
 
 
