@@ -33,12 +33,12 @@ def RLnetwork(	RPE_function_params,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, a_0, a_1, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, a_0, a_1, a_2, a_3, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 
 	if param_xplr == 'pypet': 
-		RPE_function_params = [a_0, a_1]
+		RPE_function_params = [a_0, a_1, a_2, a_3]
 		if RPE_function == 'tanh': RPE_function=ex.tanh
 		elif RPE_function == 'polynomial': RPE_function=ex.polynomial
 

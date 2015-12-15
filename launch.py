@@ -52,7 +52,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'noProba_2d_pypet'		,# name of the folder where to save results
+'runName' 		: 'Proba_4d_pypet'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -60,7 +60,7 @@ kwargs = {
 'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
-'proba_predict'	: False				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
+'proba_predict'	: True				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
@@ -71,8 +71,10 @@ kwargs = {
 'dNeut' 		: 6.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
-'a_0'			: 3.2				,# parameters for the RPE function
-'a_1'			: -2.7				,
+'a_0'			: 2.4				,# parameters for the RPE function
+'a_1'			: 1000.				,
+'a_2'			: 0.05				,
+'a_3'			: -2.0				,
 
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
@@ -112,8 +114,10 @@ explore_dict = {
 # 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 
-'a_0'			:	np.round(np.arange(2., 4.1, 0.2),1).tolist(),
-'a_1'			:	np.round(np.arange(-4., -1.9, 0.2),1).tolist(),
+# 'a_0'			:	np.round(np.arange(2., 4.1, 0.2),1).tolist(),
+'a_1'			:	[2., 3., 4., 5., 7., 10., 100.],
+'a_2'			:	[-0.4, -0.3, -0.2, -0.1, -0.05, 0., 0.05, 0.1, 0.2, 0.3, 0.4],
+# 'a_3'			:	np.round(np.arange(-4., -1.9, 0.2),1).tolist(),
 
 }
 
@@ -212,7 +216,7 @@ elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize
 					images_task, labels_task, orientations_task, 
 					None, kwargs)
 
-	for k in ['classes', 'rActions', 'nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'comment']:
+	for k in ['classes', 'rActions', 'nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'comment']:
 		args_tuple += (kwargs[k],)
 
 	if kwargs['param_xplr'] == 'basinhopping':
@@ -331,7 +335,7 @@ elif kwargs['param_xplr'] == 'pypet':
 							log_stdout=False,
 							add_time = False,
 							multiproc = True,
-							ncores = 10,
+							ncores = 12,
 							filename='output/' + kwargs['runName'] + '/perf.hdf5',
 							overwrite_file=False)
 
