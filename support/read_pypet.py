@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pypet
 
 # folder_path = '../output/gabor_xplr-5/'
-folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/gabor_xplr-7/'
+folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/noProba_2d_pypet/'
 
 traj_name = 'xplr'
 traj = pypet.load_trajectory(traj_name, filename=folder_path + 'perf.hdf5', force=True)
@@ -55,7 +55,7 @@ for ik in range(len(keys)):
 				mask = np.logical_and(mask, param[o]==best_param[o])
 		pX = param[keys[ik]][mask]
 		pY = param[k][mask]
-		rC = np.array(p_W_act)[mask]
+		rC = np.hstack(p_W_act)[mask]
 
 		if True: #True: non-linear representation of results; False: linear representation 
 			ipX = np.zeros(len(pX))
@@ -70,7 +70,7 @@ for ik in range(len(keys)):
 		fig = plt.figure()
 		fig.patch.set_facecolor('white')
 		
-		plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(p_W_act), vmax=np.max(p_W_act), s=5000, marker='s')
+		plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(p_W_act), vmax=np.max(p_W_act), s=1000, marker='s')
 		# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 		for i in range(len(pX)):
 			if pX[i]==param[keys[ik]][arg_best] and pY[i]==param[k][arg_best]:

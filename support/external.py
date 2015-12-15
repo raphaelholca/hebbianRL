@@ -36,12 +36,12 @@ def polynomial(X, params):
 		(numpy array): DA value
 	"""
 	
-	func_value = 0.
+	DA = np.zeros(len(X))
 
 	for i in range(len(params)):
-		func_value += params[i]*(X**i)
+		DA += params[i]*(X**i)
 
-	return func_value
+	return DA
 	# return params[0] + params[1]*X + params[2]*(X**2) + params[3]*(X**3)
 
 def tanh(X, params):
@@ -60,10 +60,31 @@ def tanh(X, params):
 		return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
 	elif len(params)==2:
 		return params[0] * np.tanh( 1000. * (X + 0.05) ) + params[1]
-		# return params[0] * np.tanh( X ) + params[1]
 	else:
-		return 0
+		return None
 
+def step_func(X, params):
+	"""
+	step function to relate prediction error to DA
+
+	Args:
+		X (numpy array): prediction error: actual - predicted rewards
+		params (list): list of parameters for the function
+
+	returns:
+		(numpy array): DA value
+	"""
+
+	DA=np.zeros(len(X))
+
+	DA[ X >= -0.6 ] = params[0]
+	DA[np.logical_and( X < -0.6, X>= -0.7 )] = params[1]
+	DA[np.logical_and( X < -0.7, X>= -0.8 )] = params[2]
+	DA[ X < -0.8 ] = params[3]
+
+	DA[ X >= 0.0 ] = 0.4
+
+	return DA
 
 def normalize(images, A):
 	"""

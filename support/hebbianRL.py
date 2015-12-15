@@ -37,10 +37,13 @@ def RLnetwork(	RPE_function_params,
 
 	""" variable initialization """
 
+	if RPE_function_params[0]!=a_0 or RPE_function_params[1]!=a_1 or RPE_function_params[2]!=a_2 or RPE_function_params[3]!=a_3:
+		print "\n!! warning !! inconsistent RPE function parameters !!\n"
 	if param_xplr == 'pypet': 
 		RPE_function_params = [a_0, a_1, a_2, a_3]
-		if RPE_function == 'tanh': RPE_function=ex.tanh
-		elif RPE_function == 'polynomial': RPE_function=ex.polynomial
+	if RPE_function == 'tanh': RPE_function=ex.tanh
+	elif RPE_function == 'polynomial': RPE_function=ex.polynomial
+	elif RPE_function == 'step_func': RPE_function=ex.step_func
 
 	W_in_save = {}
 	W_act_save = {}
@@ -89,8 +92,8 @@ def RLnetwork(	RPE_function_params,
 		perf_track = np.zeros((nActNeurons, 2))
 
 		choice_count = np.zeros((nClasses, nClasses))
-		dopa_save = []
-		predicted_reward_save = []
+		dopa_save = np.array([])
+		predicted_reward_save = np.array([])
 		perf_epi = []
 		dW_save=np.array([])
 
@@ -174,7 +177,7 @@ def RLnetwork(	RPE_function_params,
 				elif classifier=='bayesian' and e >= nEpiCrit:
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 
-				predicted_reward_save.append(predicted_reward)
+				predicted_reward_save = np.append(predicted_reward_save, predicted_reward)
 
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit and train_class_layer:
@@ -347,8 +350,8 @@ def RLnetwork(	RPE_function_params,
 
 	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
 		print 'perc. correct: ' + str(np.round(allPerf[0]*100,2)) + '\n'
-		ex.save_visited_params(RPE_function_params, 1. - allPerf[0], kwargs)
-		return 1. - allPerf[0]
+		ex.save_visited_params(RPE_function_params, 1. - np.mean(allPerf), kwargs)
+		return 1. - np.mean(allPerf)
 	
 	elif param_xplr=='None':
 		import pdb; pdb.set_trace()
