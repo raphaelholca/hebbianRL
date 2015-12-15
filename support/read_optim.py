@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-folder_path = '../output/Proba_2d/'
+folder_path = '../output/noProba_2d_local/'
 # folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/gabor_xplr-7/'
 
 
