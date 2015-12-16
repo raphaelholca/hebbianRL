@@ -52,7 +52,7 @@ kwargs = {
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'proba_step'		,# name of the folder where to save results
+'runName' 		: 'proba_step_3'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -115,10 +115,10 @@ explore_dict = {
 # 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 
-'a_0'			:	[-4.6, -4.4, -4.2],
-'a_1'			:	[-4.6, -4.4, -4.2],
-'a_2'			:	[-4.6, -4.4, -4.2],
-'a_3'			:	[-4.6, -4.4, -4.2],
+'a_0'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
+'a_1'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
+'a_2'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
+'a_3'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
 
 }
 

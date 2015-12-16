@@ -77,12 +77,21 @@ def step_func(X, params):
 
 	DA=np.zeros(len(X))
 
-	DA[ X >= -0.6 ] = params[0]
-	DA[np.logical_and( X < -0.6, X>= -0.7 )] = params[1]
-	DA[np.logical_and( X < -0.7, X>= -0.8 )] = params[2]
-	DA[ X < -0.8 ] = params[3]
+	# DA[ X >= -0.6 ] = params[0]
+	# DA[np.logical_and( X < -0.6, X>= -0.7 )] = params[1]
+	# DA[np.logical_and( X < -0.7, X>= -0.8 )] = params[2]
+	# DA[ X < -0.8 ] = params[3]
 
-	DA[ X >= 0.0 ] = 0.4
+	# DA[ X >= 0.0 ] = 0.4
+
+	###------###
+
+	DA[ X <= 0.0 ] = -4.4
+
+	DA[np.logical_and( X > 0.00, X <= 0.15 )] = params[0]
+	DA[np.logical_and( X > 0.15, X <= 0.20 )] = params[1]
+	DA[np.logical_and( X > 0.20, X <= 0.30 )] = params[2]
+	DA[ X > 0.3 ] = params[3]
 
 	return DA
 
