@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pypet
 
 # folder_path = '../output/gabor_xplr-5/'
-folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/noProba_2d_pypet/'
+folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/proba_two_lin/'
 
 traj_name = 'xplr'
 traj = pypet.load_trajectory(traj_name, filename=folder_path + 'perf.hdf5', force=True)
@@ -20,6 +20,9 @@ for run in traj.f_iter_runs():
 	except pypet.pypetexceptions.DataNotInStorageError:
 		skipped_count+=1
 print str(skipped_count) + ' runs skipped'
+
+p_W_act_all = np.copy(p_W_act)
+p_W_act = np.mean(p_W_act,1)
 
 param_traj = traj.f_get_explored_parameters()
 param = {}
@@ -39,6 +42,7 @@ print '================'
 for k in param.keys():
 	best_param[k] = param[k][arg_best]
 	print k + ' : ' + str(param[k][arg_best]) + '\t\t' + str(np.round(np.unique(param[k]),3))
+print "\nbest performance: " + str(np.round(np.max(p_W_act)*100,2)) + "\n"
 
 keys = param.keys()
 for ik in range(len(keys)):

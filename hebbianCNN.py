@@ -2,12 +2,7 @@
 Author: Raphael Holca-Lamarre
 Date: 26/05/2015
 
-This function creates a convolutional hebbian neural network
-"""
-
-"""
-TO DO NEXT:
-train a hebbian network on the images transformed in the representation space of a back-prop conv net.
+This function runs a convolutional hebbian neural network
 """
 
 import numpy as np
@@ -77,6 +72,18 @@ def get_conv_input(image, conv_input, conv_side):
 	return conv_input	
 
 def subsampling(conv_activ, conv_mapSide, conv_mapNum, subS_mapSide):
+	"""
+	Subsamples the convolutional feature maps
+
+	Args:
+		conv_activ ():
+		conv_mapSide ():
+		conv_mapNum ():
+		subS_mapSide ():
+
+	returns:
+		subsampled feature maps
+	"""
 	FM = np.reshape(conv_activ, (conv_mapSide, conv_mapSide, conv_mapNum))
 	SSM = np.zeros((subS_mapSide, subS_mapSide, conv_mapNum))
 	ite = np.arange(0, conv_mapSide, 2)
@@ -89,7 +96,7 @@ def subsampling(conv_activ, conv_mapSide, conv_mapNum, subS_mapSide):
 @numba.njit
 def subsampling_numba(FM, SSM, ite):
 	"""
-	Subsamples the convolutional feature maps
+	Numba implementation of the subsampling routine
 
 	Args:
 		FM (3D numpy array): feature maps; size = (cMaps_side x cMaps_side x nFeatureMaps)
@@ -251,20 +258,20 @@ size_params = {'conv_neuronNum':conv_neuronNum, 'conv_filterSide':conv_filterSid
 
 """ initialize weights """
 if False: #load pre-trained weights from file
-	# f = open('weights_bp_long', 'r')
-	# conv_W = pickle.load(f)
-	# conv_W = np.reshape(conv_W, (6,25))
-	# conv_W -= np.min(conv_W,1)[:,np.newaxis]
-	# conv_W = ex.normalize(conv_W,900).T
-	# f.close()
+	f = open('weights_bp_long', 'r')
+	conv_W = pickle.load(f)
+	conv_W = np.reshape(conv_W, (6,25))
+	conv_W -= np.min(conv_W,1)[:,np.newaxis]
+	conv_W = ex.normalize(conv_W,900).T
+	f.close()
 
-	# f = open('weights', 'r')
-	# weights = pickle.load(f)
-	# f.close()
+	f = open('weights', 'r')
+	weights = pickle.load(f)
+	f.close()
 
-	# conv_W = weights['conv_W']
-	# feedF_W = weights['feedF_W']
-	# class_W = weights['class_W']
+	conv_W = weights['conv_W']
+	feedF_W = weights['feedF_W']
+	class_W = weights['class_W']
 else: #random initialization
 	# conv_W = np.random.random_sample(size=(conv_filterSide**2, conv_mapNum)) + A/(conv_filterSide**2) + 2.5
 	conv_W = np.random.random_sample(size=(conv_filterSide**2, conv_mapNum)) + A/(conv_filterSide**2) ###just for trials with conv_filter size == image size
