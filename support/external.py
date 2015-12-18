@@ -24,6 +24,14 @@ def set_global(lActions_pass, rActions_pass, classes_pass, kwargs_pass):
 	classes = classes_pass
 	kwargs = kwargs_pass
 
+def two_lin(X, params):
+	""" concatenation of two linear functions """
+	
+	DA = np.zeros(len(X))
+
+	DA[ X < 0 ]  = (params[0] * (X + 0.7)) - 4.8
+	DA[ X >= 0 ] = (params[1] * (X - 0.3)) + 0.4
+
 def polynomial(X, params):
 	"""
 	polynomial function to relate prediction error to DA; order of the polynomial is decided by the length of the parameters passed: order = len(params)-1
@@ -86,12 +94,12 @@ def step_func(X, params):
 
 	###------###
 
-	DA[ X <= 0.0 ] = -4.4
+	DA[ X < 0.0 ] = -4.4
 
-	DA[np.logical_and( X > 0.00, X <= 0.15 )] = params[0]
-	DA[np.logical_and( X > 0.15, X <= 0.20 )] = params[1]
-	DA[np.logical_and( X > 0.20, X <= 0.30 )] = params[2]
-	DA[ X > 0.3 ] = params[3]
+	DA[np.logical_and( X >= 0.00, X < 0.15 )] = params[0]
+	DA[np.logical_and( X >= 0.15, X < 0.20 )] = params[1]
+	DA[np.logical_and( X >= 0.20, X < 0.30 )] = params[2]
+	DA[ X >= 0.3 ] = params[3]
 
 	return DA
 
