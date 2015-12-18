@@ -46,13 +46,13 @@ def pypet_RLnetwork(traj):
 
 """ parameters """
 kwargs = {
-'nRun' 			: 3					,# number of runs
+'nRun' 			: 60					,# number of runs
 'nEpiCrit'		: 0 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
 'nEpiDopa'		: 2					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
-'runName' 		: 'proba_step_3'		,# name of the folder where to save results
+'runName' 		: 'proba_two_lin'		,# name of the folder where to save results
 'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 16				,# number of hidden neurons
 'lim_weights'	: True 				,# whether to artificially limit the value of weights. Used during parameter exploration
@@ -102,10 +102,10 @@ kwargs = {
 }
 
 """ parameters of the RPE function """
-kwargs['RPE_function'] = 'step_func' 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function, e.g.: ex.polynomial, ex.tanh
+kwargs['RPE_function'] = 'two_lin' 		# RPE value; valid: 'neural' (function approx.), 'discrete', or callable function, e.g.: ex.polynomial, ex.tanh
 # RPE_function_params = [3.11, 10000., 0.05, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
 # RPE_function_params = [2.4, 1000., 0.05, -2.0]				# parameters of the RPE function, if RPE_function is a callable function
-RPE_function_params = [-4.4, -4.4, -4.4, -4.4]	
+RPE_function_params = [0.5, 0.2, 0.3, 0.4]	
 
 """ parameters for exploration """
 explore_dict = {
@@ -115,10 +115,13 @@ explore_dict = {
 # 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
 # 'noise_std'		:	[0.005, 0.01, 0.05]
 
-'a_0'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
-'a_1'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
-'a_2'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
-'a_3'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
+'a_0'			:	[-1., 0., 0.5, 1.0, 2.0, 3.0],
+'a_1'			:	[-1., 0., 0.5, 1.0, 2.0, 3.0]
+
+# 'a_0'			:	[0.05, 0.2, 0.4], #[-4.8, -4.4, -4.0],
+# 'a_1'			:	[0.05, 0.2, 0.4], #[-4.8, -4.4, -4.0],
+# 'a_2'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
+# 'a_3'			:	[0.4, 0.6, 0.8], #[-4.8, -4.4, -4.0],
 
 }
 

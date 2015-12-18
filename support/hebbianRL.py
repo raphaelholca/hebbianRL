@@ -41,9 +41,8 @@ def RLnetwork(	RPE_function_params,
 		RPE_function_params = [a_0, a_1, a_2, a_3]
 	elif RPE_function_params[0]!=a_0 or RPE_function_params[1]!=a_1 or RPE_function_params[2]!=a_2 or RPE_function_params[3]!=a_3:
 		print "\n!! warning !! inconsistent RPE function parameters !!\n"
-	if RPE_function == 'tanh': RPE_function=ex.tanh
-	elif RPE_function == 'polynomial': RPE_function=ex.polynomial
-	elif RPE_function == 'step_func': RPE_function=ex.step_func
+	if isinstance(RPE_function, str): 
+		RPE_function = {'tanh':ex.tanh, 'polynomial':ex.polynomial, 'step_func':ex.step_func, 'two_lin':ex.two_lin}[RPE_function]
 
 	W_in_save = {}
 	W_act_save = {}
