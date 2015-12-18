@@ -29,8 +29,12 @@ def two_lin(X, params):
 	
 	DA = np.zeros(len(X))
 
-	DA[ X < 0 ]  = (params[0] * (X + 0.7)) - 4.8
-	DA[ X >= 0 ] = (params[1] * (X - 0.3)) + 0.4
+	X_mask_neg = X < 0
+	X_mask_pos = X >= 0
+	DA[X_mask_neg] = (params[0] * (X[X_mask_neg] + 0.7)) - 4.8
+	DA[X_mask_pos] = (params[1] * (X[X_mask_pos] - 0.3)) + 0.4
+
+	return DA
 
 def polynomial(X, params):
 	"""

@@ -71,10 +71,10 @@ kwargs = {
 'dNeut' 		: 6.				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
 'dLow' 			: -1.5				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
 
-'a_0'			: 2.4				,# parameters for the RPE function
-'a_1'			: 1000.				,
-'a_2'			: 0.05				,
-'a_3'			: -2.0				,
+'a_0'			: 0.0				,# parameters for the RPE function
+'a_1'			: 0.0				,
+'a_2'			: 0.0				,
+'a_3'			: 0.0				,
 
 'nBatch' 		: 20 				,# mini-batch size
 'protocol'		: 'digit'			,# training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination)
@@ -88,7 +88,7 @@ kwargs = {
 'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'digit_479_16'	,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization
-'test_each_epi'	: False 			,# whether to test the network's performance at each episode
+'test_each_epi'	: True 			,# whether to test the network's performance at each episode
 'SVM'			: False				,# whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron
 'save_data'		: True				,# whether to save data to disk
 'verbose'		: True				,# whether to create text output
@@ -106,7 +106,7 @@ kwargs['RPE_function'] = 'two_lin' 		# RPE value; valid: 'neural' (function appr
 # RPE_function_params = [3.11, 10000., 0.05, 0.148]				# parameters of the RPE function, if RPE_function is a callable function
 # RPE_function_params = [2.4, 1000., 0.05, -2.0]				# parameters of the RPE function, if RPE_function is a callable function
 # RPE_function_params = [0.2, 0.4, 0.2, 0.6]	
-RPE_function_params = [0.4, 0.4, 0.4, 0.4]	
+RPE_function_params = [0.0, 0.0, 0.0, 0.0]	
 
 """ parameters for exploration """
 explore_dict = {
