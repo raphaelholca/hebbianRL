@@ -207,13 +207,13 @@ classes 	= np.array([4, 9], dtype=int)
 # classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
-runName 			= 't_1'
-nEpiCrit			= 5
+runName 			= 't_2'
+nEpiCrit			= 30
 nEpiDopa			= 0
 noise 				= 'feedF' #'none' 'conv' 'feedF'
 A 					= 900.##200.
 lr 					= 1e-5
-dataset 			= 'train'
+dataset 			= 'test'
 nBatch 				= 196##196  #196 112 49
 conv_mapNum			= 20
 conv_filterSide		= 5#20#5
@@ -303,13 +303,13 @@ for e in range(nEpiTot):
 		dopa_conv = None
 		dopa_feedF = None
 		if e>=nEpiCrit: #DOPA
-			reward = ex.compute_reward(ex.label2idx([rndLabels[i]]), np.argmax(class_activ_noise))
-
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.02, dLow=-2.0) #parameters from old network
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.0, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			dopa_conv = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			dopa_feedF = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
-			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=0.75, dMid=1.0, dNeut=-0.02, dLow=-0.5) #OK parameters for (large) convolutional layer
+			reward = ex.reward_delivery(ex.label2idx([rndLabels[i]]), np.argmax(class_activ_noise))
+			reward_pred = ex.reward_prediction(np.argmax(class_activ), np.argmax(class_activ_noise), proba_predict=False, posterior=None)
+			# dopa = ex.compute_dopa(reward_pred, reward, dHigh=7.0, dMid=0.01, dNeut=-0.02, dLow=-2.0) #parameters from old network
+			# dopa = ex.compute_dopa(reward_pred, reward, dHigh=2.0, dMid=0.0, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			dopa_conv = ex.compute_dopa(reward_pred, reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			dopa_feedF = ex.compute_dopa(reward_pred, reward, dHigh=0.75, dMid=0.5, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
+			# dopa = ex.compute_dopa(reward_pred, reward, dHigh=0.75, dMid=1.0, dNeut=-0.02, dLow=-0.5) #OK parameters for (large) convolutional layer
 
 			dopa_save = np.append(dopa_save, dopa_conv[0])
 			
