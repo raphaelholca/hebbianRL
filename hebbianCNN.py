@@ -138,7 +138,7 @@ def load_images(classes, dataset, imPath, pad_size):
 
 	print "importing and pre-processing " + dataset + " images..."
 	images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset, path = imPath)
-	images, labels = ex.evenLabels(images, labels, classes)
+	images, labels = ex.evenLabels(images, labels)
 	# images = ex.normalize_numba(images, 1080)
 	images = add_padding(images, pad_size=pad_size, pad_value=0)
 	images += 1e-5 #to avoid division by zero error when the convolving filter takes as input a patch of images that is filled with 0s
@@ -202,14 +202,14 @@ def propagate(image, conv_W, feedF_W, class_W, A, t, size_params, noise='none', 
 
 
 """ define parameters """
-classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
-# classes 	= np.array([4, 9], dtype=int)
+# classes 	= np.array([ 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 ], dtype=int)
+classes 	= np.array([4, 9], dtype=int)
 # classes 	= np.array([4,7,9], dtype=int)
 nClasses = len(classes)
 
 runName 			= 't_1'
-nEpiCrit			= 10
-nEpiDopa			= 35
+nEpiCrit			= 5
+nEpiDopa			= 0
 noise 				= 'feedF' #'none' 'conv' 'feedF'
 A 					= 900.##200.
 lr 					= 1e-5
@@ -223,6 +223,7 @@ seed 				= 951#np.random.randint(1000) #970
 
 np.random.seed(seed)
 print '\n' + 'run name: ' + runName + ' -- seed: ' + str(seed) + '\n'
+ex.set_global(None, None, classes, None)
 
 """ load and pre-process images """
 pad_size = (conv_filterSide-1)/2 ### 0
@@ -302,7 +303,7 @@ for e in range(nEpiTot):
 		dopa_conv = None
 		dopa_feedF = None
 		if e>=nEpiCrit: #DOPA
-			reward = ex.compute_reward(ex.label2idx(classes, [rndLabels[i]]), np.argmax(class_activ_noise))
+			reward = ex.compute_reward(ex.label2idx([rndLabels[i]]), np.argmax(class_activ_noise))
 
 			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=7.0, dMid=0.01, dNeut=-0.02, dLow=-2.0) #parameters from old network
 			# dopa = ex.compute_dopa([np.argmax(class_activ)], [np.argmax(class_activ_noise)], reward, dHigh=2.0, dMid=0.0, dNeut=-0.02, dLow=-0.5) #OK paramters for feedforward layer alone
@@ -333,7 +334,7 @@ for e in range(nEpiTot):
 
 		#...of the classification layer
 		dW_class = ex.learningStep(feedF_activ, class_activ, class_W, lr=0.005)
-		if np.argmax(class_activ) == ex.label2idx(classes, [rndLabels[i]]):
+		if np.argmax(class_activ) == ex.label2idx([rndLabels[i]]):
 			dW_class *= 0.75
 			correct_train+=1
 		else:
@@ -353,7 +354,7 @@ for e in range(nEpiTot):
 	correct_test = 0.
 	for i in range(images_test_short.shape[0]):
 		classif = propagate(images_test_short[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
-		if classif == ex.label2idx(classes, [labels_test_short[i]]): correct_test += 1.
+		if classif == ex.label2idx([labels_test_short[i]]): correct_test += 1.
 	print 'approx. test error: ' + str(np.round((1.-correct_test/images_test_short.shape[0])*100,2)) +'%'
 
 	correct_Wout = np.sum(np.argmax(last_neuron_class,1)==np.argmax(class_W,1))
@@ -370,7 +371,7 @@ correct = 0.
 pbar_epi = ProgressBar()
 for i in pbar_epi(range(images_test.shape[0])):
 	classif = propagate(images_test[i,:,:], conv_W, feedF_W, class_W, A, 0.01, size_params)[0]
-	if classif == ex.label2idx(classes, [labels_test[i]]): correct += 1.
+	if classif == ex.label2idx([labels_test[i]]): correct += 1.
 print 'test error: ' + str(np.round((1.-correct/images_test.shape[0])*100,2)) +'%'
 
 
