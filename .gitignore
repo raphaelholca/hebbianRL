@@ -1,0 +1,15 @@
+.DS_Store
+*.pyc
+images_subs*
+bp_support/*
+logs/*
+output/*
+support/SVM-MNIST*
+support/get_input_c.pyx
+support/tsne.py
+weights_bp
+write-up/*
+plots/*
+recon.py
+temporalRL.py
+
