@@ -12,7 +12,6 @@ import support.external as ex
 import support.plots as pl
 import support.classifier as cl
 import support.assessRF as rf
-import support.svmutils as su
 import support.grating as gr
 import support.bayesian_decoder as bc
 import sys
@@ -24,7 +23,6 @@ ex = reload(ex)
 pl = reload(pl)
 cl = reload(cl)
 rf = reload(rf)
-su = reload(su)
 gr = reload(gr)
 bc = reload(bc)
 

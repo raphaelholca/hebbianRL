@@ -1,15 +1,12 @@
 """ support functions for hebbian network and neural classifier """
 
 import numpy as np
-import accel
 import pickle
 import os
 import sys
 import shutil
 import numba
 import time	
-import string
-from configobj import ConfigObj
 import grating as gr
 
 gr = reload(gr)
@@ -179,7 +176,7 @@ def propL1(bInput, W_in, SM=True, t=1.):
 		numpy array: the activation of the hidden neurons
 	"""
 
-	hidNeurons = np.dot(bInput, accel.log(W_in))
+	hidNeurons = np.dot(bInput, np.log(W_in))
 	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 

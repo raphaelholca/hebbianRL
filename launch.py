@@ -5,30 +5,21 @@ if 'Documents' in os.getcwd():
 
 import numpy as np
 import pickle
-import struct
-import pypet
 import time
 import support.hebbianRL as rl
 import support.external as ex
 import support.plots as pl
 import support.mnist as mnist
-from scipy.optimize import basinhopping
-from scipy.optimize import minimize
-from scipy.optimize import brute
-# from sknn.mlp import Regressor, Layer
 
 rl = reload(rl)
 ex = reload(ex)
 pl = reload(pl)
 
-def get_images():
-	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
-
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
 'nEpiCrit'		: 10 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 10				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
