@@ -116,7 +116,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None, 
 			notsame_pass = np.array([])
 
 		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
-		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3)+'.pdf')
+		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3)+'.png')
 		pyplot.close(fig)
 
 def clockwise(r):

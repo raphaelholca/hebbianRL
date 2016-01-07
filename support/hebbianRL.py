@@ -18,6 +18,7 @@ import support.bayesian_decoder as bc
 import sys
 import time
 import pickle
+import warnings
 
 ex = reload(ex)
 pl = reload(pl)
@@ -40,7 +41,7 @@ def RLnetwork(	RPE_function_params,
 	if param_xplr == 'pypet': 
 		RPE_function_params = [a_0, a_1, a_2, a_3]
 	elif RPE_function_params[0]!=a_0 or RPE_function_params[1]!=a_1 or RPE_function_params[2]!=a_2 or RPE_function_params[3]!=a_3:
-		print "\n!! warning !! inconsistent RPE function parameters !!\n"
+		warnings.warn("\n!! warning !! inconsistent RPE function parameters !!\n")
 	if isinstance(RPE_function, str): 
 		RPE_function = {'tanh':ex.tanh, 'polynomial':ex.polynomial, 'step_func':ex.step_func, 'two_lin':ex.two_lin}[RPE_function]
 
@@ -92,7 +93,6 @@ def RLnetwork(	RPE_function_params,
 
 		choice_count = np.zeros((nClasses, nClasses))
 		dopa_save = np.array([])
-		predicted_reward_save = np.array([])
 		perf_epi = []
 		dW_save=np.array([])
 
@@ -176,13 +176,11 @@ def RLnetwork(	RPE_function_params,
 				elif classifier=='bayesian' and e >= nEpiCrit:
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)
 
-				predicted_reward_save = np.append(predicted_reward_save, predicted_reward)
-
 				#compute dopa signal and disinhibition based on training period
 				if e < nEpiCrit and train_class_layer:
 					""" critical period; trains class layer """
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-					# dopa = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+					# dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+					# dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
 
 					disinhib_Hid = ach
@@ -221,29 +219,6 @@ def RLnetwork(	RPE_function_params,
 
 				W_in = np.clip(W_in, 1e-10, np.inf)
 				if train_class_layer: W_act = np.clip(W_act, 1e-10, np.inf)
-
-				# if (W_act>1.5).any(): import pdb; pdb.set_trace()
-				# if np.isnan(W_in).any(): import pdb; pdb.set_trace()
-
-				#fit regressor neural net during training
-				# if param_xplr=='neural_net' and b%5==0 anf False:
-				# 	rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-				# 	batch_perf = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], kwargs, save_data=False, verbose=False)[1]
-				# 	nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*batch_perf)
-
-				# 	X = np.ones((120, 2))*0.5
-				# 	X[:,0]=np.arange(-6,6,0.1)
-				# 	best_X = np.argmax(nn_regressor.predict(X))
-					
-				# 	X_ = np.ones((120, 2))*-0.5
-				# 	X_[:,0]=np.arange(-6,6,0.1)
-				# 	best_X_ = np.argmax(nn_regressor.predict(X_))
-
-				# 	print 'batch perf: ' + str(np.round(batch_perf[0],3)*100) + '%' + '   ; best_DA err=0.5: ' + str(X[best_X][0]) + ' ; err=-0.5: ' + str(X_[best_X_][0])
-
-				# 	import pdb; pdb.set_trace()
-
-				# 	nn_input = np.empty((0,2), dtype=float)
 
 			""" end of mini-batch """
 
