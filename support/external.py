@@ -24,89 +24,6 @@ def set_global(lActions_pass, rActions_pass, classes_pass, kwargs_pass):
 	classes = classes_pass
 	kwargs = kwargs_pass
 
-def two_lin(X, params):
-	""" concatenation of two linear functions """
-	
-	DA = np.zeros(len(X))
-
-	X_mask_neg = X < 0
-	X_mask_pos = X >= 0
-	DA[X_mask_neg] = (params[0] * (X[X_mask_neg] + 0.7)) - 4.8
-	DA[X_mask_pos] = (params[1] * (X[X_mask_pos] - 0.3)) + 0.4
-
-	return DA
-
-def polynomial(X, params):
-	"""
-	polynomial function to relate prediction error to DA; order of the polynomial is decided by the length of the parameters passed: order = len(params)-1
-
-	Args:
-		X (numpy array): prediction error: actual - predicted rewards
-		params (list): list of parameters for the function
-
-	returns:
-		(numpy array): DA value
-	"""
-	
-	DA = np.zeros(len(X))
-
-	for i in range(len(params)):
-		DA += params[i]*(X**i)
-
-	return DA
-	# return params[0] + params[1]*X + params[2]*(X**2) + params[3]*(X**3)
-
-def tanh(X, params):
-	"""
-	hyperbolic tangent function to relate prediction error to DA.
-
-	Args:
-		X (numpy array): prediction error: actual - predicted rewards
-		params (list): list of parameters for the function
-
-	returns:
-		(numpy array): DA value
-	"""
-
-	if len(params)==4:
-		return params[0] * np.tanh( params[1] * ( X + params[2] ) ) + params[3]
-	elif len(params)==2:
-		return params[0] * np.tanh( 1000. * (X + 0.05) ) + params[1]
-	else:
-		return None
-
-def step_func(X, params):
-	"""
-	step function to relate prediction error to DA
-
-	Args:
-		X (numpy array): prediction error: actual - predicted rewards
-		params (list): list of parameters for the function
-
-	returns:
-		(numpy array): DA value
-	"""
-
-	DA=np.zeros(len(X))
-
-	# DA[ X >= -0.6 ] = params[0]
-	# DA[np.logical_and( X < -0.6, X>= -0.7 )] = params[1]
-	# DA[np.logical_and( X < -0.7, X>= -0.8 )] = params[2]
-	# DA[ X < -0.8 ] = params[3]
-
-	# DA[ X >= 0.0 ] = 0.4
-
-	###------###
-
-	DA[ X < 0.0 ] = -4.4
-
-	DA[np.logical_and( X >= 0.00, X < 0.15 )] = params[0]
-	DA[np.logical_and( X >= 0.15, X < 0.20 )] = params[1]
-	DA[np.logical_and( X >= 0.20, X < 0.30 )] = params[2]
-	DA[ X >= 0.3 ] = params[3]
-
-	return DA
-
 def normalize(images, A):
 	"""
 	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
@@ -317,32 +234,6 @@ def regularization(dot, postNeurons, W, sum_ar):
 
 	return dot
 
-def track_perf(perf, bLabels, pred_bLabels, decay_param=0.001):
-	"""
-	Tracks performance for all classes using a weighted average
-
-	Args:
-		perf (numpy array): matrix of performances of shape (nClasses x 2), containing in perf[:,0] the number of correct trials and in perf[:,1] the number of all trials
-		bLabels (numpy array): image labels
-		pred_bLabels (numpy array): predictated stimulus class (i.e., label predicted by the network)
-		decay_param (float, optional): decay parameter of the weighted average (~0, all values equally considered; ~1, only last value considered; 0.1: ~50 values; 0.01: 500; 0.001: ~5000)
-
-	returns:
-		numpy array: updated performances (i.e., count of correct and total trials)
-	"""
-
-	#commented out code doesn't require label knowledge
-
-	for ic, c in enumerate(classes):
-		# if sum(pred_bLabels==c) != 0:
-		if sum(bLabels==c) != 0:
-			# perf[ic,0] = np.sum(bLabels[pred_bLabels==c] == pred_bLabels[pred_bLabels==c])*decay_param + perf[ic,0]*(1-decay_param)
-			# perf[ic,1] = np.sum(pred_bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
-
-			perf[ic,0] = np.sum(bLabels[bLabels==c] == pred_bLabels[bLabels==c])*decay_param + perf[ic,0]*(1-decay_param)
-			perf[ic,1] = np.sum(bLabels==c)*decay_param + perf[ic,1]*(1-decay_param)
-	return perf
-
 def reward_delivery(labels, actions):
 	"""
 	Computes the reward based on the action taken and the label of the current input
@@ -406,90 +297,6 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, RPE_function_params=[]):
-	"""
-	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
-
-	Args:
-		predicted (numpy array): predicted rewards for current batch
-		actual (numpy array): received rewards for current batch
-		nn_regressor (sknn regressor): neural network regressor object
-		RPE_function (callable function, optional): function to convert prediction error to dopa value; should be a function for range [-1,1]; suggested function: np.sign, np.expm1, np.tanh
-		RPE_function_params (list): list of parameters for the RPE function
-
-	returns:
-		numpy array: array of dopamine release value
-	"""
-
-	prediction_error = actual-predicted
-	dopa = np.zeros(len(prediction_error))
-
-	if nn_regressor is None: #uses a function to compute DA release
-		dopa = RPE_function(prediction_error, RPE_function_params)
-
-	else: #uses a neural network regressor to compute DA value
-		DA_min = -6.
-		DA_max = +6.1
-		step = 0.1
-		tried_DA_values = np.arange(DA_min, DA_max, step)
-
-		nn_input = np.zeros((len(tried_DA_values), 2))
-		nn_input[:,1] = tried_DA_values
-		for i in range(len(prediction_error)):
-			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
-			perf_predict = nn_regressor.predict(nn_input)
-			chosen_idx = np.argmax(perf_predict) #greedy algorithm
-			dopa[i] = tried_DA_values[chosen_idx]
-		# import pdb; pdb.set_trace()
-
-	return dopa, prediction_error
-
-def compute_ach(perf, pred_bLabels_idx, aHigh, aPairing=1.):
-	"""
-	Computes the ach signal based on stimulus difficulty (average classification performance)
-
-	Args:
-		perf (numpy array): average performance over n batches
-		pred_bLabels_idx (numpy array): index of predictated stimulus class (i.e., index of the predicted digit label)
-		aHigh (numpy array): parameter of the exponential decay function relating perfomance to ach release
-		aPairing (float) : strength of ACh release for stimulus pairing protocol; ach_labels is set to aPairing for capital letters in rActions
-
-	returns:
-		numpy array: array of acetylcholine release value for each training example of the current batch
-		numpy array: array of acetylcholine release value for each of the digit label
-	"""
-
-	perf_ratio = np.zeros(np.size(perf,0))
-	mask = perf[:,1]!=0 #avoid division by zero
-	perf_ratio[mask] = perf[mask,0]/perf[mask,1]
-	if np.mean(perf_ratio)==0:  #avoid division by zero
-		ach_labels = np.ones(np.size(perf,0))
-	else: 
-		perc_mean =  perf_ratio/np.mean(perf_ratio)
-		ach_labels = np.exp(aHigh*(-perc_mean+1))
-	if aPairing!=1.: ach_labels[np.array([char.isupper() for char in rActions])] = aPairing
-	return ach_labels[pred_bLabels_idx], ach_labels
-
-def Q_learn(Q, state, action, reward, Q_LR=0.01):
-	"""
-	Q-learner for state-action pairs
-
-	Args;
-		Q (numpy array): look up table of Q values (state x action)
-		state (numpy array): index of the states visited in the current batch
-		action (numpy array): index of the actions taken in the current batch
-		reward (numpy array): reward value obtained in the current batch
-		Q_LR (float): learning rate (0 < LR < 1)
-
-	returns:
-		numpy array: Q look-up table
-	"""
-
-	for b in range(len(state)):
-		Q[state[b], action[b]] = (1 - Q_LR) * Q[state[b], action[b]] + Q_LR*reward[b]
-
-	return Q
-
 def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
@@ -520,7 +327,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'exploration', 'pdf_method', 'dHigh', 'dMid', 'dNeut', 'dLow', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions']
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
@@ -531,110 +338,6 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		settingFile[k] = args_save[k]
 	
 	settingFile.write()
-
-def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
-	"""
-	Loads data from files for specified runs
-
-	Args:
-		runs_list (dict or list): list of the runs to load from files; should be something like: runs = ['control_49-small', 'dopa_49-small']
-		path (string, optional): path to the folders containing the data
-
-	returns:
-		dict: dictionary of dictionaries filled with data loaded from file
-	"""
-
-	if type(runs_list) not in [list, np.array, dict]:
-		runs_list = [runs_list] 
-
-	runs = {}
-	for r in runs_list: runs[r]=dict()
-	for k in runs.keys():
-		runName = k
-		datapath = path + runName
-
-		pFile = open(path + runName + '/W_in', 'r')
-		runs[k]['W_in'] = pickle.load(pFile)
-		pFile.close()
-
-		pFile = open(path + runName + '/W_act', 'r')
-		runs[k]['W_act'] = pickle.load(pFile)
-		pFile.close()
-
-		pFile = open(path + runName + '/classResults', 'r')
-		runs[k]['classResults'] = pickle.load(pFile)
-		pFile.close()
-
-		pFile = open(path + runName + '/RFclass', 'r')
-		runs[k]['RFclass'] = pickle.load(pFile)
-		pFile.close()
-
-		pFile = open(path + runName + '/perf_epi', 'r')
-		runs[k]['perf_epi'] = pickle.load(pFile)
-		pFile.close()
-
-		pFile = open(path + runName + '/slopes', 'r')
-		runs[k]['slopes'] = pickle.load(pFile)
-		pFile.close()
-
-		settingFile = ConfigObj(datapath+'/settings.txt')
-		runs[k]['kwargs'] = {}
-
-		runs[k]['kwargs']['nRun'] 				= int(settingFile['nRun'])
-		runs[k]['kwargs']['nEpiCrit'] 			= int(settingFile['nEpiCrit'])
-		runs[k]['kwargs']['nEpiDopa'] 			= int(settingFile['nEpiDopa'])
-		runs[k]['kwargs']['t_hid'] 				= float(settingFile['t_hid'])
-		runs[k]['kwargs']['t_act'] 				= float(settingFile['t_act'])
-		runs[k]['kwargs']['A'] 					= float(settingFile['A'])
-		runs[k]['kwargs']['runName'] 			= runName
-		runs[k]['kwargs']['dataset'] 			= settingFile['dataset']
-		runs[k]['kwargs']['nHidNeurons'] 		= int(settingFile['nHidNeurons'])
-		runs[k]['kwargs']['lim_weights'] 		= conv_bool(settingFile['lim_weights'])
-		runs[k]['kwargs']['lr'] 				= float(settingFile['lr'])
-		runs[k]['kwargs']['e_greedy'] 			= conv_bool(settingFile['e_greedy'])
-		runs[k]['kwargs']['epsilon'] 			= float(settingFile['epsilon'])
-		runs[k]['kwargs']['noise_std'] 			= float(settingFile['noise_std'])
-		runs[k]['kwargs']['proba_predict'] 		= conv_bool(settingFile['proba_predict'])
-		runs[k]['kwargs']['exploration'] 		= conv_bool(settingFile['exploration'])
-		runs[k]['kwargs']['RPE_function'] 			= settingFile['RPE_function']
-		runs[k]['kwargs']['pdf_method'] 		= settingFile['pdf_method']
-		runs[k]['kwargs']['aHigh'] 				= float(settingFile['aHigh'])
-		runs[k]['kwargs']['aPairing'] 			= float(settingFile['aPairing'])
-		runs[k]['kwargs']['dHigh'] 				= float(settingFile['dHigh'])
-		runs[k]['kwargs']['dMid'] 				= float(settingFile['dMid'])
-		runs[k]['kwargs']['dNeut'] 				= float(settingFile['dNeut'])
-		runs[k]['kwargs']['dLow'] 				= float(settingFile['dLow'])
-
-		runs[k]['kwargs']['a_0'] 				= float(settingFile['a_0'])
-		runs[k]['kwargs']['a_1'] 				= float(settingFile['a_1'])
-		runs[k]['kwargs']['a_2'] 				= float(settingFile['a_2'])
-		runs[k]['kwargs']['a_3'] 				= float(settingFile['a_3'])
-
-		runs[k]['kwargs']['nBatch'] 			= int(settingFile['nBatch'])
-		runs[k]['kwargs']['protocol'] 			= settingFile['protocol']
-		runs[k]['kwargs']['target_ori'] 		= float(settingFile['target_ori'])
-		runs[k]['kwargs']['excentricity'] 		= float(settingFile['excentricity'])
-		runs[k]['kwargs']['noise_crit'] 		= float(settingFile['noise_crit'])
-		runs[k]['kwargs']['noise_train'] 		= float(settingFile['noise_train'])
-		runs[k]['kwargs']['noise_test'] 		= float(settingFile['noise_test'])
-		runs[k]['kwargs']['im_size'] 			= int(settingFile['im_size'])
-		runs[k]['kwargs']['classifier'] 		= settingFile['classifier']
-		runs[k]['kwargs']['pre_train'] 			= settingFile['pre_train']
-		runs[k]['kwargs']['test_each_epi']	 	= conv_bool(settingFile['test_each_epi'])
-		runs[k]['kwargs']['SVM'] 				= conv_bool(settingFile['SVM'])
-		runs[k]['kwargs']['save_data'] 			= conv_bool(settingFile['save_data'])
-		runs[k]['kwargs']['verbose'] 			= conv_bool(settingFile['verbose'])
-		runs[k]['kwargs']['show_W_act'] 		= conv_bool(settingFile['show_W_act'])
-		runs[k]['kwargs']['sort'] 				= settingFile['sort']
-		runs[k]['kwargs']['target'] 			= settingFile['target']
-		runs[k]['kwargs']['seed'] 				= int(settingFile['seed'])
-
-		runs[k]['kwargs']['comment'] 			= settingFile['comment']
-
-		runs[k]['kwargs']['classes'] 			= np.array(map(int, settingFile['classes']))
-		runs[k]['kwargs']['rActions'] 			= np.array(settingFile['rActions'])
-
-	return runs
 
 def checkdir(kwargs, OW_bool=True):
 	"""
@@ -786,25 +489,9 @@ def computeCM(classResults, labels_test, classes):
 			classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
 			overTot = np.sum(labels_test==label)
 			confusMatrix[ilabel, iclassif] = float(classifiedAs)/overTot
-
-	# import pdb; pdb.set_trace()
 	
 	return confusMatrix
 
-def conv_bool(bool_str):
-	"""
-	Converts a string ('True', 'False') value to boolean (True, False)
-
-	Args:
-		bool_str (str): string to convert
-
-	returns:
-		bool: boolean value of the string
-	"""
-
-	if bool_str=='True': return True
-	elif bool_str=='False': return False
-	else: return None
 
 
 
