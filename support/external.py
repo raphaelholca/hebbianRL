@@ -406,7 +406,7 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, RPE_function_params=[], param_xplr='None', temp_xplr=1e-3):
+def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, RPE_function_params=[]):
 	"""
 	Computes the dopa signal based on the difference between predicted and actual rewards, allowing for probabilistic (non-binary) reward predictions
 
@@ -416,7 +416,6 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, 
 		nn_regressor (sknn regressor): neural network regressor object
 		RPE_function (callable function, optional): function to convert prediction error to dopa value; should be a function for range [-1,1]; suggested function: np.sign, np.expm1, np.tanh
 		RPE_function_params (list): list of parameters for the RPE function
-		param_xplr (str, optional): method for parameter exploration
 
 	returns:
 		numpy array: array of dopamine release value
@@ -439,12 +438,7 @@ def compute_dopa_proba(predicted, actual, nn_regressor=None, RPE_function=None, 
 		for i in range(len(prediction_error)):
 			nn_input[:,0] = np.ones(len(tried_DA_values)) * prediction_error[i]
 			perf_predict = nn_regressor.predict(nn_input)
-			if param_xplr=='neural_net':
-				perf_predict_cumsum = np.cumsum(softmax(perf_predict.T, t=temp_xplr)) # <- temp of softmax affects exploration (~simulated annealing; low t = low exploration) #1e-3
-				chosen_idx = np.argmin(perf_predict_cumsum <= np.random.uniform(0,1)) #probability matching, stimulus-wise noise injection
-				# chosen_idx = np.argmin(perf_predict_cumsum <= xplr_noise) #probability matching, trial-wise noise injection (i.e., constant noise for a trial, prob. not ideal)
-			else:
-				chosen_idx = np.argmax(perf_predict) #greedy algorithm
+			chosen_idx = np.argmax(perf_predict) #greedy algorithm
 			dopa[i] = tried_DA_values[chosen_idx]
 		# import pdb; pdb.set_trace()
 
@@ -526,7 +520,7 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pFile.close()
 
 
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
+	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions', 'comment']
 
 	settingFile = ConfigObj()
 	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
@@ -625,7 +619,6 @@ def load_data(runs_list, path='/Users/raphaelholca/Dropbox/hebbianRL/output/'):
 		runs[k]['kwargs']['noise_test'] 		= float(settingFile['noise_test'])
 		runs[k]['kwargs']['im_size'] 			= int(settingFile['im_size'])
 		runs[k]['kwargs']['classifier'] 		= settingFile['classifier']
-		runs[k]['kwargs']['param_xplr'] 		= settingFile['param_xplr']
 		runs[k]['kwargs']['pre_train'] 			= settingFile['pre_train']
 		runs[k]['kwargs']['test_each_epi']	 	= conv_bool(settingFile['test_each_epi'])
 		runs[k]['kwargs']['SVM'] 				= conv_bool(settingFile['SVM'])
@@ -669,9 +662,6 @@ def checkdir(kwargs, OW_bool=True):
 		os.makedirs('output/' + runName + '/RFs')
 	if kwargs['protocol']=='gabor' and kwargs['save_data']==True:
 		os.makedirs('output/' + runName + '/TCs')
-	if kwargs['param_xplr']=='neural_net':
-		os.makedirs('output/' + runName + '/regressor_prediction')
-		os.makedirs('output/' + runName + '/nn_regressor')
 
 	return runName
 
@@ -801,66 +791,6 @@ def computeCM(classResults, labels_test, classes):
 	
 	return confusMatrix
 
-def save_visited_params(visited_params, perf, kwargs):
-	"""
-	saves explorared parameters during opitmization; size of saved array: (#sample x #params + perf)
-	"""
-	file_name = 'output/' + kwargs['runName'] + '/visited_params'
-	
-	if not os.path.exists(file_name):
-		visited_params_save = np.zeros((1,len(visited_params)+1))
-		visited_params_save[0, :-1] = visited_params
-		visited_params_save[0, -1] = perf
-		pickle.dump(visited_params_save, open(file_name, 'w'))
-	else:
-		visited_params_saved = pickle.load(open(file_name, 'r'))
-		visited_params_saved_new = np.zeros((np.size(visited_params_saved,0)+1, np.size(visited_params_saved,1)))
-		visited_params_saved_new[:-1,:]=visited_params_saved
-		visited_params_saved_new[-1,:-1]=visited_params
-		visited_params_saved_new[-1,-1]=perf
-
-		pickle.dump(visited_params_saved_new, open(file_name, 'w'))
-
-def bh_callback(x, f, accept):
-	"""
-	callback function of the scipy's basinhopping optimization function; prints and saves param exploration info
-	"""
-
-	print "\n----------------------end of basinhopping iteration----------------------"
-	print "at param values: " + str(x) + " ; perf: " + str(f) + " ; accept: " + str(accept) + "\n"
-
-	#load from file
-	file_name_local = 'output/' + kwargs['runName'] + '/visited_params'
-	visited_params_local = pickle.load(open(file_name_local, 'r'))
-	os.remove(file_name_local)
-
-	#add column indicating if basin hop was accepted
-	visited_params_local_accept = np.zeros((np.size(visited_params_local,0), np.size(visited_params_local,1)+1))
-	visited_params_local_accept[:,:-1] = visited_params_local
-	visited_params_local_accept[:,-1] = float(accept)
-
-	#save to file
-	file_name_global = 'output/' + kwargs['runName'] + '/visited_params_global'
-	if not os.path.exists(file_name_global):
-		visited_params_global = []
-		visited_params_global.append(visited_params_local)
-		pickle.dump(visited_params_global, open(file_name_global, 'w'))
-	else:
-		visited_params_global = pickle.load(open(file_name_global, 'r'))
-		visited_params_global.append(visited_params_local)
-		pickle.dump(visited_params_global, open(file_name_global, 'w'))
-
-
-class basinhopping_bounds(object):
-    def __init__(self, xmax=[10.,5.], xmin=[1.,-2.] ):
-        self.xmax = np.array(xmax)
-        self.xmin = np.array(xmin)
-    def __call__(self, **kwargs):
-        x = kwargs["x_new"]
-        tmax = bool(np.all(x <= self.xmax))
-        tmin = bool(np.all(x >= self.xmin))
-        return tmax and tmin
-
 def conv_bool(bool_str):
 	"""
 	Converts a string ('True', 'False') value to boolean (True, False)
@@ -875,22 +805,6 @@ def conv_bool(bool_str):
 	if bool_str=='True': return True
 	elif bool_str=='False': return False
 	else: return None
-
-""" pypet-specific support functions """
-def add_parameters(traj, kwargs):
-	for k in kwargs.keys():
-		traj.f_add_parameter(k, kwargs[k])
-
-def set_run_names(explore_dict, runName):
-	nXplr = len(explore_dict[explore_dict.keys()[0]])
-	runName_list = [runName for _ in range(nXplr)]
-	for n in range(nXplr):
-		for k in explore_dict.keys():
-			runName_list[n] += '_'
-			runName_list[n] += k
-			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
-	return runName_list
-
 
 
 

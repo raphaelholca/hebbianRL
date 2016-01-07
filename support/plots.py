@@ -137,10 +137,7 @@ def perf_progress(perf, kwargs, nEpi=None):
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
 	for r in perf.keys():
-		if kwargs['param_xplr'] == 'neural_net':
-			X = np.arange( len(perf[r][nEpiCrit:]) )
-		else:
-			X = np.arange( len(perf[r][nEpiCrit:]) )+1
+		X = np.arange( len(perf[r][nEpiCrit:]) )+1
 		ax.plot(X, perf[r][nEpiCrit:]*100, lw=3)
 
 	fig.patch.set_facecolor('white')
@@ -150,10 +147,7 @@ def perf_progress(perf, kwargs, nEpi=None):
 	ax.set_ylim([50,100])
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	if kwargs['param_xplr'] == 'neural_net':
-		ax.set_xlabel('training episodes', fontsize=18)
-	else:
-		ax.set_xlabel('episodes after dopa', fontsize=18)
+	ax.set_xlabel('episodes after dopa', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 

@@ -61,7 +61,7 @@ kwargs = {
 'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'proba_predict'	: False				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
-'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
+'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
 
 'dHigh' 		: 2.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
@@ -83,7 +83,6 @@ kwargs = {
 'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
 'classifier'	: 'actionNeurons'	,# which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'
-'param_xplr'	: 'None' 			,# method for parameter exploration; valid values are: 'None', 'pypet', 'neural_net', 'basinhopping', 'gridsearch', 'minimize'
 'temp_xplr'		: 1e-3				,# temperature for exploration in neural network-based parameter exploration
 'pre_train'		: 'None'			,# initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization #'digit_479_16'
 'test_each_epi'	: True 				,# whether to test the network's performance at each episode
@@ -105,24 +104,6 @@ kwargs['RPE_function'] = 'two_lin' 		# RPE value; valid: 'neural' (function appr
 # RPE_function_params = [2.4, 1000., 0.05, -2.0]				# parameters of the RPE function, if RPE_function is a callable function
 # RPE_function_params = [0.2, 0.4, 0.2, 0.6]	
 RPE_function_params = [0.0, 0.0, 0.0, 0.0]	
-
-""" parameters for exploration """
-explore_dict = {
-# 'dHigh'			:	np.arange(0., 6.1, 1.5).tolist(),
-# 'dMid'			:	np.round(np.arange(-0.4, 0.41, 0.2),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-# 'dNeut'			:	np.round(np.arange(-0.4, 0.01, 0.1),1).tolist(), #np.arange(-0.004, 0.0041, 0.002).tolist(),
-# 'dLow'			:	np.arange(-1.5, 0.51, 0.5).tolist(),
-# 'noise_std'		:	[0.005, 0.01, 0.05]
-
-'a_0'			:	[-1., 0., 0.5, 1.0, 2.0, 3.0],
-'a_1'			:	[-1., 0., 0.5, 1.0, 2.0, 3.0]
-
-# 'a_0'			:	[0.05, 0.2, 0.4], #[-4.8, -4.4, -4.0],
-# 'a_1'			:	[0.05, 0.2, 0.4], #[-4.8, -4.4, -4.0],
-# 'a_2'			:	[0.2, 0.4, 0.6], #[-4.8, -4.4, -4.0],
-# 'a_3'			:	[0.4, 0.6, 0.8], #[-4.8, -4.4, -4.0],
-
-}
 
 """ load and pre-process images """
 ex.checkClassifier(kwargs['classifier'])
@@ -195,173 +176,12 @@ elif kwargs['protocol'] == 'gabor':
 """ parameter exploration """
 tic = time.time()
 
-if kwargs['param_xplr'] == 'None':
-	if kwargs['save_data']: kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True) #create saving directory
-	allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	RPE_function_params, 
-																						images, labels, orientations, 
-																						images_test, labels_test, orientations_test, 
-																						images_task, labels_task, orientations_task, 
-																						None, kwargs, **kwargs)
-
-
-elif kwargs['param_xplr'] == 'basinhopping' or kwargs['param_xplr'] == 'minimize' or kwargs['param_xplr'] == 'gridsearch':
-	print "optimizing function parameters with: \'" + kwargs['param_xplr'] + "\'\n"
-	print kwargs['runName'] + '\n'
-	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
-
-	func = rl.RLnetwork
-	# RPE_function_params_0 = [0.1, 1.0, -1., 4.] ## polynomial init # <-- the number of parameters sets the order of the polynomial function to use
-	# RPE_function_params_0 = [2., 10., 0.05, 0.5] ## tanh init
-	RPE_function_params_0 = [3.50012704, -2.76669199] ## tanh_2d init
-
-	args_tuple = (images, labels, orientations, 
-					images_test, labels_test, orientations_test, 
-					images_task, labels_task, orientations_task, 
-					None, kwargs)
-
-	for k in ['classes', 'rActions', 'nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'proba_predict', 'exploration', 'RPE_function', 'pdf_method', 'aHigh', 'aPairing', 'dHigh', 'dMid', 'dNeut', 'dLow', 'a_0', 'a_1', 'a_2', 'a_3', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'param_xplr', 'temp_xplr', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'comment']:
-		args_tuple += (kwargs[k],)
-
-	if kwargs['param_xplr'] == 'basinhopping':
-		bounds_max = [10.,5.]
-		bounds_min = [1.,-2.] 
-		bounds_accept_test = ex.basinhopping_bounds(xmax=bounds_max, xmin=bounds_min)
-		optim_results = basinhopping( 	func, 
-										RPE_function_params_0,
-										# T=0.1, 
-										stepsize=1.5,
-										accept_test=bounds_accept_test,
-										niter_success=15,
-										disp=True,
-										callback=ex.bh_callback,
-										minimizer_kwargs={												# local minimizer options
-											'args':args_tuple,
-											'method':'Nelder-Mead',
-											'options':{	'disp':True,
-														'xtol': 0.05, 
-														'ftol': 0.05,
-													},	
-											}
-										)
-	
-	elif kwargs['param_xplr'] == 'gridsearch':
-		optim_results = brute(	func,
-								args=args_tuple,
-								ranges=[(0., 4.), (-4.1, -0.1)],
-								Ns=7,
-								full_output=True,
-								disp=True,
-								# finish=None
-								)
-
-	elif kwargs['param_xplr'] == 'minimize':
-		optim_results = minimize( 	func, 
-									RPE_function_params_0,
-									args_tuple,
-									method='Nelder-Mead',			#<- Melder-Neav: doesn't rely on gradient evaluation; good for noisy functions
-									options={	'disp':True,
-												'xtol': 0.01, 
-												'ftol': 0.01,
-											},	
-									)
-
-	pickle.dump(optim_results, open('output/' + kwargs['runName'] + '/optim_results', 'w'))
-	ex.save_data(None, None, None, None, kwargs, save_weights=False)
-
-
-elif kwargs['param_xplr'] == 'neural_net':
-	nn_regressor = Regressor(		#[prediction_error, tried_DA_values]
-	    layers=[
-	        Layer("Rectifier", 	units=5),
-	        Layer("Linear", 	units=1)],
-	    learning_rate=1e-8,
-	    n_iter=1)
-
-	n_iter = 15 # number of training iterations
-	n_sample = 1000 # number of sample input to save 
-	sample_input_save = np.zeros((n_iter*n_sample, 3)) #[prediction_error, best_DA, performance]
-	perf_save = np.array([])
-	all_DA_save = np.zeros((121,105,n_iter))
-
-	kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True)
-	pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_0', 'w'))
-
-	for i_iter in range(n_iter):
-		print "training hebbian network..."
-		try:
-			allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	None, images, labels, orientations, 
-																							images_test, labels_test, orientations_test, 
-																							images_task, labels_task, orientations_task, 
-																							nn_regressor, kwargs, **kwargs)
-		except ValueError: 
-			allPerf = np.zeros(1)
-
-		perf_save = np.append(perf_save, allPerf[0])
-		all_DA = np.zeros(shape=(121,105))
-		for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
-			X = np.ones((121, 2))*rpe
-			X[:,1]=np.arange(-6,6.1,0.1)
-			all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
-		pl.regressor_prediction(all_DA, i_iter, kwargs, perf=allPerf[0], nn_input=nn_input)
-		all_DA_save[:,:,i_iter] = all_DA
-
-		
-		sample_idx = np.random.choice(np.size(nn_input,0),size=n_sample)
-		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, :2] = nn_input[sample_idx,:]
-		sample_input_save[i_iter*n_sample: (i_iter+1)*n_sample, 2] = np.ones(n_sample)*allPerf
-		
-		print "training regressor neural net..."
-		nn_regressor.fit(nn_input, np.ones(np.size(nn_input,0))*allPerf)
-		
-		if i_iter+1==n_iter:
-			for rpe_idx, rpe in enumerate(np.arange(-1,1.1,0.02)):
-				X = np.ones((121, 2))*rpe
-				X[:,1]=np.arange(-6,6.1,0.1)
-				all_DA[:, rpe_idx] = nn_regressor.predict(X)[:,0]
-			pl.regressor_prediction(all_DA, i_iter+1, kwargs)
-
-		print 'run ' + str(i_iter+1) + '/' + str(n_iter) + '; perf: ' + str(np.round(allPerf[0],3)*100) + '%' + '   ; all_DA: ' + str(np.round(X[np.argmax(all_DA[:,::10],0), 1],1)) + ' \n'
-
-		pickle.dump(nn_regressor, open('output/' + kwargs['runName'] + '/nn_regressor' + '/nn_epi_' + str(i_iter+1), 'w'))
-
-	#save results to file
-	pickle.dump(sample_input_save, open('output/' + kwargs['runName'] + '/sample_input', 'w'))
-	pickle.dump(all_DA_save, open('output/' + kwargs['runName'] + '/best_DA_epi', 'w'))
-	pickle.dump(perf_save, open('output/' + kwargs['runName'] + '/perf_epi', 'w'))
-	pl.perf_progress({'000': perf_save}, kwargs)
-	ex.save_data(None, None, None, None, kwargs, save_weights=False)
-
-elif kwargs['param_xplr'] == 'pypet':
-	""" launch simulation with pypet for parameter exploration """
-	env = pypet.Environment(trajectory = 'xplr',
-							comment = 'testing with pypet...',
-							log_stdout=False,
-							add_time = False,
-							multiproc = True,
-							ncores = 12,
-							filename='output/' + kwargs['runName'] + '/perf.hdf5',
-							overwrite_file=False)
-
-	traj = env.v_trajectory
-	ex.add_parameters(traj, kwargs)
-
-	explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys())) #if not all entry of dict need be explored through cartesian product replace tuple(.) only with relevant dict keys in tuple
-	explore_dict['runName'] = ex.set_run_names(explore_dict, kwargs['runName'])
-	traj.f_explore(explore_dict)
-
-	#save parameters to file
-	kwargs_save = kwargs.copy()
-	for k in explore_dict.keys():
-		if k != 'runName':
-			kwargs_save[k] = np.unique(explore_dict[k])
-	outName	= 'output/' + kwargs['runName']
-	if not os.path.exists(outName): os.mkdir(outName)
-	ex.save_data(None, None, None, None, kwargs_save, save_weights=False)
-
-	#run the simuation
-	env.f_run(pypet_RLnetwork)
-
-	env.f_disable_logging() #disable logging and close all log-files
+if kwargs['save_data']: kwargs['runName'] = ex.checkdir(kwargs, OW_bool=True) #create saving directory
+allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(	RPE_function_params, 
+																					images, labels, orientations, 
+																					images_test, labels_test, orientations_test, 
+																					images_task, labels_task, orientations_task, 
+																					None, kwargs, **kwargs)
 
 print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))

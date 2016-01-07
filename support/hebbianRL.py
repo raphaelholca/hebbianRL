@@ -34,13 +34,11 @@ def RLnetwork(	RPE_function_params,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, dHigh, dMid, dNeut, dLow, a_0, a_1, a_2, a_3, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, dHigh, dMid, dNeut, dLow, a_0, a_1, a_2, a_3, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 
-	if param_xplr == 'pypet': 
-		RPE_function_params = [a_0, a_1, a_2, a_3]
-	elif RPE_function_params[0]!=a_0 or RPE_function_params[1]!=a_1 or RPE_function_params[2]!=a_2 or RPE_function_params[3]!=a_3:
+	if RPE_function_params[0]!=a_0 or RPE_function_params[1]!=a_1 or RPE_function_params[2]!=a_2 or RPE_function_params[3]!=a_3:
 		warnings.warn("\n!! warning !! inconsistent RPE function parameters !!\n")
 	if isinstance(RPE_function, str): 
 		RPE_function = {'tanh':ex.tanh, 'polynomial':ex.polynomial, 'step_func':ex.step_func, 'two_lin':ex.two_lin}[RPE_function]
@@ -60,8 +58,6 @@ def RLnetwork(	RPE_function_params,
 	nn_input_save = np.empty((0,2), dtype=float)
 
 	""" training of the network """
-	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
-		print 'params of RPE function: ' + str(RPE_function_params)
 	if verbose: 
 		print 'run:  ' + runName
 		print '\ntraining hebbian network...'
@@ -182,8 +178,8 @@ def RLnetwork(	RPE_function_params,
 
 				elif e >= nEpiCrit: 
 					""" Dopa - perceptual learning """
-					if RPE_function=='neural' or isfunction(RPE_function) or param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
-						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, RPE_function=RPE_function, RPE_function_params=RPE_function_params, param_xplr=param_xplr, temp_xplr=temp_xplr)
+					if RPE_function=='neural' or isfunction(RPE_function):
+						dopa, prediction_error = ex.compute_dopa_proba(predicted_reward, bReward, nn_regressor, RPE_function=RPE_function, RPE_function_params=RPE_function_params)
 						tmp_input = np.zeros((nBatch, 2))
 						tmp_input[:,0] = prediction_error
 						tmp_input[:,1] = dopa
@@ -316,13 +312,7 @@ def RLnetwork(	RPE_function_params,
 
 	if verbose: print '\nrun: '+runName + '\n'
 
-	if param_xplr=='basinhopping' or param_xplr=='minimize' or param_xplr=='gridsearch':
-		print 'perc. correct: ' + str(np.round(allPerf[0]*100,2)) + '\n'
-		ex.save_visited_params(RPE_function_params, 1. - np.mean(allPerf), kwargs)
-		return 1. - np.mean(allPerf)
-	
-	elif param_xplr=='None':
-		import pdb; pdb.set_trace()
+	import pdb; pdb.set_trace()
 
 	return allCMs, allPerf, correct_W_act/nHidNeurons, W_in, W_act, RFproba, nn_input_save
 
