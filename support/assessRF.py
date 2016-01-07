@@ -9,12 +9,11 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True, lr_ratio=1.0, rel_classes=np.array([False])):
+def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True, lr_ratio=1.0, rel_classes=np.array([False])):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
-		runName (str) : name of the folder where to save results
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		images (numpy array) : images of the MNIST dataset used for training
@@ -27,7 +26,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, sav
 		rel_classes (numpy array, optional) : the classes relevant in the training protocol (i.e., those not equal to '0')
 
 	return:
-		RFproba (numpy array) : probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x nHidNeurons x 10). This can be used to compute the selectivity index of a neuron (when SVM=False abd lr_ratio=1.0) by taking np.max(RFproba,2)
+		RFproba (numpy array) : probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron (when SVM=False abd lr_ratio=1.0) by taking np.max(RFproba,2)
 		RFclass (numpy array) : count of weights/RFs responsive of each digit class (shape= nRun x 10)
 		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
@@ -67,7 +66,7 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, sav
 	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	if save_data:
-		pfile = open('output/'+runName+'/RFclass', 'w')
+		pfile = open('output/'+ net.name +'/RFclass', 'w')
 		pickle.dump(pRFclass, pfile)
 		pfile.close()
 
@@ -79,12 +78,12 @@ def hist(runName, W, classes, images, labels, protocol, n_bins=10, SVM=True, sav
 			for i in range(n_bins):
 				bin_names[i] = str(int(bin_size*i + bin_size/2.))
 		fig = pl.plotHist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
-		pyplot.savefig('./output/'+runName+'/' +runName+ '_RFhist.pdf')
+		pyplot.savefig('./output/'+net.name+'/' +net.name+ '_RFhist.pdf')
 		pyplot.close(fig)
 
 	return RFproba, RFclass, RFselec
 
-def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None, verbose=True):
+def plot(net, W, RFproba, target=None, W_act=None, sort=None, notsame=None, verbose=True):
 	if verbose: print "\nploting RFs..."
 
 	if sort=='tSNE':
@@ -116,7 +115,7 @@ def plot(runName, W, RFproba, target=None, W_act=None, sort=None, notsame=None, 
 			notsame_pass = np.array([])
 
 		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
-		pyplot.savefig('output/' + runName + '/RFs/' +runName+ '_' + str(r).zfill(3)+'.png')
+		pyplot.savefig('output/' + net.name + '/RFs/' +net.name+ '_' + str(r).zfill(3)+'.png')
 		pyplot.close(fig)
 
 def clockwise(r):
@@ -137,17 +136,17 @@ def tSNE_sort(W):
 
 	Y = tsne.tsne(W.T, 2 , 50).T
 	side = int(np.sqrt(np.size(W,1)))
-	nHidNeurons = np.size(W,1)
+	n_hid_neurons = np.size(W,1)
 
 	n0_min, n1_min = np.min(Y,1)
 	n0_max, n1_max = np.max(Y,1)
 	n0_grid = np.hstack(np.linspace(n0_min, n0_max, side)[:,np.newaxis]*np.ones((side,side)))
 	n1_grid = np.hstack(np.linspace(n1_max, n1_min, side)[np.newaxis,:]*np.ones((side,side)))
 
-	sorted_idx = np.zeros(nHidNeurons, dtype=int)
-	mask = np.zeros(nHidNeurons, dtype=bool)
+	sorted_idx = np.zeros(n_hid_neurons, dtype=int)
+	mask = np.zeros(n_hid_neurons, dtype=bool)
 
-	iterate_clockwise = map(int, clockwise(list(np.reshape(np.linspace(0,nHidNeurons-1,nHidNeurons),(side,side)))))
+	iterate_clockwise = map(int, clockwise(list(np.reshape(np.linspace(0,n_hid_neurons-1,n_hid_neurons),(side,side)))))
 
 	for i in iterate_clockwise:
 		c_point = np.array([n0_grid[i], n1_grid[i]])[:,np.newaxis]

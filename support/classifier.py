@@ -14,7 +14,7 @@ ex = reload(ex)
 pl = reload(pl)
 bc = reload(bc)
 
-def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose):
+def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -28,11 +28,8 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_
 		verbose (bool, optional) : whether to display text ouput
 	"""
 
-	runName = kwargs['runName']
 	classes = kwargs['classes']
 	rActions = kwargs['rActions']
-	nHidNeurons = kwargs['nHidNeurons']
-	t_hid = kwargs['t_hid']
 
 	if verbose: print "\nassessing performance..."
 
@@ -55,7 +52,7 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_
 		W_act = W_act_save[iw]
 
 		""" testing of the classifier """
-		hidNeurons = ex.propL1(images_test, W_in, t=t_hid)
+		hidNeurons = ex.propL1(images_test, W_in, t=net.t)
 		actNeurons = ex.propL1(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
 		classResults = rActions[classIdx]
@@ -69,21 +66,19 @@ def actionNeurons(W_in_save, W_act_save, images_test, labels_test, kwargs, save_
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, rActions_uni, runName, verbose, save_data)
+	print_save(allCMs, allPerf, rActions_uni, net.name, verbose, save_data)
 	return allCMs, allPerf
 
-def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, train_dataset, save_data, verbose, SM=True):
+def SVM(net, W_in_save, images_train, labels_train, classes, nDimStates, train_dataset, save_data, verbose, SM=True):
 	"""
 	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
 
 	Args:
-		runName (str) : name of the folder where to save results
 		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		images_train (numpy array): training image of the MNIST dataset
 		labels_train (numpy array): training labels of the MNIST dataset
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		nDimStates (int) : number of dimensions of the states (size of images)
-		A (int): normalization constant
 		train_dataset (str): name of the dataset used for training
 		save_data (bool, optional) : whether save data
 		verbose (bool, optional) : whether to display text ouput
@@ -123,15 +118,14 @@ def SVM(runName, W_in_save, images_train, labels_train, classes, nDimStates, A, 
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, runName, verbose, save_data)
+	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
 	return allCMs, allPerf
 
-def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test, labels_test, save_data, verbose):
+def neuronClass(net, W_in_save, classes, RFproba, nDimStates, images_test, labels_test, save_data, verbose):
 	"""
 	evaluates the quality of a representation using the class of the most activated neuron as the classification result
 
 	Args:
-		runName (str) : name of the folder where to save results
 		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
 		RFproba (numpy array) : probability of that a RF belongs to a certain class (of the MNIST dataset)
@@ -161,10 +155,10 @@ def neuronClass(runName, W_in_save, classes, RFproba, nDimStates, A, images_test
 		allCMs.append(ex.computeCM(classResults, labels_test, classes))
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, runName, verbose, save_data)
+	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
 	return allCMs, allPerf
 
-def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
+def bayesian(net, W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
@@ -177,10 +171,8 @@ def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_d
 		kwargs (dict): parameters of the model
 	"""
 
-	runName = kwargs['runName']
 	classes = kwargs['classes']
 	rActions = kwargs['rActions']
-	t_hid = kwargs['t_hid']
 	pdf_method = kwargs['pdf_method']
 	if verbose is None: verbose = kwargs['verbose']
 	if save_data is None: save_data = kwargs['save_data']
@@ -208,7 +200,7 @@ def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_d
 		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in, kwargs)
 
 		""" testing of the classifier """
-		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=t_hid), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
 		classIdx = np.argmax(posterior, 1)
 		classResults = rActions[classIdx]
 		
@@ -221,10 +213,10 @@ def bayesian(W_in_save, images, labels, images_test, labels_test, kwargs, save_d
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, rActions_uni, runName, verbose, save_data)
+	print_save(allCMs, allPerf, rActions_uni, net.name, verbose, save_data)
 	return allCMs, allPerf
 
-def print_save(allCMs, allPerf, classes, runName, verbose, save_data):
+def print_save(allCMs, allPerf, classes, name, verbose, save_data):
 	""" print and save performance measures """
 	avgCM = np.mean(allCMs,0)
 	steCM = np.std(allCMs,0)/np.sqrt(np.shape(allCMs)[0])
@@ -250,17 +242,17 @@ def print_save(allCMs, allPerf, classes, runName, verbose, save_data):
 		print perf_print
 
 	if save_data:
-		pFile = open('output/' + runName + '/classResults', 'w')
+		pFile = open('output/' + name + '/classResults', 'w')
 		pDict = {'allCMs':allCMs, 'avgCM':avgCM, 'steCM':steCM, 'allPerf':allPerf, 'avgPerf':avgPerf, 'stePerf':stePerf}
 		pickle.dump(pDict, pFile)
 		pFile.close()
 
-		perf_file = open('./output/' + runName + '/' +runName+ '_perf.txt', 'w')
+		perf_file = open('./output/' + name + '/' +name+ '_perf.txt', 'w')
 		perf_file.write(perf_print)
 		perf_file.close()
 
 		fig = pl.plotCM(avgCM, classes)
-		pyplot.savefig('./output/' + runName + '/' +runName+ '_avgCM.pdf')
+		pyplot.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
 		pyplot.close(fig)
 
 

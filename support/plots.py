@@ -18,9 +18,9 @@ def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
 	plots of the weights, with superimposed colouring for target digit and L2 weights 
 	"""
 	#plot parameters
-	nHidNeurons = np.size(W,1)
-	v = int(np.sqrt(nHidNeurons))
-	h = int(np.ceil(float(nHidNeurons)/v))
+	n_hid_neurons = np.size(W,1)
+	v = int(np.sqrt(n_hid_neurons))
+	h = int(np.ceil(float(n_hid_neurons)/v))
 	Wmin = np.min(W)
 	Wmax = np.max(W)
 
@@ -125,20 +125,17 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
-def perf_progress(perf, kwargs, nEpi=None):
+def perf_progress(net, perf, kwargs, nEpi=None):
 	"""
 	plots the progression of the error rate over training episodes
 	"""
-	runName = kwargs['runName']
-	nEpiCrit = kwargs['nEpiCrit']
-	nEpiDopa = kwargs['nEpiDopa']
 
 	fig, ax = plt.subplots()
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
 	for r in perf.keys():
-		X = np.arange( len(perf[r][nEpiCrit:]) )+1
-		ax.plot(X, perf[r][nEpiCrit:]*100, lw=3)
+		X = np.arange( len(perf[r][net.n_epi_crit:]) )+1
+		ax.plot(X, perf[r][net.n_epi_crit:]*100, lw=3)
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
@@ -151,28 +148,25 @@ def perf_progress(perf, kwargs, nEpi=None):
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + runName + '/' + runName+ '_progress.pdf')
+	plt.savefig('output/' + net.name + '/' + net.name+ '_progress.pdf')
 	plt.close(fig)	
 
 
-def plot_noise_proba(W_in, images, kwargs):
+def plot_noise_proba(net, W_in, images, kwargs):
 	"""
 	plots the probability that noise injection changes the most active hidden neurons.
 	"""
 
-	runName = kwargs['runName']
-	t_hid = kwargs['t_hid']
-	noise_std = kwargs['noise_std']
-	nHidNeurons = np.size(W_in,1)
+	n_hid_neurons = np.size(W_in,1)
 
 	hidNeurons = ex.propL1(images, W_in, SM=False)
 	hidNeurons = np.sort(hidNeurons,1)[:, ::-1]
-	hidNeurons_noise = hidNeurons + np.random.normal(0, noise_std, np.shape(hidNeurons))
+	hidNeurons_noise = hidNeurons + np.random.normal(0, net.noise_std, np.shape(hidNeurons))
 
-	hidNeurons = ex.softmax(hidNeurons, t=t_hid)
-	hidNeurons_noise = ex.softmax(hidNeurons_noise, t=t_hid)
+	hidNeurons = ex.softmax(hidNeurons, t=net.t)
+	hidNeurons_noise = ex.softmax(hidNeurons_noise, t=net.t)
 
-	proba_argmax = np.histogram(np.argmax(hidNeurons_noise,1), bins=nHidNeurons, range=(0,nHidNeurons))[0]
+	proba_argmax = np.histogram(np.argmax(hidNeurons_noise,1), bins=n_hid_neurons, range=(0,n_hid_neurons))[0]
 	proba_argmax = proba_argmax / float(np.sum(proba_argmax))
 
 	hidNeurons_noise = np.sort(hidNeurons_noise,1)[:, ::-1]
@@ -183,13 +177,13 @@ def plot_noise_proba(W_in, images, kwargs):
 	""" plot of probability of most activated neuron after noise injection """
 	fig, ax = plt.subplots()
 
-	ax.bar(np.arange(nHidNeurons), proba_argmax, width=0.8, color=my_blues[6], edgecolor=my_blues[6])
+	ax.bar(np.arange(n_hid_neurons), proba_argmax, width=0.8, color=my_blues[6], edgecolor=my_blues[6])
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
 	ax.spines['top'].set_visible(False)
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
-	ax.set_xlim([0,nHidNeurons])
+	ax.set_xlim([0,n_hid_neurons])
 	ax.set_ylim([0,1])
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
@@ -197,20 +191,20 @@ def plot_noise_proba(W_in, images, kwargs):
 	ax.set_ylabel('prob. most activ. neuron after noise', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + runName + '/' + runName+ '_activ_prob.pdf')
+	plt.savefig('output/' + net.name + '/' + net.name+ '_activ_prob.pdf')
 	plt.close(fig)
 
 	""" plot of distribution of activation in network after noise injection """
 	fig, ax = plt.subplots()
 
-	ax.bar(np.arange(nHidNeurons), mean_activ, width=0.4, color=my_blues[6], edgecolor=my_blues[6])
-	ax.bar(np.arange(nHidNeurons)+.5, mean_activ_noise, width=0.4, color=my_reds[6], edgecolor=my_reds[6])
+	ax.bar(np.arange(n_hid_neurons), mean_activ, width=0.4, color=my_blues[6], edgecolor=my_blues[6])
+	ax.bar(np.arange(n_hid_neurons)+.5, mean_activ_noise, width=0.4, color=my_reds[6], edgecolor=my_reds[6])
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
 	ax.spines['top'].set_visible(False)
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
-	ax.set_xlim([0,nHidNeurons])
+	ax.set_xlim([0,n_hid_neurons])
 	ax.set_ylim([0,1])
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
@@ -218,46 +212,8 @@ def plot_noise_proba(W_in, images, kwargs):
 	ax.set_ylabel('activation', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + runName + '/' + runName+ '_activation.pdf')
+	plt.savefig('output/' + net.name + '/' + net.name+ '_activation.pdf')
 	plt.close(fig)
-
-def regressor_prediction(all_DA, epi, kwargs, perf=None, nn_input=None):
-	"""
-	plot performance prediction by neural regressor
-
-	Args:
-		all_DA (numpy array): array of saved performance predictions, size: ( n_DA x n_RPE )
-	"""
-
-	if epi!=0 or True:
-		vmax = 1.0
-		vmin = 0.0
-	else:
-		vmax = np.max(all_DA)
-		vmin = np.min(all_DA)
-
-	plt.figure()
-	plt.imshow(all_DA[:,:], vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap='autumn')
-	plt.colorbar(orientation='vertical')
-	plt.plot(np.argmax(all_DA[:,:],0), c='k', lw=3)
-	if nn_input is not None:
-		plt.scatter((nn_input[:,0]+1)*50, (nn_input[:,1]+6)*10, marker='x', color='w', s=15)
-
-	plt.xticks([0,25,50,75,100], ['-1', '-0.5', '0', '+0.5', '+1'])
-	plt.yticks([0,30,60,90,120], ['-6', '-3', '0', '+3', '+6'])
-
-	plt.xlim(0,100)
-	plt.ylim(0,120)
-
-	if perf is not None:
-		plt.title('epi ' + str(epi) + ' -- ' + str(np.round(perf,3)*100))
-	else:
-		plt.title('epi ' + str(epi))
-	plt.xlabel('RPE')
-	plt.ylabel('DA')
-
-	plt.savefig('output/' + kwargs['runName'] + '/regressor_prediction/epi_' + str(epi) + '.png')
-	plt.close()
 
 
 

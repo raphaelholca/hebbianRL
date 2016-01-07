@@ -294,7 +294,7 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	return dopa
 
-def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
+def save_data(net, W_in, W_act, perf, slopes, save_weights=True):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 
@@ -303,27 +303,26 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		W_act (numpy array): weight matrix to be saved to pickle file
 		perf (list): performance at each episode of the training
 		slopes (dict): dictionary of various measurements of slope values
-		args (dict): arguments to the hebbianRL function to be saved to ConfigObj
 	"""
 
 	if save_weights:
-		pFile = open('output/' + args['runName'] + '/W_in', 'w')
+		pFile = open('output/' + net.name + '/W_in', 'w')
 		pickle.dump(W_in, pFile)
 		pFile.close()
 
-		pFile = open('output/' + args['runName'] + '/W_act', 'w')
+		pFile = open('output/' + net.name + '/W_act', 'w')
 		pickle.dump(W_act, pFile)
 		pFile.close()
 
-		pFile = open('output/' + args['runName'] + '/perf_epi', 'w')
+		pFile = open('output/' + net.name + '/perf_epi', 'w')
 		pickle.dump(perf, pFile)
 		pFile.close()
 
-		pFile = open('output/' + args['runName'] + '/slopes', 'w')
+		pFile = open('output/' + net.name + '/slopes', 'w')
 		pickle.dump(slopes, pFile)
 		pFile.close()
 
-def checkdir(kwargs, OW_bool=True):
+def checkdir(net, OW_bool=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
 
@@ -331,26 +330,24 @@ def checkdir(kwargs, OW_bool=True):
 		kwargs (dict): parameters of the model
 	"""
 
-	runName = kwargs['runName']
-
-	if os.path.exists('output/' + runName):
+	if os.path.exists('output/' + net.name):
 		if OW_bool: overwrite='yes'
-		else: overwrite = raw_input('Folder \''+runName+'\' already exists. Overwrite? (y/n/<new name>) ')
+		else: overwrite = raw_input('Folder \''+net.name+'\' already exists. Overwrite? (y/n/<new name>) ')
 		if overwrite in ['n', 'no', 'not', ' ', '']:
 			sys.exit('Folder exits - not overwritten')
 		elif overwrite in ['y', 'yes']:
-			shutil.rmtree('output/' + runName)
+			shutil.rmtree('output/' + net.name)
 		else:
-			runName = overwrite
-			checkdir(runName)
-			return runName
-	os.makedirs('output/' + runName)
-	if kwargs['protocol']=='digit' and kwargs['save_data']==True:
-		os.makedirs('output/' + runName + '/RFs')
-	if kwargs['protocol']=='gabor' and kwargs['save_data']==True:
-		os.makedirs('output/' + runName + '/TCs')
+			net.name = overwrite
+			checkdir(net.name)
+			return net.name
+	os.makedirs('output/' + net.name)
+	if net.protocol=='digit' and net.save_data==True:
+		os.makedirs('output/' + net.name + '/RFs')
+	if net.protocol=='gabor' and net.save_data==True:
+		os.makedirs('output/' + net.name + '/TCs')
 
-	return runName
+	return net.name
 
 def checkClassifier(classifier):
 	"""
