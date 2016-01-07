@@ -326,19 +326,6 @@ def save_data(W_in, W_act, perf, slopes, args, save_weights=True):
 		pickle.dump(slopes, pFile)
 		pFile.close()
 
-
-	param_keys = ['nRun', 'nEpiCrit', 'nEpiDopa', 't_hid', 't_act', 'A', 'runName', 'dataset', 'nHidNeurons', 'lim_weights', 'lr', 'e_greedy', 'epsilon', 'noise_std', 'exploration', 'pdf_method', 'dHigh', 'dMid', 'dNeut', 'dLow', 'nBatch', 'protocol', 'target_ori', 'excentricity', 'noise_crit', 'noise_train', 'noise_test', 'im_size', 'classifier', 'pre_train', 'test_each_epi', 'SVM', 'save_data', 'verbose', 'show_W_act', 'sort', 'target', 'seed', 'classes', 'rActions']
-
-	settingFile = ConfigObj()
-	settingFile.filename = 'output/' + args['runName'] + '/settings.txt'
-	args_save = args.copy()
-	for k in param_keys:
-		if type(args_save[k]) == type(np.array(0)): #convert numpy array to list
-			args_save[k] = list(args_save[k])
-		settingFile[k] = args_save[k]
-	
-	settingFile.write()
-
 def checkdir(kwargs, OW_bool=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated

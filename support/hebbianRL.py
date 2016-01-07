@@ -33,7 +33,7 @@ def RLnetwork(	images, labels, orientations,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, exploration, pdf_method, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, noise_std, exploration, pdf_method, dHigh, dMid, dNeut, dLow, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed):
 
 	""" variable initialization """
 
@@ -127,8 +127,7 @@ def RLnetwork(	images, labels, orientations,
 
 				#add noise to activation of hidden neurons and compute lateral inhibition
 				if exploration and (e >= nEpiCrit):
-					exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-					bHidNeurons[exploratory] += np.random.normal(0, np.std(bHidNeurons)*noise_std, np.shape(bHidNeurons))[exploratory]
+					bHidNeurons += np.random.normal(0, np.std(bHidNeurons)*noise_std, np.shape(bHidNeurons))
 					bHidNeurons = ex.softmax(bHidNeurons, t=t_hid)
 					if train_class_layer:
 						bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
@@ -138,9 +137,7 @@ def RLnetwork(	images, labels, orientations,
 				if train_class_layer:
 					#adds noise in W_act neurons
 					if e < nEpiCrit:
-						exploratory = epsilon>np.random.uniform(0, 1, nBatch) if e_greedy else np.ones(nBatch, dtype=bool)
-						# bActNeurons[exploratory] += np.random.normal(0, noise_std, np.shape(bActNeurons))[exploratory]
-						bActNeurons[exploratory] += np.random.normal(0, 4.0, np.shape(bActNeurons))[exploratory]
+						bActNeurons += np.random.normal(0, 4.0, np.shape(bActNeurons))
 					bActNeurons = ex.softmax(bActNeurons, t=t_act)
 					#take action			
 					bActions = rActions[np.argmax(bActNeurons,1)]	
@@ -153,10 +150,7 @@ def RLnetwork(	images, labels, orientations,
 					bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
 
 				#determine predicted reward
-				if e_greedy:
-					# predicted_reward = ~exploratory #doesn't predict a reward on all exploratory trials (slightly worse performance than next line; ~2%)
-					predicted_reward = np.logical_or(bPredictActions==bActions, ~exploratory) #doesn't predict a reward only on exploratory trials that lead to a different output
-				elif classifier!='bayesian':
+				if classifier!='bayesian':
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict)
 				elif classifier=='bayesian' and e >= nEpiCrit:
 					predicted_reward = ex.reward_prediction(bPredictActions, bActions, proba_predict, posterior)

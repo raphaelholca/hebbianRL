@@ -24,26 +24,6 @@ pl = reload(pl)
 def get_images():
 	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
 
-def pypet_RLnetwork(traj):
-	images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task = get_images()
-	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
-
-	try:
-		allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = rl.RLnetwork(None, images, labels, orientations, 
-																						images_test, labels_test, orientations_test, 
-																						images_task, labels_task, orientations_task, 
-																						None, parameter_dict, **parameter_dict)
-	except ValueError:
-		allPerf = np.ones(kwargs['nRun'])*-1
-		perc_correct_W_act = np.ones(kwargs['nRun'])*-1
-
-	traj.f_add_result('RLnetwork.$', 
-					perc_W_act=perc_correct_W_act, 
-					perf=allPerf, 
-					comment='param exploration')
-
-	return np.round(perc_correct_W_act,3), np.round(np.mean(allPerf),2)
-
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
@@ -57,8 +37,6 @@ kwargs = {
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
-'e_greedy'		: False 			,# whether to use an epsilon-greedy approach to noise injection
-'epsilon'		: 1.0 				,# probability of taking an exploratory decisions, range: [0,1]
 'noise_std'		: 0.2 				,# parameter of the standard deviation of the normal distribution from which noise is drawn						digit: 4.0 	; gabor: 0.2 (?)
 'exploration' 	: True				,# whether to take take explorative decisions (True) or not (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
