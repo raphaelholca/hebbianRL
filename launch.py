@@ -47,13 +47,13 @@ def pypet_RLnetwork(traj):
 """ parameters """
 kwargs = {
 'nRun' 			: 1					,# number of runs
-'nEpiCrit'		: 10 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
-'nEpiDopa'		: 10				,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
+'nEpiCrit'		: 7 				,# number of 'critical period' episodes in each run (episodes when reward is not required for learning)
+'nEpiDopa'		: 5					,# number of 'adult' episodes in each run (episodes when reward is not required for learning)
 't_hid'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for hidden layer 
 't_act'			: 0.1 				,# temperature of the softmax function (t<<1: strong competition; t>=1: weak competition) for action layer 
 'A' 			: 1.2				,# input normalization constant. Will be used as: (input size)*A; for images: 784*1.2=940.8
 'runName' 		: 'test'			,# name of the folder where to save results
-'dataset'		: 'train'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
+'dataset'		: 'test'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
 'nHidNeurons'	: 49				,# number of hidden neurons
 'lim_weights'	: False 			,# whether to artificially limit the value of weights. Used during parameter exploration
 'lr'			: 0.01 				,# learning rate during 'critica period' (pre-training, nEpiCrit)
@@ -63,8 +63,6 @@ kwargs = {
 'proba_predict'	: False				,# whether the reward prediction is probabilistic (True) or deterministic/binary (False)
 'exploration' 	: False				,# whether to take take explorative decisions (True) or not (False)
 'pdf_method' 	: 'fit'				,# method used to approximate the pdf; valid: 'fit', 'subsample', 'full'
-'aHigh' 		: 0.0 				,# learning rate increase for relevance signal (high ACh) outside of critical period
-'aPairing'		: 1.0 				,# strength of ACh signal for pairing protocol
 
 'dHigh' 		: 2.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
 'dMid' 			: 6.00 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---

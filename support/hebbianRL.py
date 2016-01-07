@@ -34,7 +34,7 @@ def RLnetwork(	RPE_function_params,
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				nn_regressor, kwargs, 
-				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, aHigh, aPairing, dHigh, dMid, dNeut, dLow, a_0, a_1, a_2, a_3, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
+				classes, rActions, nRun, nEpiCrit, nEpiDopa, t_hid, t_act, A, runName, dataset, nHidNeurons, lim_weights, lr, e_greedy, epsilon, noise_std, proba_predict, exploration, RPE_function, pdf_method, dHigh, dMid, dNeut, dLow, a_0, a_1, a_2, a_3, nBatch, protocol, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, classifier, param_xplr, temp_xplr, pre_train, test_each_epi, SVM, save_data, verbose, show_W_act, sort, target, seed, comment):
 
 	""" variable initialization """
 
@@ -70,8 +70,6 @@ def RLnetwork(	RPE_function_params,
 		if verbose: print '\nrun: ' + str(r+1)
 
 		#initialize network variables
-		ach = np.zeros(nBatch)
-		dopa = np.zeros(nBatch)
 		""" load pre-trained weights """
 		
 		if pre_train!='' and pre_train!='None':
@@ -121,7 +119,6 @@ def RLnetwork(	RPE_function_params,
 				bLabels = rndLabels[b*nBatch:(b+1)*nBatch]
 
 				#initialize batch variables
-				ach = np.ones(nBatch)
 				dopa = np.ones(nBatch)
 				dW_in = 0.
 				dW_act = 0.
@@ -164,9 +161,6 @@ def RLnetwork(	RPE_function_params,
 					#compute reward
 					bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
 
-				# pred_bLabels_idx = ex.val2idx(bPredictActions) ##same as bActions_idx for exploration = True ??
-				# ach, ach_labels = ex.compute_ach(perf_track, pred_bLabels_idx, aHigh=aHigh, rActions=None, aPairing=1.0) # make rActions=None or aPairing=1.0 to remove pairing
-
 				#determine predicted reward
 				if e_greedy:
 					# predicted_reward = ~exploratory #doesn't predict a reward on all exploratory trials (slightly worse performance than next line; ~2%)
@@ -183,7 +177,7 @@ def RLnetwork(	RPE_function_params,
 					# dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
 					dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
 
-					disinhib_Hid = ach
+					disinhib_Hid = np.ones(nBatch)
 					disinhib_Act = dopa
 
 				elif e >= nEpiCrit: 
@@ -200,7 +194,7 @@ def RLnetwork(	RPE_function_params,
 					else:
 						print "!! error in DA value computation !!"
 
-					disinhib_Hid = ach*dopa
+					disinhib_Hid = dopa
 					# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 					disinhib_Act = np.zeros(nBatch) #no learning in L2 during perc_dopa.
 					dopa_save = np.append(dopa_save, dopa)
