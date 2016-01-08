@@ -336,7 +336,7 @@ def compute_dopa(predicted_reward, bReward, dopa_values):
 
 	return dopa
 
-def save_data(net, W_in, W_act, perf, slopes, save_weights=True):
+def save_data(net, W_in, W_act, perf, slopes=None, save_weights=True):
 	"""
 	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
 

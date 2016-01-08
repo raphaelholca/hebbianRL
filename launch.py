@@ -71,14 +71,22 @@ images, labels, orientations, images_test, labels_test, orientations_test, image
 
 tic = time.time()
 
-allCMs, allPerf, perc_correct_W_act, W_in, W_act, RFproba, nn_input = net.train(	images, labels, orientations, 
-																					images_test, labels_test, orientations_test, 
-																					images_task, labels_task, orientations_task, 
-																					)
+net.train(	images, labels, orientations, 
+			images_test, labels_test, orientations_test, 
+			images_task, labels_task, orientations_task, 
+			)
 
-print '\n\nstart time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
-print 'end time: ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
-print 'run time: ' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
+allCMs, allPerf, perc_correct_W_act = net.test(images, labels)
+
+net.assess(images, labels)
+
+net.save()
+
+
+
+print '\n\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
+print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
+print 'run time:\t' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
 
 
 
