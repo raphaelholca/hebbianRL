@@ -14,7 +14,7 @@ ex = reload(ex)
 pl = reload(pl)
 bc = reload(bc)
 
-def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose):
+def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose, classes, rActions):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -27,9 +27,6 @@ def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, 
 		save_data (bool, optional) : whether save data
 		verbose (bool, optional) : whether to display text ouput
 	"""
-
-	classes = kwargs['classes']
-	rActions = kwargs['rActions']
 
 	if verbose: print "\nassessing performance..."
 

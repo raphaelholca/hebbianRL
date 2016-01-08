@@ -1,4 +1,9 @@
-""" support functions for hebbian network and neural classifier """
+""" 
+Author: Raphael Holca-Lamarre
+Date: 23/10/2014
+
+Support functions for Hebbian neural network
+"""
 
 import numpy as np
 import pickle
@@ -8,6 +13,7 @@ import shutil
 import numba
 import time	
 import grating as gr
+import support.mnist as mnist
 
 gr = reload(gr)
 
@@ -20,6 +26,51 @@ def set_global(lActions_pass, rActions_pass, classes_pass, kwargs_pass):
 	rActions = rActions_pass
 	classes = classes_pass
 	kwargs = kwargs_pass
+
+def load_images(net, classes, rActions, dataset_train, dataset_path):
+	if net.protocol == 'digit':
+		_, idx = np.unique(rActions, return_index=True)
+		lActions = rActions[np.sort(idx)]
+		set_global(lActions, rActions, classes, kwargs)
+
+		imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
+		if net.verbose: print 'loading train images...'
+		images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset_train, path = imPath)
+		images, labels = evenLabels(images, labels)
+		images = normalize(images, net.A*np.size(images,1))
+
+		if net.verbose: print 'loading test images...'
+		test_dataset='test' if dataset_train=='train' else 'train'
+		images_test, labels_test = mnist.read_images_from_mnist(classes = classes, dataset = test_dataset, path = imPath)
+		images_test, labels_test = evenLabels(images_test, labels_test)
+		images_test, labels_test = shuffle([images_test, labels_test])
+		images_test = normalize(images_test, net.A*np.size(images_test,1))
+		
+		orientations = None
+		images_task = None
+		labels_task = None
+		orientations_task = None
+		orientations_test = None
+
+	elif net.protocol == 'gabor':
+		if net.verbose: print 'creating gabor training images...'
+		_, idx = np.unique(rActions, return_index=True)
+		lActions = rActions[np.sort(idx)]
+		set_global(lActions, rActions, classes)
+
+		n_train = 50000
+		n_test = 1000
+
+		orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
+		images, labels = generate_gabors(orientations, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_crit'], kwargs['A'])
+
+		orientations_task = np.random.random(n_train)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
+		images_task, labels_task = generate_gabors(orientations_task, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_train'], kwargs['A'])
+
+		orientations_test = np.random.random(n_test)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
+		images_test, labels_test = generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
+
+	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
 
 def normalize(images, A):
 	"""
@@ -269,7 +320,7 @@ def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
 
 	return reward_prediction
 
-def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
+def compute_dopa(predicted_reward, bReward, dopa_values):
 	"""
 	Computes the dopa signal based on the actual and predicted rewards
 
@@ -287,10 +338,10 @@ def compute_dopa(predicted_reward, bReward, dHigh, dMid, dNeut, dLow):
 
 	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dHigh			#unpredicted reward
-	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dMid			#correct reward prediction
-	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dNeut			#correct no reward prediction
-	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dLow			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dopa_values['dHigh']			#unpredicted reward
+	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dopa_values['dMid']			#correct reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dopa_values['dNeut']			#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dopa_values['dLow']			#incorrect reward prediction
 
 	return dopa
 

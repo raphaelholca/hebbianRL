@@ -1,7 +1,8 @@
-""" 
-This function trains a hebbian neural network to learn a representation from the MNIST dataset. It makes use of a reward/relevance signal that increases the learning rate when the network makes a correct state-action pair selection.
+"""
+Author: Raphael Holca-Lamarre
+Date: 23/10/2014
 
-Output is saved under RL/data/[self.name]
+This function trains a hebbian neural network to learn a representation from the MNIST dataset. It makes use of a reward/relevance signal that increases the learning rate when the network makes a correct state-action pair selection.
 """
 
 # from progressbar import ProgressBar
@@ -28,12 +29,13 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', pre_train=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None):
+	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', pre_train=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=0):
 
 		"""
 		Sets network parameters 
 
 			Args:
+				dopa_values (dict): values of dopamine release for different reward prediction error scenarios
 				name (str, optional): name of the folder where to save results. Default='net'
 				n_run (int, optional): number of runs. Default=1
 				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default=10
@@ -57,20 +59,18 @@ class Network:
 				show_W_act (bool, optional): whether to display W_act weights on the weight plots. Default=True
 				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default=None
 				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default=None
+				seed (int, optional): seed of the random number generator. Default=0
 				
 				'dataset'		: 'test'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-				'dHigh' 		: 4.5 				,# learning rate increase for unexpected reward																	digit: 4.5	; gabor: 2.0
-				'dMid' 			: 0.02 				,# learning rate increase for correct reward prediction															digit: 0.02	; gabor: ---
-				'dNeut' 		: -0.1				,# learning rate increase for correct no reward prediction														digit: -0.1	; gabor: ---
-				'dLow' 			: -2.0				,# learning rate increase for incorrect reward prediction														digit: -2.0	; gabor: 0.0
+
 				'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
 				'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
 				'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
 				'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
 				'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
 				'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
-				'seed' 			: 995, #np.random.randint(1000), 	# seed of the random number generator
 		"""
+		self.dopa_values 	= dopa_values
 		self.name 			= name
 		self.n_run 			= n_run
 		self.n_epi_crit		= n_epi_crit				
@@ -94,17 +94,18 @@ class Network:
 		self.show_W_act 	= show_W_act
 		self.sort 			= sort
 		self.target 		= target
-
+		self.seed 			= seed
 
 	def train(	self, images, labels, orientations, 
 				images_test, labels_test, orientations_test, 
 				images_task, labels_task, orientations_task,
 				kwargs,
-				classes, rActions, dataset, dHigh, dMid, dNeut, dLow, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size, seed):
+				dataset, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size):
 
 		""" variable initialization """
 
-
+		classes = np.sort(np.unique(labels))
+		rActions 		= np.array(['a','b','c'], dtype='|S1') ##
 		W_in_save = {}
 		W_act_save = {}
 		perf_save = {}
@@ -124,7 +125,7 @@ class Network:
 			print 'run:  ' + self.name
 			print '\ntraining hebbian network...'
 		for r in range(self.n_run):
-			np.random.seed(seed+r)
+			np.random.seed(self.seed+r)
 			if self.verbose: print '\nrun: ' + str(r+1)
 
 			#initialize network variables
@@ -177,7 +178,7 @@ class Network:
 					bLabels = rndLabels[b*self.n_batch:(b+1)*self.n_batch]
 
 					#initialize batch variables
-					dopa = np.ones(self.n_batch)
+					dopa_release = np.ones(self.n_batch)
 					dW_in = 0.
 					dW_act = 0.
 					disinhib_Hid = np.ones(self.n_batch)##np.zeros(self.n_batch)
@@ -225,21 +226,21 @@ class Network:
 					#compute dopa signal and disinhibition based on training period
 					if e < self.n_epi_crit and train_class_layer:
 						""" critical period; trains class layer """
-						# dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-						# dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.2, dNeut=-0.3, dLow=-0.5)
+						# dopa_release = ex.compute_dopa(predicted_reward, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+						# dopa_release = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+						dopa_release = ex.compute_dopa(predicted_reward, bReward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
 
 						disinhib_Hid = np.ones(self.n_batch)
-						disinhib_Act = dopa
+						disinhib_Act = dopa_release
 
 					elif e >= self.n_epi_crit: 
 						""" Dopa - perceptual learning """
-						dopa = ex.compute_dopa(predicted_reward, bReward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+						dopa_release = ex.compute_dopa(predicted_reward, bReward, self.dopa_values)
 
-						disinhib_Hid = dopa
+						disinhib_Hid = dopa_release
 						# disinhib_Act = ex.compute_dopa(bPredictActions, bActions, bReward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 						disinhib_Act = np.zeros(self.n_batch) #no learning in L2 during perc_dopa.
-						dopa_save = np.append(dopa_save, dopa)
+						dopa_save = np.append(dopa_save, dopa_release)
 						
 					#compute weight updates
 					dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=self.lr, disinhib=disinhib_Hid)
@@ -287,7 +288,7 @@ class Network:
 						rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
 						_, perf_tmp = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], kwargs, save_data=False, verbose=False)
 					if self.classifier=='actionNeurons':
-						_, perf_tmp = cl.actionNeurons(self, {'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, save_data=False, verbose=False)
+						_, perf_tmp = cl.actionNeurons(self, {'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, False, False, classes, rActions)
 					perf_epi.append(perf_tmp[0])
 					if self.verbose: print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 				elif self.verbose and train_class_layer: print 
@@ -346,7 +347,7 @@ class Network:
 				pl.perf_progress(self, perf_save, kwargs)
 
 		""" compute network performance """
-		if self.classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(self, W_in_save, W_act_save, images_test, labels_test, kwargs, self.save_data, self.verbose)
+		if self.classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(self, W_in_save, W_act_save, images_test, labels_test, kwargs, self.save_data, self.verbose, classes, rActions)
 		if self.classifier=='self.SVM': 			allCMs, allPerf = cl.self.SVM(self, self.name, W_in_save, images, labels, classes, nInpNeurons, dataset, self.save_data, self.verbose)
 		if self.classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(self, self.name, W_in_save, classes, RFproba, nInpNeurons, images_test, labels_test, self.save_data, self.verbose)
 		if self.classifier=='bayesian':		allCMs, allPerf = cl.bayesian(self, W_in_save, images, labels, images_test, labels_test, kwargs)
