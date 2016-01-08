@@ -29,7 +29,7 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', pre_train=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=0):
+	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', pre_train=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
 
 		"""
 		Sets network parameters 
@@ -59,17 +59,9 @@ class Network:
 				show_W_act (bool, optional): whether to display W_act weights on the weight plots. Default=True
 				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default=None
 				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default=None
-				seed (int, optional): seed of the random number generator. Default=0
-				
-				'dataset'		: 'test'			,# dataset to use; possible values: 'test': MNIST test, 'train': MNIST train, 'grating': orientation discrimination
-
-				'target_ori' 	: 85. 				,# target orientation around which to discriminate clock-wise vs. counter clock-wise
-				'excentricity' 	: 3. 				,# degree range within wich to test the network (on each side of target orientation)
-				'noise_crit'	: 0. 				,# noise injected in the gabor filter for the pre-training (critical period)
-				'noise_train'	: 0. 				,# noise injected in the gabor filter for the training
-				'noise_test'	: 0.2 				,# noise injected in the gabor filter for the testing
-				'im_size'		: 28 				,# side of the gabor filter image (total pixels = im_size * im_size)
+				seed (int, optional): seed of the random number generator. Default=None
 		"""
+		
 		self.dopa_values 	= dopa_values
 		self.name 			= name
 		self.n_run 			= n_run
@@ -96,29 +88,27 @@ class Network:
 		self.target 		= target
 		self.seed 			= seed
 
-	def train(	self, images, labels, orientations, 
-				images_test, labels_test, orientations_test, 
-				images_task, labels_task, orientations_task,
-				kwargs,
-				dataset, target_ori, excentricity, noise_crit, noise_train, noise_test, im_size):
+		if self.save_data: self.name = ex.checkdir(self, OW_bool=True)
+		ex.checkClassifier(self.classifier)
+		print 'seed: ' + str(self.seed) + '\n'
+		if not self.save_data: print "!!! ----- not saving data ----- !!! \n"
+		np.random.seed(self.seed)
+
+	def train(self, images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task):
 
 		""" variable initialization """
-
 		classes = np.sort(np.unique(labels))
-		rActions 		= np.array(['a','b','c'], dtype='|S1') ##
 		W_in_save = {}
 		W_act_save = {}
 		perf_save = {}
-		nClasses = len(classes)
-		nEpiTot = self.n_epi_crit + self.n_epi_dopa
-		nImages = np.size(images,0)
-		nInpNeurons = np.size(images,1)
-		nActNeurons = nClasses
+		n_classes = len(classes)
+		n_epi_tot = self.n_epi_crit + self.n_epi_dopa
+		n_images = np.size(images,0)
+		n_inp_neurons = np.size(images,1)
+		n_out_neurons = n_classes
 		train_class_layer = False if self.classifier=='bayesian' else True
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
 		proba_predict = False if self.classifier!='bayesian' else proba_predict
-		nn_input = np.empty((0,2), dtype=float) #input to the regressor neural net; nn_input[:,0] is prediction_error; nn_input[:,1] is tried DA value 
-		nn_input_save = np.empty((0,2), dtype=float)
 
 		""" training of the network """
 		if self.verbose: 
@@ -140,22 +130,22 @@ class Network:
 				W_act = pickle.load(f_W_act)['000']
 				f_W_act.close()
 			else:
-				W_in = np.random.random_sample(size=(nInpNeurons, self.n_hid_neurons)) + 1.0
-				W_act = (np.random.random_sample(size=(self.n_hid_neurons, nActNeurons))/1000+1.0)/self.n_hid_neurons
+				W_in = np.random.random_sample(size=(n_inp_neurons, self.n_hid_neurons)) + 1.0
+				W_act = (np.random.random_sample(size=(self.n_hid_neurons, n_out_neurons))/1000+1.0)/self.n_hid_neurons
 			
 			W_in_init = np.copy(W_in)
 			W_act_init = np.copy(W_act)
 			W_in_since_update = np.copy(W_in)
-			perf_track = np.zeros((nActNeurons, 2))
+			perf_track = np.zeros((n_out_neurons, 2))
 
-			choice_count = np.zeros((nClasses, nClasses))
+			choice_count = np.zeros((n_classes, n_classes))
 			dopa_save = np.array([])
 			perf_epi = []
 			dW_save=np.array([])
 
 			# pbar_epi = ProgressBar()
-			# for e in pbar_epi(range(nEpiTot)):
-			for e in range(nEpiTot):
+			# for e in pbar_epi(range(n_epi_tot)):
+			for e in range(n_epi_tot):
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
 
 				#shuffle input
@@ -165,13 +155,13 @@ class Network:
 					rndImages, rndLabels = ex.shuffle([images_task, labels_task])
 
 				#train network with mini-batches
-				for b in range(int(nImages/self.n_batch)):
+				for b in range(int(n_images/self.n_batch)):
 					#re-compute the pdf for bayesian inference if any weights have changed more than a threshold
 					if self.classifier=='bayesian' and (e >= self.n_epi_crit or self.test_each_epi):
 						W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
 						if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
 							W_in_since_update = np.copy(W_in)
-							pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in, kwargs)
+							pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in)
 				
 					#select batch training images (may leave a few training examples out (< self.n_batch))
 					bImages = rndImages[b*self.n_batch:(b+1)*self.n_batch,:]
@@ -188,10 +178,10 @@ class Network:
 					bHidNeurons = ex.propL1(bImages, W_in, SM=False)
 					if train_class_layer: 
 						bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=self.t), W_act, SM=False)
-						bPredictActions = rActions[np.argmax(bActNeurons,1)]
+						bPredictActions = classes[np.argmax(bActNeurons,1)]
 					elif e >= self.n_epi_crit:
 						posterior = bc.bayesian_decoder(ex.softmax(bHidNeurons, t=self.t), pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
-						bPredictActions = rActions[np.argmax(posterior,1)]
+						bPredictActions = classes[np.argmax(posterior,1)]
 
 					#add noise to activation of hidden neurons and compute lateral inhibition
 					if self.exploration and (e >= self.n_epi_crit):
@@ -208,14 +198,14 @@ class Network:
 							bActNeurons += np.random.normal(0, 4.0, np.shape(bActNeurons))
 						bActNeurons = ex.softmax(bActNeurons, t=self.t)
 						#take action			
-						bActions = rActions[np.argmax(bActNeurons,1)]	
+						bActions = classes[np.argmax(bActNeurons,1)]	
 						#compute reward
-						bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
+						bReward = ex.reward_delivery(bLabels, bActions)
 					elif e >= self.n_epi_crit:
 						posterior_noise = bc.bayesian_decoder(bHidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
-						bActions = rActions[np.argmax(posterior_noise,1)]
+						bActions = classes[np.argmax(posterior_noise,1)]
 						#compute reward
-						bReward = ex.reward_delivery(ex.labels2actionVal(bLabels), bActions)
+						bReward = ex.reward_delivery(bLabels, bActions)
 
 					#determine predicted reward
 					if self.classifier!='bayesian':
@@ -263,11 +253,11 @@ class Network:
 				if self.protocol=='digit':
 					RFproba, _, _ = rf.hist(self, {'000':W_in}, classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
 				elif self.protocol=='gabor':
-					pref_ori = gr.preferred_orientations({'000':W_in}, params=kwargs)
-					RFproba = np.zeros((1, self.n_hid_neurons, nClasses), dtype=int)
+					pref_ori = gr.preferred_orientations({'000':W_in})
+					RFproba = np.zeros((1, self.n_hid_neurons, n_classes), dtype=int)
 					RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
 					RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
-				same = ex.labels2actionVal(np.argmax(RFproba[0],1)) == rActions[np.argmax(W_act,1)]
+				same = np.argmax(RFproba[0],1) == classes[np.argmax(W_act,1)]
 				if train_class_layer:
 					correct_W_act = 0.
 					correct_W_act += np.sum(same)
@@ -280,21 +270,20 @@ class Network:
 				if self.save_data:
 					if r==0 and e==self.n_epi_crit-1:
 						if self.protocol=='digit':
-							pl.plot_noise_proba(self, W_in, images, kwargs)
+							pl.plot_noise_proba(self, W_in, images)
 						else:
-							pl.plot_noise_proba(self, W_in, images_task, kwargs)
+							pl.plot_noise_proba(self, W_in, images_task)
 				if self.test_each_epi and (self.verbose or self.save_data):
 					if self.classifier=='bayesian':
 						rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-						_, perf_tmp = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], kwargs, save_data=False, verbose=False)
+						_, perf_tmp = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], save_data=False, verbose=False)
 					if self.classifier=='actionNeurons':
-						_, perf_tmp = cl.actionNeurons(self, {'000':W_in}, {'000':W_act}, images_test, labels_test, kwargs, False, False, classes, rActions)
+						_, perf_tmp = cl.actionNeurons(self, {'000':W_in}, {'000':W_act}, images_test, labels_test, False, False, classes)
 					perf_epi.append(perf_tmp[0])
 					if self.verbose: print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 				elif self.verbose and train_class_layer: print 
 
 			""" end of episode """
-
 			#save weights
 			W_in_save[str(r).zfill(3)] = np.copy(W_in)
 			W_act_save[str(r).zfill(3)] = np.copy(W_act)
@@ -302,7 +291,7 @@ class Network:
 
 		""" compute histogram of RF classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = rf.hist(self, W_in_save, classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose, lr_ratio=1.0, rel_classes=classes[rActions!='0'])
+			RFproba, RFclass, _ = rf.hist(self, W_in_save, classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
 
 		elif self.protocol=='gabor':
 			n_bins = 10
@@ -312,8 +301,8 @@ class Network:
 				mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
 				orientations_bin[mask_bin] = i
 
-			pref_ori = gr.preferred_orientations(W_in_save, params=kwargs)
-			RFproba = np.zeros((self.n_run, self.n_hid_neurons, nClasses), dtype=int)
+			pref_ori = gr.preferred_orientations(W_in_save)
+			RFproba = np.zeros((self.n_run, self.n_hid_neurons, n_classes), dtype=int)
 			for r in pref_ori.keys():
 				RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 				RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
@@ -324,7 +313,7 @@ class Network:
 			correct_W_act = 0.
 			notsame = {}
 			for k in W_act_save.keys():
-				same = ex.labels2actionVal(np.argmax(RFproba[int(k)],1)) == rActions[np.argmax(W_act_save[k],1)]
+				same = np.argmax(RFproba[int(k)],1) == classes[np.argmax(W_act_save[k],1)]
 				notsame[k] = np.argwhere(~same)
 				correct_W_act += np.sum(same)
 			correct_W_act/=len(RFproba)
@@ -341,16 +330,16 @@ class Network:
 				slopes = {}
 			elif self.protocol=='gabor':
 				rf.plot(self, W_in_save, RFproba, W_act=W_act_pass, notsame=notsame, verbose=self.verbose)
-				curves = gr.tuning_curves(W_in_save, params=kwargs, method='no_softmax', plot=True) #basic, no_softmax, with_noise
-				slopes = gr.slopes(W_in_save, curves, pref_ori, kwargs)
+				curves = gr.tuning_curves(W_in_save, method='no_softmax', plot=True) #basic, no_softmax, with_noise
+				slopes = gr.slopes(W_in_save, curves, pref_ori)
 			if self.test_each_epi:
-				pl.perf_progress(self, perf_save, kwargs)
+				pl.perf_progress(self, perf_save)
 
 		""" compute network performance """
-		if self.classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(self, W_in_save, W_act_save, images_test, labels_test, kwargs, self.save_data, self.verbose, classes, rActions)
-		if self.classifier=='self.SVM': 			allCMs, allPerf = cl.self.SVM(self, self.name, W_in_save, images, labels, classes, nInpNeurons, dataset, self.save_data, self.verbose)
-		if self.classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(self, self.name, W_in_save, classes, RFproba, nInpNeurons, images_test, labels_test, self.save_data, self.verbose)
-		if self.classifier=='bayesian':		allCMs, allPerf = cl.bayesian(self, W_in_save, images, labels, images_test, labels_test, kwargs)
+		if self.classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(self, W_in_save, W_act_save, images_test, labels_test, self.save_data, self.verbose, classes)
+		if self.classifier=='self.SVM': 			allCMs, allPerf = cl.self.SVM(self, self.name, W_in_save, images, labels, classes, n_inp_neurons, dataset, self.save_data, self.verbose)
+		if self.classifier=='neuronClass':	allCMs, allPerf = cl.neuronClass(self, self.name, W_in_save, classes, RFproba, n_inp_neurons, images_test, labels_test, self.save_data, self.verbose)
+		if self.classifier=='bayesian':		allCMs, allPerf = cl.bayesian(self, W_in_save, images, labels, images_test, labels_test)
 
 		if self.verbose and train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(self.n_hid_neurons)
 

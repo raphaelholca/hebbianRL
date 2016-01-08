@@ -125,7 +125,7 @@ def plotHist(h, bins, h_err=None):
 
 	return fig
 
-def perf_progress(net, perf, kwargs, nEpi=None):
+def perf_progress(net, perf, nEpi=None):
 	"""
 	plots the progression of the error rate over training episodes
 	"""
@@ -152,7 +152,7 @@ def perf_progress(net, perf, kwargs, nEpi=None):
 	plt.close(fig)	
 
 
-def plot_noise_proba(net, W_in, images, kwargs):
+def plot_noise_proba(net, W_in, images):
 	"""
 	plots the probability that noise injection changes the most active hidden neurons.
 	"""

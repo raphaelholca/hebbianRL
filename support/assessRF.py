@@ -9,9 +9,9 @@ import pickle
 pl = reload(pl)
 ex = reload(ex)
 
-def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True, lr_ratio=1.0, rel_classes=np.array([False])):
+def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True):
 	"""
-	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False and lr_ratio=1.0. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
+	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
 		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
@@ -22,8 +22,6 @@ def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_da
 		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
 		save_data (bool, optional) : whether save data
 		verbose (bool, optional) : whether to display text ouput
-		lr_ratio (float, optional) : the ratio between ach signal and normal learning rate
-		rel_classes (numpy array, optional) : the classes relevant in the training protocol (i.e., those not equal to '0')
 
 	return:
 		RFproba (numpy array) : probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron (when SVM=False abd lr_ratio=1.0) by taking np.max(RFproba,2)
@@ -54,7 +52,6 @@ def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_da
 			mostActiv = np.argmax(ex.propL1(images, W[r]),1)
 			for n in range(nNeurons):
 				RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
-				RFproba[int(r),n,rel_classes] *= lr_ratio #to balance the effect of ACh
 				RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
 		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=n_bins, range=(-0.5,9.5))
 		for c in range(n_bins):

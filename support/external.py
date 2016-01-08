@@ -17,32 +17,25 @@ import support.mnist as mnist
 
 gr = reload(gr)
 
-def set_global(lActions_pass, rActions_pass, classes_pass, kwargs_pass):
-	global lActions
-	global rActions
-	global classes
-	global kwargs
-	lActions = lActions_pass
-	rActions = rActions_pass
-	classes = classes_pass
-	kwargs = kwargs_pass
-
-def load_images(net, classes, rActions, dataset_train, dataset_path):
+def load_images(net, classes, dataset_train, dataset_path, gabor_params={}):
+	# target orientation around which to discriminate clock-wise vs. counter clock-wise
+	# degree range within wich to test the network (on each side of target orientation)
+	# noise injected in the gabor filter for the pre-training (critical period)
+	# noise injected in the gabor filter for the training
+	# noise injected in the gabor filter for the testing
+	# side of the gabor filter image (total pixels = im_size * im_size)
 	if net.protocol == 'digit':
-		_, idx = np.unique(rActions, return_index=True)
-		lActions = rActions[np.sort(idx)]
-		set_global(lActions, rActions, classes, kwargs)
 
 		imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
 		if net.verbose: print 'loading train images...'
 		images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset_train, path = imPath)
-		images, labels = evenLabels(images, labels)
+		images, labels = evenLabels(images, labels, classes)
 		images = normalize(images, net.A*np.size(images,1))
 
 		if net.verbose: print 'loading test images...'
 		test_dataset='test' if dataset_train=='train' else 'train'
 		images_test, labels_test = mnist.read_images_from_mnist(classes = classes, dataset = test_dataset, path = imPath)
-		images_test, labels_test = evenLabels(images_test, labels_test)
+		images_test, labels_test = evenLabels(images_test, labels_test, classes)
 		images_test, labels_test = shuffle([images_test, labels_test])
 		images_test = normalize(images_test, net.A*np.size(images_test,1))
 		
@@ -54,21 +47,19 @@ def load_images(net, classes, rActions, dataset_train, dataset_path):
 
 	elif net.protocol == 'gabor':
 		if net.verbose: print 'creating gabor training images...'
-		_, idx = np.unique(rActions, return_index=True)
-		lActions = rActions[np.sort(idx)]
-		set_global(lActions, rActions, classes)
+		set_global(classes)
 
 		n_train = 50000
 		n_test = 1000
 
 		orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
-		images, labels = generate_gabors(orientations, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_crit'], kwargs['A'])
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_crit'], net.A)
 
-		orientations_task = np.random.random(n_train)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
-		images_task, labels_task = generate_gabors(orientations_task, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_train'], kwargs['A'])
+		orientations_task = np.random.random(n_train)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] #orientations of gratings (in degrees)
+		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_train'], net.A)
 
-		orientations_test = np.random.random(n_test)*kwargs['excentricity']*2 + kwargs['target_ori'] - kwargs['excentricity'] #orientations of gratings (in degrees)
-		images_test, labels_test = generate_gabors(orientations_test, kwargs['target_ori'], kwargs['im_size'], kwargs['noise_test'], kwargs['A'])
+		orientations_test = np.random.random(n_test)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] #orientations of gratings (in degrees)
+		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_test'], net.A)
 
 	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
 
@@ -189,7 +180,7 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def evenLabels(images, labels):
+def evenLabels(images, labels, classes):
 	"""
 	Even out images and labels distribution so that they are evenly distributed over the labels.
 
@@ -435,71 +426,6 @@ def shuffle(arrays):
 
 	return shuffled_arrays#, rndIdx
 
-def val2idx(actionVal):
-	"""
-	Returns the index of the action (int) for each provided value (str)
-
-	Args:
-		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-
-	returns:
-		numpy array of int: array of int representing the index of the chosen action for an input image
-	"""
-
-	actionIdx = np.zeros_like(actionVal, dtype=int)
-	for i,v in enumerate(lActions):
-		actionIdx[actionVal==v] = i
-
-	return actionIdx
-
-def labels2actionVal(labels):
-	"""
-	returns the the correct action value (str) for each provided label (int)
-
-	Args:
-		labels (numpy array): labels of the input images
-
-	returns:
-		numpy array str: rewarded action value for each images. Returns empty space ' ' if provided label is not part of the considered classes
-	"""
-
-	actionVal = np.empty(len(labels), dtype='|S1')
-	for i in range(len(classes)):
-		actionVal[labels==classes[i]] = rActions[i]
-	actionVal[actionVal=='']=' '
-	return actionVal
-
-def actionVal2labels(actionVal):
-	"""
-	returns the class labels (int) for each action value (str). If more than one label corresponds to the same action value, than a list of list is returned, with the inside list containing all correct labels for the action value.
-
-	Args:
-		actionVal (numpy array of str): array of 1-char long strings representing the value of the chosen action for an input image 
-
-	returns:
-		list: label associated with each action value
-	"""
-
-	labels=[]
-	for act in actionVal:
-		labels.append(list(classes[act==rActions]))
-	return labels
-
-def label2idx(labels):
-	"""
-	Creates a vector of length identical to labels but with the index of the label rather than its class label (int)
-
-	Args:
-		labels (numpy array): labels of the input images
-
-	returns:
-		numpy array str: rewarded action value for each images
-	"""
-
-	actionIdx = np.ones(len(labels), dtype=int)
-	for i,c in enumerate(classes):
-		actionIdx[labels==c] = i
-	return actionIdx
 
 def computeCM(classResults, labels_test, classes):
 	"""
@@ -508,7 +434,7 @@ def computeCM(classResults, labels_test, classes):
 	Args:
 		classResults (numpy array): result of the classifcation task
 		labels_test (numpy array): labels of the test dataset
-		classes (numpy array): all classes of the MNIST dataset used in the current run (or rAction, the correct action associated with each digit class)
+		classes (numpy array): all classes of the MNIST dataset used in the current run
 
 	returns:
 		numpy array: confusion matrix of shape (actual class x predicted class)

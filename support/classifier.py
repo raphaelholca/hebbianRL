@@ -14,7 +14,7 @@ ex = reload(ex)
 pl = reload(pl)
 bc = reload(bc)
 
-def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, save_data, verbose, classes, rActions):
+def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, save_data, verbose, classes):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
@@ -23,7 +23,6 @@ def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, 
 		W_act_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
-		kwargs (dict): parameters of the model
 		save_data (bool, optional) : whether save data
 		verbose (bool, optional) : whether to display text ouput
 	"""
@@ -34,15 +33,6 @@ def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, 
 	allCMs = []
 	allPerf = []
 
-	""" process labels for plot """
-	rActions_uni, idx = np.unique(rActions, return_index=True)
-	sorter = idx.argsort()
-	rActions_uni = rActions_uni[sorter]
-	labels_print = ex.actionVal2labels(rActions_uni)
-	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
-	labels_print = np.array(labels_print)
-	labels_print[rActions_uni=='z'] = 'z'
-
 	for iw in sorted(W_in_save.keys()):
 		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw]
@@ -52,18 +42,18 @@ def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, kwargs, 
 		hidNeurons = ex.propL1(images_test, W_in, t=net.t)
 		actNeurons = ex.propL1(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
-		classResults = rActions[classIdx]
+		classResults = classes[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test)))
+		correct_classif = float(np.sum(classResults==labels_test))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test), np.unique(rActions))
-		CM = CM[sorter,:]
-		CM = CM[:,sorter]
+		CM = ex.computeCM(classResults, labels_test, classes)
+		# CM = CM[sorter,:]
+		# CM = CM[:,sorter]
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, rActions_uni, net.name, verbose, save_data)
+	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
 	return allCMs, allPerf
 
 def SVM(net, W_in_save, images_train, labels_train, classes, nDimStates, train_dataset, save_data, verbose, SM=True):
@@ -155,7 +145,7 @@ def neuronClass(net, W_in_save, classes, RFproba, nDimStates, images_test, label
 	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
 	return allCMs, allPerf
 
-def bayesian(net, W_in_save, images, labels, images_test, labels_test, kwargs, save_data=None, verbose=None):
+def bayesian(net, W_in_save, images, labels, images_test, labels_test, save_data=None, verbose=None):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
@@ -165,14 +155,7 @@ def bayesian(net, W_in_save, images, labels, images_test, labels_test, kwargs, s
 		labels (numpy array): train labels
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
-		kwargs (dict): parameters of the model
 	"""
-
-	classes = kwargs['classes']
-	rActions = kwargs['rActions']
-	pdf_method = kwargs['pdf_method']
-	if verbose is None: verbose = kwargs['verbose']
-	if save_data is None: save_data = kwargs['save_data']
 
 	if verbose: print "\nassessing performance..."
 
@@ -194,7 +177,7 @@ def bayesian(net, W_in_save, images, labels, images_test, labels_test, kwargs, s
 		W_in = W_in_save[iw]
 
 		""" compute pdf """
-		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in, kwargs)
+		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in)
 
 		""" testing of the classifier """
 		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
