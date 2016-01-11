@@ -42,7 +42,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					n_batch 		= 20,
 					protocol		= 'digit',
 					classifier		= 'actionNeurons',
-					pre_train		= None,					#'digit_479_16'
+					init_file		= None,					#'digit_479_16'
 					test_each_epi	= True,
 					SVM				= False,
 					save_data		= True,
@@ -76,7 +76,7 @@ net.train(	images, labels, orientations,
 			images_task, labels_task, orientations_task, 
 			)
 
-allCMs, allPerf, perc_correct_W_act = net.test(images, labels)
+allCMs, allPerf, perc_correct_W_act = net.test(images_test, labels_test)
 
 net.assess(images, labels)
 

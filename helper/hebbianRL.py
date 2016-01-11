@@ -29,7 +29,7 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', pre_train=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
+	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', n_batch=20, protocol='digit', classifier='actionNeurons', init_file=None, test_each_epi=True, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
 
 		"""
 		Sets network parameters 
@@ -51,7 +51,7 @@ class Network:
 				n_batch (int, optional): mini-batch size. Default=20
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default='digit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'. Default='actionNeurons'
-				pre_train (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default=None
+				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default=None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode. Default=True
 				SVM (bool, optional): whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron. Default=False
 				save_data (bool, optional): whether to save data to disk. Default=True
@@ -78,7 +78,7 @@ class Network:
 		self.n_batch 		= n_batch
 		self.protocol		= protocol
 		self.classifier		= classifier
-		self.pre_train		= pre_train
+		self.init_file		= init_file
 		self.test_each_epi	= test_each_epi
 		self.SVM 			= SVM
 		self.save_data 		= save_data
@@ -88,55 +88,50 @@ class Network:
 		self.target 		= target
 		self.seed 			= seed
 
-		if self.save_data: self.name = ex.checkdir(self, OW_bool=True)
+		if self.save_data: 
+			self.name = ex.checkdir(self, OW_bool=True)
+		else:
+			print "!!! ----- not saving data ----- !!! \n"
 		ex.checkClassifier(self.classifier)
 		print 'seed: ' + str(self.seed) + '\n'
-		if not self.save_data: print "!!! ----- not saving data ----- !!! \n"
 		np.random.seed(self.seed)
 
 	def train(self, images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task):
 
 		""" variable initialization """
 		classes = np.sort(np.unique(labels))
-		self.W_in_save = {}
-		self.W_act_save = {}
-		self.perf_save = {}
 		n_classes = len(classes)
 		n_epi_tot = self.n_epi_crit + self.n_epi_dopa
 		n_images = np.size(images,0)
+		proba_predict = False if self.classifier!='bayesian' else proba_predict
+
+		self.W_in_save = {}
+		self.W_act_save = {}
+		self.perf_save = {}
 		self.n_inp_neurons = np.size(images,1)
-		n_out_neurons = n_classes
+		self.n_out_neurons = n_classes
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
-		proba_predict = False if self.classifier!='bayesian' else proba_predict
 
 		""" training of the network """
 		if self.verbose: 
 			print 'run:  ' + self.name
 			print '\ntraining hebbian network...'
+		
 		for r in range(self.n_run):
 			np.random.seed(self.seed+r)
 			if self.verbose: print '\nrun: ' + str(r+1)
 
-			#initialize network variables
-			""" load pre-trained weights """
-			
-			if self.pre_train!='' and self.pre_train is not None:
-				f_W_in = open('output/' + self.pre_train + '/W_in', 'r')
-				W_in = pickle.load(f_W_in)['000']
-				f_W_in.close()
-
-				f_W_act = open('output/' + self.pre_train + '/W_act', 'r')
-				W_act = pickle.load(f_W_act)['000']
-				f_W_act.close()
+			""" initialize network variables """
+			if self.init_file != '' and self.init_file != None:
+				self._init_weights_file()
 			else:
-				W_in = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
-				W_act = (np.random.random_sample(size=(self.n_hid_neurons, n_out_neurons))/1000+1.0)/self.n_hid_neurons
-			
-			W_in_init = np.copy(W_in)
-			W_act_init = np.copy(W_act)
-			W_in_since_update = np.copy(W_in)
-			perf_track = np.zeros((n_out_neurons, 2))
+				self._init_weights_random()
+
+			W_in_init = np.copy(self.W_in)
+			W_act_init = np.copy(self.W_act)
+			W_in_since_update = np.copy(self.W_in)
+			perf_track = np.zeros((self.n_out_neurons, 2))
 
 			choice_count = np.zeros((n_classes, n_classes))
 			dopa_save = np.array([])
@@ -158,10 +153,10 @@ class Network:
 				for b in range(int(n_images/self.n_batch)):
 					#re-compute the pdf for bayesian inference if any weights have changed more than a threshold
 					if self.classifier=='bayesian' and (e >= self.n_epi_crit or self.test_each_epi):
-						W_mschange = np.sum((W_in_since_update - W_in)**2, 0)
+						W_mschange = np.sum((W_in_since_update - self.W_in)**2, 0)
 						if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
-							W_in_since_update = np.copy(W_in)
-							pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, W_in)
+							W_in_since_update = np.copy(self.W_in)
+							pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(rndImages, rndLabels, self.W_in)
 				
 					#select batch training images (may leave a few training examples out (< self.n_batch))
 					bImages = rndImages[b*self.n_batch:(b+1)*self.n_batch,:]
@@ -175,9 +170,9 @@ class Network:
 					disinhib_Act = np.zeros(self.n_batch)
 					
 					#compute activation of hidden and classification neurons
-					bHidNeurons = ex.propL1(bImages, W_in, SM=False)
+					bHidNeurons = ex.propL1(bImages, self.W_in, SM=False)
 					if self._train_class_layer: 
-						bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=self.t), W_act, SM=False)
+						bActNeurons = ex.propL1(ex.softmax(bHidNeurons, t=self.t), self.W_act, SM=False)
 						bPredictActions = classes[np.argmax(bActNeurons,1)]
 					elif e >= self.n_epi_crit:
 						posterior = bc.bayesian_decoder(ex.softmax(bHidNeurons, t=self.t), pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
@@ -188,7 +183,7 @@ class Network:
 						bHidNeurons += np.random.normal(0, np.std(bHidNeurons)*self.noise_std, np.shape(bHidNeurons))
 						bHidNeurons = ex.softmax(bHidNeurons, t=self.t)
 						if self._train_class_layer:
-							bActNeurons = ex.propL1(bHidNeurons, W_act, SM=False)
+							bActNeurons = ex.propL1(bHidNeurons, self.W_act, SM=False)
 					else:
 						bHidNeurons = ex.softmax(bHidNeurons, t=self.t)
 
@@ -233,31 +228,31 @@ class Network:
 						dopa_save = np.append(dopa_save, dopa_release)
 						
 					#compute weight updates
-					dW_in = ex.learningStep(bImages, bHidNeurons, W_in, lr=self.lr, disinhib=disinhib_Hid)
-					if self._train_class_layer: dW_act = ex.learningStep(bHidNeurons, bActNeurons, W_act, lr=self.lr*1e-4, disinhib=disinhib_Act)
+					dW_in = ex.learningStep(bImages, bHidNeurons, self.W_in, lr=self.lr, disinhib=disinhib_Hid)
+					if self._train_class_layer: dW_act = ex.learningStep(bHidNeurons, bActNeurons, self.W_act, lr=self.lr*1e-4, disinhib=disinhib_Act)
 
 					#update weights
 					if e<self.n_epi_crit or not self.lim_weights:
-						W_in += dW_in
+						self.W_in += dW_in
 					elif e>=self.n_epi_crit: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
-						mask = np.logical_and(np.sum(W_in+dW_in,0)<=940.801, np.min(W_in+dW_in,0)>0.2)
-						W_in[:,mask] += dW_in[:,mask]
-					if self._train_class_layer: W_act += dW_act
+						mask = np.logical_and(np.sum(self.W_in+dW_in,0)<=940.801, np.min(self.W_in+dW_in,0)>0.2)
+						self.W_in[:,mask] += dW_in[:,mask]
+					if self._train_class_layer: self.W_act += dW_act
 
-					W_in = np.clip(W_in, 1e-10, np.inf)
-					if self._train_class_layer: W_act = np.clip(W_act, 1e-10, np.inf)
+					self.W_in = np.clip(self.W_in, 1e-10, np.inf)
+					if self._train_class_layer: self.W_act = np.clip(self.W_act, 1e-10, np.inf)
 
 				""" end of mini-batch """
 
 				#check Wact assignment after each episode:
 				if self.protocol=='digit':
-					RFproba, _, _ = an.hist(self, {'000':W_in}, classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
+					RFproba, _, _ = an.hist(self, {'000':self.W_in}, classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
 				elif self.protocol=='gabor':
-					pref_ori = gr.preferred_orientations({'000':W_in})
+					pref_ori = gr.preferred_orientations({'000':self.W_in})
 					RFproba = np.zeros((1, self.n_hid_neurons, n_classes), dtype=int)
 					RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
 					RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
-				same = np.argmax(RFproba[0],1) == classes[np.argmax(W_act,1)]
+				same = np.argmax(RFproba[0],1) == classes[np.argmax(self.W_act,1)]
 				if self._train_class_layer:
 					correct_W_act = 0.
 					correct_W_act += np.sum(same)
@@ -270,23 +265,23 @@ class Network:
 				if self.save_data:
 					if r==0 and e==self.n_epi_crit-1:
 						if self.protocol=='digit':
-							pl.plot_noise_proba(self, W_in, images)
+							pl.plot_noise_proba(self, self.W_in, images)
 						else:
-							pl.plot_noise_proba(self, W_in, images_task)
+							pl.plot_noise_proba(self, self.W_in, images_task)
 				if self.test_each_epi and (self.verbose or self.save_data):
 					if self.classifier=='bayesian':
 						rdn_idx = np.random.choice(len(labels_test), 1000, replace=False)
-						_, perf_tmp = cl.bayesian({'000':W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], save_data=False, verbose=False)
+						_, perf_tmp = cl.bayesian({'000':self.W_in}, images, labels, images_test[rdn_idx], labels_test[rdn_idx], save_data=False, verbose=False)
 					if self.classifier=='actionNeurons':
-						_, perf_tmp = cl.actionNeurons(self, {'000':W_in}, {'000':W_act}, images_test, labels_test, False, False, classes)
+						_, perf_tmp = cl.actionNeurons(self, {'000':self.W_in}, {'000':self.W_act}, images_test, labels_test, False, False, classes)
 					perf_epi.append(perf_tmp[0])
 					if self.verbose: print 'performance: ' + str(np.round(perf_tmp[0]*100,1)) + '%'
 				elif self.verbose and self._train_class_layer: print 
 
 			""" end of episode """
 			#save weights
-			self.W_in_save[str(r).zfill(3)] = np.copy(W_in)
-			self.W_act_save[str(r).zfill(3)] = np.copy(W_act)
+			self.W_in_save[str(r).zfill(3)] = np.copy(self.W_in)
+			self.W_act_save[str(r).zfill(3)] = np.copy(self.W_act)
 			self.perf_save[str(r).zfill(3)] = np.copy(perf_epi)
 
 		if self.verbose and self._train_class_layer: print 'correct action weight assignment:\n' + str(correct_W_act) + ' out of ' + str(self.n_hid_neurons)
@@ -358,7 +353,24 @@ class Network:
 		"""" save data """
 		if self.save_data: ex.save_data(self, self.W_in_save, self.W_act_save, self.perf_save)
 
+	def _init_weights_file(self):
+		""" initialize weights of the network by loading saved weights from file """
 
+		if not os.path.exists(self.init_file):
+			raise IOError, "weight file \'%s\' not found" % self.init_file
+
+		f_W_in = open('output/' + self.init_file + '/W_in', 'r')
+		self.W_in = pickle.load(f_W_in)['000']
+		f_W_in.close()
+
+		f_W_act = open('output/' + self.init_file + '/W_act', 'r')
+		self.W_act = pickle.load(f_W_act)['000']
+		f_W_act.close()
+
+	def _init_weights_random(self):
+		""" initialize weights of the network randomly or by loading saved weights from file """
+		self.W_in = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
+		self.W_act = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 	
 
 
