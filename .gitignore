@@ -4,9 +4,8 @@ images_subs*
 bp_support/*
 logs/*
 output/*
-support/SVM-MNIST*
-support/get_input_c.pyx
-support/tsne.py
+helper/SVM-MNIST*
+helper/tsne.py
 weights_bp
 write-up/*
 plots/*
