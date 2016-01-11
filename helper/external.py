@@ -204,7 +204,7 @@ def evenLabels(images, labels, classes):
 	images, labels = np.copy(images_even), np.copy(labels_even)
 	return images, labels
 
-def propL1(bInput, W_in, SM=True, t=1.):
+def propagate_layerwise(bInput, W_in, SM=True, t=1.):
 	"""
 	One propagation step
 
@@ -290,7 +290,7 @@ def reward_delivery(labels, actions):
 
 	return reward
 
-def reward_prediction(best_action, action_taken, proba_predict, posterior=None):
+def reward_prediction(best_action, action_taken, proba_predict=False, posterior=None):
 	"""
 	Computes reward prediction based on the best (greedy) action and the action taken
 
@@ -390,18 +390,6 @@ def checkdir(net, OW_bool=True):
 		os.makedirs('output/' + net.name + '/TCs')
 
 	return net.name
-
-def checkClassifier(classifier):
-	"""
-	Checks if classifier has correct value. If not, raise an error.
-
-	Args:
-		classifier (str): name of the classifier
-	"""
-
-	if classifier not in ['neuronClass', 'SVM', 'actionNeurons', 'bayesian']:
-		raise ValueError( '\'' + classifier +  '\' not a legal classifier value. Legal values are: \'neuronClass\', \'SVM\', \'actionNeurons\'.')
-
 
 def shuffle(arrays):
 	"""
