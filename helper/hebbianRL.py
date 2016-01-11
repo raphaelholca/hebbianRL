@@ -9,12 +9,12 @@ This function trains a hebbian neural network to learn a representation from the
 from inspect import isfunction
 import numpy as np
 import matplotlib.pyplot as pyplot
-import support.external as ex
-import support.plots as pl
-import support.classifier as cl
-import support.assess_network as an
-import support.grating as gr
-import support.bayesian_decoder as bc
+import helper.external as ex
+import helper.plots as pl
+import helper.classifier as cl
+import helper.assess_network as an
+import helper.grating as gr
+import helper.bayesian_decoder as bc
 import sys
 import time
 import pickle

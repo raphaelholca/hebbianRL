@@ -13,7 +13,7 @@ import shutil
 import numba
 import time	
 import grating as gr
-import support.mnist as mnist
+import helper.mnist as mnist
 
 gr = reload(gr)
 

@@ -4,7 +4,7 @@ import numpy as np
 import plots as pl
 import external as ex
 import matplotlib.pyplot as pyplot
-import support.mnist as mnist
+import helper.mnist as mnist
 import pickle
 pl = reload(pl)
 ex = reload(ex)

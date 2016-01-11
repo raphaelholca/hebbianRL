@@ -13,9 +13,9 @@ if 'Documents' in os.getcwd():
 import numpy as np
 import pickle
 import time
-import support.hebbianRL as rl
-import support.external as ex
-import support.plots as pl
+import helper.hebbianRL as rl
+import helper.external as ex
+import helper.plots as pl
 
 rl = reload(rl)
 ex = reload(ex)

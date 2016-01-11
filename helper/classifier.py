@@ -2,12 +2,11 @@
 
 import numpy as np
 import matplotlib.pyplot as pyplot
-import support.mnist as mnist
-import support.external as ex
-import support.plots as pl
-import support.bayesian_decoder as bc
+import helper.mnist as mnist
+import helper.external as ex
+import helper.plots as pl
+import helper.bayesian_decoder as bc
 import pickle
-import re
 from sklearn.svm import SVC
 
 ex = reload(ex)
@@ -168,7 +167,7 @@ def bayesian(net, W_in_save, images, labels, images_test, labels_test, save_data
 	sorter = idx.argsort()
 	rActions_uni = rActions_uni[sorter]
 	labels_print = ex.actionVal2labels(rActions_uni)
-	for i_l, l in enumerate(labels_print): labels_print[i_l] = re.sub("[^0-9 ]", "", str(l))
+	for i_l, l in enumerate(labels_print): labels_print[i_l] = l.replace('[^0-9 ]', '')
 	labels_print = np.array(labels_print)
 	labels_print[rActions_uni=='z'] = 'z'
 
