@@ -49,7 +49,7 @@ def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_da
 		if SVM:
 			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r].T),2)
 		else:
-			mostActiv = np.argmax(ex.propL1(images, W[r]),1)
+			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
 			for n in range(nNeurons):
 				RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 				RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
@@ -162,7 +162,7 @@ def selectivity(W, RFproba, images, labels, classes):
 		W (numpy array) : weights from input to hidden neurons
 		RFproba (numpy array) : 
 	"""
-	acti = ex.propL1(images, W, SM=False)
+	acti = ex.propagate_layerwise(images, W, SM=False)
 	nNeurons = np.size(acti,1)
 	nClasses = len(classes)
 	best_neuron = np.argmax(acti, 1)

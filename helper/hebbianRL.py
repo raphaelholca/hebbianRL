@@ -5,8 +5,6 @@ Date: 23/10/2014
 This function trains a hebbian neural network to learn a representation from the MNIST dataset. It makes use of a reward/relevance signal that increases the learning rate when the network makes a correct state-action pair selection.
 """
 
-# from progressbar import ProgressBar
-from inspect import isfunction
 import numpy as np
 import matplotlib.pyplot as pyplot
 import helper.external as ex
@@ -15,10 +13,7 @@ import helper.classifier as cl
 import helper.assess_network as an
 import helper.grating as gr
 import helper.bayesian_decoder as bc
-import sys
-import time
 import pickle
-import warnings
 
 ex = reload(ex)
 pl = reload(pl)
@@ -107,8 +102,8 @@ class Network:
 		self.W_hid_save = {}
 		self.W_out_save = {}
 		self.perf_save = {}
-		self._train_class_layer = False if self.classifier=='bayesian' else True
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
+		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
 
 		""" training the network """
@@ -128,7 +123,6 @@ class Network:
 				self._init_weights_random()
 
 			W_in_since_update = np.copy(self.hid_W)
-			dopa_save = np.array([])
 			perf_epi = []
 
 			for e in range(self.n_epi_tot):
@@ -156,56 +150,30 @@ class Network:
 
 					#initialize batch variables
 					dopa_release = np.ones(self.n_batch)
-					dW_hid = 0.
-					dW_out = 0.
-					disinhib_Hid = np.ones(self.n_batch)
-					disinhib_Act = np.zeros(self.n_batch)
+					hid_dW = 0.
+					out_dW = 0.
+					dopa_hid = np.ones(self.n_batch)
+					dopa_out = np.zeros(self.n_batch)
 					
 					#compute activation of hidden and classification neurons
-					out_greedy, out_chosen = self._propagate(b_images, e)
-
-					#compute reward
-					reward = ex.reward_delivery(b_labels, out_chosen)
+					out_greedy, out_explore = self._propagate(b_images, e)
 
 					#determine predicted reward
 					if self.classifier!='bayesian':
-						predicted_reward = ex.reward_prediction(out_greedy, out_chosen)
+						predicted_reward = ex.reward_prediction(out_greedy, out_explore)
 					elif self.classifier=='bayesian' and e >= self.n_epi_crit:
-						predicted_reward = ex.reward_prediction(out_greedy, out_chosen, posterior)
+						predicted_reward = ex.reward_prediction(out_greedy, out_explore, posterior)
 
-					#compute dopa signal and disinhibition based on training period
-					if e < self.n_epi_crit and self._train_class_layer:
-						""" critical period; trains class layer """
-						# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-						# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-						dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
+					#compute reward
+					reward = ex.reward_delivery(b_labels, out_explore)
 
-						disinhib_Hid = np.ones(self.n_batch)
-						disinhib_Act = dopa_release
-
-					elif e >= self.n_epi_crit: 
-						""" Dopa - perceptual learning """
-						dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
-
-						disinhib_Hid = dopa_release
-						# disinhib_Act = ex.compute_dopa(out_greedy, out_chosen, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
-						disinhib_Act = np.zeros(self.n_batch) #no learning in L2 during perc_dopa.
-						dopa_save = np.append(dopa_save, dopa_release)
+					#compute dopa signal
+					dopa_hid, dopa_out = self._dopa_release(e, predicted_reward, reward)
 						
 					#compute weight updates
-					dW_hid = ex.learningStep(b_images, self.hid_neurons, self.hid_W, lr=self.lr, disinhib=disinhib_Hid)
-					if self._train_class_layer: dW_out = ex.learningStep(self.hid_neurons, self.out_neurons, self.out_W, lr=self.lr*1e-4, disinhib=disinhib_Act)
-
-					#update weights
-					if e<self.n_epi_crit or not self.lim_weights:
-						self.hid_W += dW_hid
-					elif e>=self.n_epi_crit: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
-						mask = np.logical_and(np.sum(self.hid_W+dW_hid,0)<=940.801, np.min(self.hid_W+dW_hid,0)>0.2)
-						self.hid_W[:,mask] += dW_hid[:,mask]
-					if self._train_class_layer: self.out_W += dW_out
-
-					self.hid_W = np.clip(self.hid_W, 1e-10, np.inf)
-					if self._train_class_layer: self.out_W = np.clip(self.out_W, 1e-10, np.inf)
+					hid_W = self._learning_step(b_images, self.hid_neurons, self.hid_W, lr=self.lr, disinhib=dopa_hid)
+					if self._train_class_layer: 
+						out_W = self._learning_step(self.hid_neurons, self.out_neurons, self.out_W, lr=self.lr*1e-4, disinhib=dopa_out)
 
 				""" end of mini-batch """
 
@@ -344,46 +312,116 @@ class Network:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
 
 	def _propagate(self, b_images, e):
+		if self.classifier == 'bayesian':
+			out_greedy, out_explore = self._propagate_bayesian(b_images, e)
+		else:
+			out_greedy, out_explore = self._propagate_neural(b_images, e)
+
+		return out_greedy, out_explore
+
+	def _propagate_neural(self, b_images, e):
 		#compute activation of hidden neurons
 		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
-		#compute greedy activation of class neurons or train bayesian decoder
-		if self._train_class_layer: 
-			self.out_neurons = ex.propagate_layerwise(ex.softmax(self.hid_neurons, t=self.t), self.out_W, SM=False)
-			out_greedy = self.classes[np.argmax(self.out_neurons,1)]
-		elif e >= self.n_epi_crit:
-			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
-			out_greedy = self.classes[np.argmax(posterior,1)]
+		#compute activation of class neurons in greedy case
+		self.out_neurons = ex.propagate_layerwise(ex.softmax(self.hid_neurons, t=self.t), self.out_W, SM=False)
+		out_greedy = self.classes[np.argmax(self.out_neurons,1)]
 
-		#add noise to activation of hidden neurons and compute lateral inhibition
+		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and e >= self.n_epi_crit:
 			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
-			if self._train_class_layer:
-				self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
+			self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
 		else:
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 
-		if self._train_class_layer:
-			#adds noise in out_W neurons
-			if e < self.n_epi_crit:
-				self.out_neurons += np.random.normal(0, 4.0, np.shape(self.out_neurons))
-			self.out_neurons = ex.softmax(self.out_neurons, t=self.t)
-			#take action			
-			out_chosen = self.classes[np.argmax(self.out_neurons,1)]	
-		elif e >= self.n_epi_crit:
+		#adds noise in out_W neurons
+		if e < self.n_epi_crit:
+			self.out_neurons += np.random.normal(0, 4.0, np.shape(self.out_neurons))
+		
+		#compute activation of class neurons in explorative case
+		self.out_neurons = ex.softmax(self.out_neurons, t=self.t)
+		out_explore = self.classes[np.argmax(self.out_neurons,1)]	
+
+		return out_greedy, out_explore
+
+	def _propagate_bayesian(self, b_images, e):
+		#compute activation of hidden neurons
+		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
+		
+		#compute posterior of the bayesian decoder in greedy case
+		if e >= self.n_epi_crit:
+			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
+			out_greedy = self.classes[np.argmax(posterior,1)]
+
+		#add noise to activation of hidden neurons (exploration)
+		if self.exploration and e >= self.n_epi_crit:
+			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
+			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+		else:
+			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+
+		#compute posterior of the bayesian decoder in explorative case
+		if e >= self.n_epi_crit:
 			posterior_noise = bc.bayesian_decoder(self.hid_neurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
-			out_chosen = self.classes[np.argmax(posterior_noise,1)]
+			out_explore = self.classes[np.argmax(posterior_noise,1)]
 
-		return out_greedy, out_chosen
+		return out_greedy, out_explore
 
+	def _dopa_release(self, e, predicted_reward, reward):
+		if e < self.n_epi_crit and self._train_class_layer:
+			""" critical period; train class layer """
+			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
+			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+			dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
 
+			dopa_hid = np.ones(self.n_batch)
+			dopa_out = dopa_release
 
+		elif e >= self.n_epi_crit: 
+			""" Dopa - perceptual learning """
+			dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
 
+			dopa_hid = dopa_release
+			# dopa_out = ex.compute_dopa(out_greedy, out_explore, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
+			dopa_out = np.zeros(self.n_batch)
 
+		return dopa_hid, dopa_out
 
+	def _learning_step(self, preNeurons, postNeurons, W, lr, disinhib=None, numba=True):
+		"""
+		One learning step for the hebbian network
 
+		Args:
+			preNeurons (numpy array): activation of the pre-synaptic neurons
+			postNeurons (numpy array): activation of the post-synaptic neurons
+			W (numpy array): weight matrix
+			lr (float): learning rate
+			disinhib (numpy array, optional): learning rate increase for the effect of acetylcholine and dopamine
 
+		returns:
+			numpy array: change in weight; must be added to the weight matrix W
+		"""
+		if disinhib is None or disinhib.shape[0]!=postNeurons.shape[0]: disinhib=np.ones(postNeurons.shape[0])
+
+		if numba:
+			postNeurons_lr = ex.disinhibition(postNeurons, lr, disinhib, np.zeros_like(postNeurons))
+			dot = np.dot(preNeurons.T, postNeurons_lr)
+			dW = ex.regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
+		else:
+			postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
+			dW = (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
+
+		#update weights		
+		if self.lim_weights and e>=self.n_epi_crit: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
+			mask = np.logical_and(np.sum(self.hid_W+hid_dW,0)<=940.801, np.min(self.hid_W+hid_dW,0)>0.2)
+		else:
+			mask = np.ones(np.size(W,1), dtype=bool)
+
+		W[:,mask] += dW[:,mask]
+		W = np.clip(W, 1e-10, np.inf)
+		
+		return W
 
 
 

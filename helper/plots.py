@@ -159,7 +159,7 @@ def plot_noise_proba(net, W_in, images):
 
 	n_hid_neurons = np.size(W_in,1)
 
-	hidNeurons = ex.propL1(images, W_in, SM=False)
+	hidNeurons = ex.propagate_layerwise(images, W_in, SM=False)
 	hidNeurons = np.sort(hidNeurons,1)[:, ::-1]
 	hidNeurons_noise = hidNeurons + np.random.normal(0, net.noise_std, np.shape(hidNeurons))
 

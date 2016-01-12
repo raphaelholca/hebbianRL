@@ -222,35 +222,10 @@ def propagate_layerwise(bInput, W_in, SM=True, t=1.):
 	if SM: hidNeurons = softmax(hidNeurons, t=t)
 	return hidNeurons
 
-def learningStep(preNeurons, postNeurons, W, lr, disinhib=None, numba=True):
-	"""
-	One learning step for the hebbian network
-
-	Args:
-		preNeurons (numpy array): activation of the pre-synaptic neurons
-		postNeurons (numpy array): activation of the post-synaptic neurons
-		W (numpy array): weight matrix
-		lr (float): learning rate
-		disinhib (numpy array, optional): learning rate increase for the effect of acetylcholine and dopamine
-
-	returns:
-		numpy array: change in weight; must be added to the weight matrix W
-	"""
-	if disinhib is None or disinhib.shape[0]!=postNeurons.shape[0]: disinhib=np.ones(postNeurons.shape[0])
-
-	if numba:
-		postNeurons_lr = disinhibition(postNeurons, lr, disinhib, np.zeros_like(postNeurons))
-		dot = np.dot(preNeurons.T, postNeurons_lr)
-		return regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
-	else:
-		postNeurons_lr = postNeurons * (lr * disinhib[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
-	return (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
-
-
 @numba.njit
 def disinhibition(postNeurons, lr, disinhib, postNeurons_lr):
 	"""
-	support function for numba implementation of learningStep() 
+	support function for numba implementation of learning_step() 
 	"""
 	for b in range(postNeurons.shape[0]):
 		for pn in range(postNeurons.shape[1]):
@@ -261,7 +236,7 @@ def disinhibition(postNeurons, lr, disinhib, postNeurons_lr):
 @numba.njit
 def regularization(dot, postNeurons, W, sum_ar):
 	"""
-	support function for numba implementation of learningStep() 
+	support function for numba implementation of learning_step() 
 	"""
 	for j in range(postNeurons.shape[1]):
 		for i in range(postNeurons.shape[0]):

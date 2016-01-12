@@ -38,8 +38,8 @@ def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, save_dat
 		W_act = W_act_save[iw]
 
 		""" testing of the classifier """
-		hidNeurons = ex.propL1(images_test, W_in, t=net.t)
-		actNeurons = ex.propL1(hidNeurons, W_act)
+		hidNeurons = ex.propagate_layerwise(images_test, W_in, t=net.t)
+		actNeurons = ex.propagate_layerwise(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
 		classResults = classes[classIdx]
 		
@@ -91,8 +91,8 @@ def SVM(net, W_in_save, images_train, labels_train, classes, nDimStates, train_d
 		""" load weight matrix and transform images into representation """
 		print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
-		hidNeurons_train = ex.propL1(images_train, W_in, SM=SM)
-		hidNeurons_test = ex.propL1(images_test, W_in, SM=SM)
+		hidNeurons_train = ex.propagate_layerwise(images_train, W_in, SM=SM)
+		hidNeurons_test = ex.propagate_layerwise(images_test, W_in, SM=SM)
 
 		""" train SVM """
 		svm_repres = SVC(kernel="rbf", C=1000.0, gamma=0.25) #kernel="linear" #C=1000000000.0 #C=1000.0
@@ -133,7 +133,7 @@ def neuronClass(net, W_in_save, classes, RFproba, nDimStates, images_test, label
 		if verbose: print 'run: ' + str(int(iw)+1)
 		W_in = W_in_save[iw][0:nDimStates,:]
 		neuronC = np.argmax(RFproba[i],1) #class of each neuron
-		argmaxActiv = np.argmax(ex.propL1(images_test, W_in, SM=False),1)
+		argmaxActiv = np.argmax(ex.propagate_layerwise(images_test, W_in, SM=False),1)
 		classResults = neuronC[argmaxActiv]
 
 		""" compute classification performance """
@@ -179,7 +179,7 @@ def bayesian(net, W_in_save, images, labels, images_test, labels_test, save_data
 		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in)
 
 		""" testing of the classifier """
-		posterior = bc.bayesian_decoder(ex.propL1(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+		posterior = bc.bayesian_decoder(ex.propagate_layerwise(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
 		classIdx = np.argmax(posterior, 1)
 		classResults = rActions[classIdx]
 		
