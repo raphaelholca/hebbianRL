@@ -5,7 +5,7 @@ from sklearn.neighbors import KNeighborsRegressor
 
 ex = reload(ex)
 
-def pdf_estimate(images, labels, W, kwargs):
+def pdf_estimate(images, labels, W, method, t):
 	"""
 	Uses kernel density extimation to the compute the pdf of neural activation data.
 
@@ -13,7 +13,8 @@ def pdf_estimate(images, labels, W, kwargs):
 		images (numpy array): input images
 		labels (numpy array): input labels associated with the neuron activations
 		W (numpy array): weights of the hidden neurons
-		kwargs (dict): parameters of the model
+		method (str): method to approximate the pdf
+		t (float): temperature of the softmax when then network was trained
 
 	returns:
 		(list of regressor or kde objects): list of marginal pdfs
@@ -24,10 +25,9 @@ def pdf_estimate(images, labels, W, kwargs):
 	classes = np.unique(labels)
 	n_classes = len(np.unique(labels))
 	n_trials = len(labels)
-	method = kwargs['pdf_method']
 
 	""" computes the activation of the hidden neurons for the given input images """
-	activ = ex.propL1(images, W, t=kwargs['t_hid'])
+	activ = ex.propagate_layerwise(images, W, t=t)
 
 	n_subsample = 1000 #number of data points to use to compute the pdf in the 'subsample' and 'fit' methods
 	subsample_idx = np.random.choice(n_trials, size=n_subsample, replace=False)

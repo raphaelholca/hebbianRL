@@ -41,7 +41,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					pdf_method 		= 'fit',
 					batch_size 		= 20,
 					protocol		= 'digit',
-					classifier		= 'actionNeurons',
+					classifier		= 'neural',
 					init_file		= None,					#'digit_479_16'
 					test_each_epi	= True,
 					SVM				= False,
@@ -73,7 +73,7 @@ tic = time.time()
 
 net.train(images, labels, images_task, labels_task)
 
-allCMs, allPerf = net.test(images_test, labels_test)
+allCMs, allPerf = net.test(images_test, labels_test, images, labels)
 
 net.assess(images, labels)
 

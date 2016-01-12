@@ -13,186 +13,79 @@ ex = reload(ex)
 pl = reload(pl)
 bc = reload(bc)
 
-def actionNeurons(net, W_in_save, W_act_save, images_test, labels_test, save_data, verbose, classes):
+def neural(net, images, labels):
 	"""
 	evaluates the quality of a representation using the action neurons of the network.
 
 	Args:
-		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
-		W_act_save (numpy array) : weight matrix from hidden to classification layer; shape = (hidden x class)
-		images_test (numpy array): test images
-		labels_test (numpy array): test labels
-		save_data (bool, optional) : whether save data
-		verbose (bool, optional) : whether to display text ouput
+		images (numpy array): test images
+		labels (numpy array): test labels
 	"""
 
-	if verbose: print "\nassessing performance..."
+	if net.verbose: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
 	allPerf = []
 
-	for iw in sorted(W_in_save.keys()):
-		if verbose: print 'run: ' + str(int(iw)+1)
-		W_in = W_in_save[iw]
-		W_act = W_act_save[iw]
+	for iw in sorted(net.hid_W_save.keys()):
+		if net.verbose: print 'run: ' + str(int(iw)+1)
+		W_in = net.hid_W_save[iw]
+		W_act = net.out_W_save[iw]
 
 		""" testing of the classifier """
-		hidNeurons = ex.propagate_layerwise(images_test, W_in, t=net.t)
+		hidNeurons = ex.propagate_layerwise(images, W_in, t=net.t)
 		actNeurons = ex.propagate_layerwise(hidNeurons, W_act)
 		classIdx = np.argmax(actNeurons, 1)
-		classResults = classes[classIdx]
+		classResults = net.classes[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==labels_test))
-		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, labels_test, classes)
-		# CM = CM[sorter,:]
-		# CM = CM[:,sorter]
+		correct_classif = float(np.sum(classResults==labels))
+		allPerf.append(correct_classif/len(labels))
+		CM = ex.computeCM(classResults, labels, net.classes)
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
+	print_save(allCMs, allPerf, net.classes, net.name, net.verbose, net.save_data)
 	return allCMs, allPerf
 
-def SVM(net, W_in_save, images_train, labels_train, classes, nDimStates, train_dataset, save_data, verbose, SM=True):
-	"""
-	evaluates the quality of a representation using an SVM. Trains an SVM on the images transformed into the representation, then assesses performance.
-
-	Args:
-		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
-		images_train (numpy array): training image of the MNIST dataset
-		labels_train (numpy array): training labels of the MNIST dataset
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		nDimStates (int) : number of dimensions of the states (size of images)
-		train_dataset (str): name of the dataset used for training
-		save_data (bool, optional) : whether save data
-		verbose (bool, optional) : whether to display text ouput
-		SM (bool, optional): whether to pass the activation throught the Softmax function
-	"""
-
-	if verbose: print "\nassessing performance..."
-
-	""" load and pre-process images """
-	if verbose: print 'assessing performance with SVM...'
-	if  train_dataset=='train': test_dataset='test'
-	else: test_dataset='train'
-	images_test, labels_test = mnist.read_images_from_mnist(classes=classes, dataset=test_dataset)
-	images_test = ex.normalize(images_test, A*nDimStates)
-	images_test, labels_test = ex.evenLabels(images_test, labels_test, classes)
-	images_train, labels_train = ex.shuffle([images_train, labels_train])
-
-	""" variable initialization """
-	allCMs = []
-	allPerf = []
-
-	""" train and test SVM for all runs """
-	for iw in sorted(W_in_save.keys()):
-		""" load weight matrix and transform images into representation """
-		print 'run: ' + str(int(iw)+1)
-		W_in = W_in_save[iw][0:nDimStates,:]
-		hidNeurons_train = ex.propagate_layerwise(images_train, W_in, SM=SM)
-		hidNeurons_test = ex.propagate_layerwise(images_test, W_in, SM=SM)
-
-		""" train SVM """
-		svm_repres = SVC(kernel="rbf", C=1000.0, gamma=0.25) #kernel="linear" #C=1000000000.0 #C=1000.0
-		svm_repres.fit(hidNeurons_train, labels_train)
-
-		""" test SVM """
-		classResults = svm_repres.predict(hidNeurons_test)
-		allPerf.append(float(np.sum(classResults==labels_test))/len(labels_test))
-		allCMs.append(ex.computeCM(classResults, labels_test, classes))
-
-	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
-	return allCMs, allPerf
-
-def neuronClass(net, W_in_save, classes, RFproba, nDimStates, images_test, labels_test, save_data, verbose):
-	"""
-	evaluates the quality of a representation using the class of the most activated neuron as the classification result
-
-	Args:
-		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-		RFproba (numpy array) : probability of that a RF belongs to a certain class (of the MNIST dataset)
-		nDimStates (int) : number of dimensions of the states (size of images)
-		A (int): normalization constant
-		save_data (bool, optional) : whether save data
-		verbose (bool, optional) : whether to display text ouput
-	"""
-
-	if verbose: print "\nassessing performance..."
-
-	""" variable initialization """
-	allCMs = []
-	allPerf = []
-
-	""" make image class prediction based on the class of most activated neuron """
-	for i, iw in enumerate(sorted(W_in_save.keys())):
-		""" load weight matrix and find most activated neuron """
-		if verbose: print 'run: ' + str(int(iw)+1)
-		W_in = W_in_save[iw][0:nDimStates,:]
-		neuronC = np.argmax(RFproba[i],1) #class of each neuron
-		argmaxActiv = np.argmax(ex.propagate_layerwise(images_test, W_in, SM=False),1)
-		classResults = neuronC[argmaxActiv]
-
-		""" compute classification performance """
-		allPerf.append(float(np.sum(classResults==labels_test))/len(labels_test))
-		allCMs.append(ex.computeCM(classResults, labels_test, classes))
-
-	""" print and save performance measures """
-	print_save(allCMs, allPerf, classes, net.name, verbose, save_data)
-	return allCMs, allPerf
-
-def bayesian(net, W_in_save, images, labels, images_test, labels_test, save_data=None, verbose=None):
+def bayesian(net, images, labels, images_test, labels_test):
 	"""
 	evaluates the performance of the newtork using a bayesian decoder
 
 	Args:
-		W_in_save (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
 		images (numpy array): train images
 		labels (numpy array): train labels
 		images_test (numpy array): test images
 		labels_test (numpy array): test labels
 	"""
 
-	if verbose: print "\nassessing performance..."
+	if net.verbose: print "\nassessing performance..."
 
 	""" variable initialization """
 	allCMs = []
 	allPerf = []
 
-	""" process labels for plot """
-	rActions_uni, idx = np.unique(rActions, return_index=True)
-	sorter = idx.argsort()
-	rActions_uni = rActions_uni[sorter]
-	labels_print = ex.actionVal2labels(rActions_uni)
-	for i_l, l in enumerate(labels_print): labels_print[i_l] = l.replace('[^0-9 ]', '')
-	labels_print = np.array(labels_print)
-	labels_print[rActions_uni=='z'] = 'z'
-
-	for iw in sorted(W_in_save.keys()):
-		if verbose: print 'run: ' + str(int(iw)+1)
-		W_in = W_in_save[iw]
+	for iw in sorted(net.hid_W_save.keys()):
+		if net.verbose: print 'run: ' + str(int(iw)+1)
+		W_in = net.hid_W_save[iw]
 
 		""" compute pdf """
-		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in)
+		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in, net.pdf_method, net.t)
 
 		""" testing of the classifier """
-		posterior = bc.bayesian_decoder(ex.propagate_layerwise(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, pdf_method)
+		posterior = bc.bayesian_decoder(ex.propagate_layerwise(images_test, W_in, t=net.t), pdf_marginals, pdf_evidence, pdf_labels, net.pdf_method)
 		classIdx = np.argmax(posterior, 1)
-		classResults = rActions[classIdx]
+		classResults = net.classes[classIdx]
 		
 		""" compute classification performance """
-		correct_classif = float(np.sum(classResults==ex.labels2actionVal(labels_test)))
+		correct_classif = float(np.sum(classResults==labels_test))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, ex.labels2actionVal(labels_test), np.unique(rActions))
-		CM = CM[sorter,:]
-		CM = CM[:,sorter]
+		CM = ex.computeCM(classResults, labels_test, net.classes)
 		allCMs.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, rActions_uni, net.name, verbose, save_data)
+	print_save(allCMs, allPerf, net.classes, net.name, net.verbose, net.save_data)
 	return allCMs, allPerf
 
 def print_save(allCMs, allPerf, classes, name, verbose, save_data):

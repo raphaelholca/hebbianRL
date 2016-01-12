@@ -24,37 +24,37 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='actionNeurons', init_file=None, test_each_epi=False, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
+	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
 
 		"""
 		Sets network parameters 
 
 			Args:
 				dopa_values (dict): values of dopamine release for different reward prediction error scenarios
-				name (str, optional): name of the folder where to save results. Default='net'
-				n_run (int, optional): number of runs. Default=1
-				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default=10
-				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default=10
-				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default=0.1
-				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default=1.2
-				n_hid_neurons (int, optional): number of hidden neurons. Default=49
-				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default=False
-				lr (float, optiona): learning rate. Default=0.01
-				noise_std (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn. Default=0.2
-				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default=True
-				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default='fit'
-				batch_size (int, optional): mini-batch size. Default=20
-				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default='digit'
-				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'actionNeurons', 'SVM', 'neuronClass', 'bayesian'. Default='actionNeurons'
-				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default=None
-				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default=False
-				SVM (bool, optional): whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron. Default=False
-				save_data (bool, optional): whether to save data to disk. Default=True
-				verbose	(bool, optional): whether to create text output. Default=True
-				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default=True
-				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default=None
-				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default=None
-				seed (int, optional): seed of the random number generator. Default=None
+				name (str, optional): name of the folder where to save results. Default: 'net'
+				n_run (int, optional): number of runs. Default: 1
+				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 10
+				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 10
+				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
+				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default: 1.2
+				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
+				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
+				lr (float, optiona): learning rate. Default: 0.01
+				noise_std (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn. Default: 0.2
+				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
+				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
+				batch_size (int, optional): mini-batch size. Default: 20
+				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
+				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
+				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default: None
+				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
+				SVM (bool, optional): whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron. Default: False
+				save_data (bool, optional): whether to save data to disk. Default: True
+				verbose	(bool, optional): whether to create text output. Default: True
+				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
+				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
+				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
+				seed (int, optional): seed of the random number generator. Default: None
 		"""
 		
 		self.dopa_values 	= dopa_values
@@ -110,8 +110,8 @@ class Network:
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
-		self.W_hid_save = {}
-		self.W_out_save = {}
+		self.hid_W_save = {}
+		self.out_W_save = {}
 		self.perf_save = {}
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
 		self._train_class_layer = False if self.classifier=='bayesian' else True
@@ -149,7 +149,7 @@ class Network:
 				for b in range(n_batches):
 					
 					#update pdf for bayesian inference
-					self._update_pdf(e)
+					self._update_pdf(e, b, rnd_images, rnd_labels)
 				
 					#select training images for the current batch
 					b_images = rnd_images[b*self.batch_size:(b+1)*self.batch_size,:]
@@ -182,37 +182,38 @@ class Network:
 				if self.verbose: print 'train performance: ' + str(np.round(perf_train[-1]*100,1)) + '%'
 
 			#save data
-			self.W_hid_save[str(r).zfill(3)] = np.copy(self.hid_W)
-			self.W_out_save[str(r).zfill(3)] = np.copy(self.out_W)
+			self.hid_W_save[str(r).zfill(3)] = np.copy(self.hid_W)
+			self.out_W_save[str(r).zfill(3)] = np.copy(self.out_W)
 			self.perf_save[str(r).zfill(3)] = np.copy(perf_train)
 
 		if self.verbose and self._train_class_layer: print 'correct out weight assignment:\n' + str(correct_out_W) + ' of ' + str(self.n_hid_neurons)
 
-	def test(self, images, labels):
+	def test(self, images_test, labels_test, images_train=None, labels_train=None):
 		""" 
 		Test Hebbian convolutional neural network
 
 			Args: 
-				images (2D numpy array): images to test the Network on.
-				labels (1D numpy array): labels of the testing images.
+				images_test (2D numpy array): images to test the Network on.
+				labels_test (1D numpy array): labels of the testing images.
+				images_train (2D numpy array): images the Network was trained on (used to compute posterior for bayesian inference).
+				labels_train (1D numpy array): labels of the training images.
 
 			returns:
 				(numpy array): confusion matrix of the network for all runs
 				(numpy array): performance of the network for all runs
 		"""
 
-		self.classes = np.sort(np.unique(labels))
-		if self.classifier=='actionNeurons':	allCMs, allPerf = cl.actionNeurons(self, self.W_hid_save, self.W_out_save, images, labels, self.save_data, self.verbose, self.classes)
-		if self.classifier=='self.SVM': 		allCMs, allPerf = cl.self.SVM(self, self.name, self.W_hid_save, images, labels, self.classes, self.n_inp_neurons, dataset, self.save_data, self.verbose)
-		if self.classifier=='neuronClass':		allCMs, allPerf = cl.neuronClass(self, self.name, self.W_hid_save, self.classes, RFproba, self.n_inp_neurons, images, labels, self.save_data, self.verbose)
-		if self.classifier=='bayesian':			allCMs, allPerf = cl.bayesian(self, self.W_hid_save, images, labels, images_test, labels_test) ##
+		if self.classifier=='neural':
+			allCMs, allPerf = cl.neural(self, images_test, labels_test)
+		elif self.classifier=='bayesian':
+			allCMs, allPerf = cl.bayesian(self, images_train, labels_train, images_test, labels_test)
 
 		return allCMs, allPerf
 
 	def assess(self, images, labels):
 		""" compute histogram of RF self.classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = an.hist(self, self.W_hid_save, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
+			RFproba, RFclass, _ = an.hist(self, self.hid_W_save, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
 
 		elif self.protocol=='gabor':
 			n_bins = 10
@@ -222,19 +223,19 @@ class Network:
 				mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
 				orientations_bin[mask_bin] = i
 
-			pref_ori = gr.preferred_orientations(self.W_hid_save)
+			pref_ori = gr.preferred_orientations(self.hid_W_save)
 			RFproba = np.zeros((self.n_run, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 			for r in pref_ori.keys():
 				RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 				RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
-			_, _, _ = hist(self, self.W_hid_save, range(n_bins), images, orientations_bin, self.protocol, n_bins=n_bins, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
+			_, _, _ = hist(self, self.hid_W_save, range(n_bins), images, orientations_bin, self.protocol, n_bins=n_bins, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
 
 		""" compute correct weight assignment in the ouput layer """
 		if self._train_class_layer:
 			correct_out_W = 0.
 			notsame = {}
-			for k in self.W_out_save.keys():
-				same = np.argmax(RFproba[int(k)],1) == self.classes[np.argmax(self.W_out_save[k],1)]
+			for k in self.out_W_save.keys():
+				same = np.argmax(RFproba[int(k)],1) == self.classes[np.argmax(self.out_W_save[k],1)]
 				notsame[k] = np.argwhere(~same)
 				correct_out_W += np.sum(same)
 			correct_out_W/=len(RFproba)
@@ -244,21 +245,21 @@ class Network:
 
 		""" plot weights """
 		if self.save_data:
-			if self.show_W_act: W_act_pass=self.W_out_save
+			if self.show_W_act: W_act_pass=self.out_W_save
 			else: W_act_pass=None
 			if self.protocol=='digit':
-				an.plot(self, self.W_hid_save, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, notsame=notsame, verbose=self.verbose)
+				an.plot(self, self.hid_W_save, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, notsame=notsame, verbose=self.verbose)
 				slopes = {}
 			elif self.protocol=='gabor':
-				an.plot(self, self.W_hid_save, RFproba, W_act=W_act_pass, notsame=notsame, verbose=self.verbose)
-				curves = gr.tuning_curves(self.W_hid_save, method='no_softmax', plot=True) #basic, no_softmax, with_noise
-				slopes = gr.slopes(self.W_hid_save, curves, pref_ori)
+				an.plot(self, self.hid_W_save, RFproba, W_act=W_act_pass, notsame=notsame, verbose=self.verbose)
+				curves = gr.tuning_curves(self.hid_W_save, method='no_softmax', plot=True) #basic, no_softmax, with_noise
+				slopes = gr.slopes(self.hid_W_save, curves, pref_ori)
 			if self.test_each_epi:
 				pl.perf_progress(self, self.perf_save)
 
 	def save(self):
 		"""" save data """
-		if self.save_data: ex.save_data(self, self.W_hid_save, self.W_out_save, self.perf_save)
+		if self.save_data: ex.save_data(self, self.hid_W_save, self.out_W_save, self.perf_save)
 
 	def _init_weights(self):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
@@ -287,20 +288,20 @@ class Network:
 	
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
-		if self.classifier not in ['neuronClass', 'SVM', 'actionNeurons', 'bayesian']:
-			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neuronClass\', \'SVM\', \'actionNeurons\' and \'bayesian\'.')
+		if self.classifier not in ['neural', 'bayesian']:
+			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural\' and \'bayesian\'.')
 		if self.protocol not in ['digit', 'gabor']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
 
-	def _update_pdf(self, e):
+	def _update_pdf(self, e, b, rnd_images, rnd_labels):
 		""" re-compute the pdf for bayesian inference if any weights have changed more than a threshold """
 		if self.classifier=='bayesian' and (e >= self.n_epi_crit or self.test_each_epi):
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
 			if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
 				self._W_in_since_update = np.copy(self.hid_W)
-				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W)
+				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
 
 	def _propagate(self, b_images, e):
 		if self.classifier == 'bayesian':
@@ -342,8 +343,11 @@ class Network:
 		
 		#compute posterior of the bayesian decoder in greedy case
 		if e >= self.n_epi_crit:
-			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, pdf_evidence, self._pdf_labels, self.pdf_method)
+			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
 			out_greedy = self.classes[np.argmax(posterior,1)]
+		else:
+			posterior = None
+			out_greedy = None
 
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and e >= self.n_epi_crit:
@@ -354,8 +358,10 @@ class Network:
 
 		#compute posterior of the bayesian decoder in explorative case
 		if e >= self.n_epi_crit:
-			posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, pdf_evidence, self._pdf_labels, self.pdf_method)
+			posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
 			out_explore = self.classes[np.argmax(posterior_noise,1)]
+		else: 
+			out_explore = None
 
 		return out_greedy, out_explore, posterior
 
@@ -376,6 +382,9 @@ class Network:
 			dopa_hid = dopa_release
 			# dopa_out = ex.compute_dopa(out_greedy, out_explore, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
 			dopa_out = np.zeros(self.batch_size)
+		else:
+			dopa_hid = None
+			dopa_out = None
 
 		return dopa_hid, dopa_out
 
