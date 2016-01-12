@@ -27,7 +27,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 										'dNeut' 	: -0.1,
 										'dLow' 		: -2.0,
 										},
-					name 			= 'test',
+					name 			= 'test_2',
 					n_run 			= 1,		
 					n_epi_crit		= 10,				
 					n_epi_dopa		= 10,				
@@ -39,7 +39,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					noise_std		= 0.2, 					#digit: 4.0 	; gabor: 0.2 (?)
 					exploration		= True,
 					pdf_method 		= 'fit',
-					n_batch 		= 20,
+					batch_size 		= 20,
 					protocol		= 'digit',
 					classifier		= 'actionNeurons',
 					init_file		= None,					#'digit_479_16'
@@ -71,12 +71,9 @@ images, labels, orientations, images_test, labels_test, orientations_test, image
 
 tic = time.time()
 
-net.train(	images, labels, orientations, 
-			images_test, labels_test, orientations_test, 
-			images_task, labels_task, orientations_task, 
-			)
+net.train(images, labels, images_task, labels_task)
 
-allCMs, allPerf, perc_correct_W_act = net.test(images_test, labels_test)
+allCMs, allPerf = net.test(images_test, labels_test)
 
 net.assess(images, labels)
 
