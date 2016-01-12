@@ -8,15 +8,14 @@ import matplotlib.pyplot as plt
 ex = reload(ex)
 
 """ initialize color maps """
-NUM_COLORS = 9
-my_blues = [plt.get_cmap('YlGnBu')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
-my_reds = [plt.get_cmap('YlOrRd')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
-cm_pastel = [plt.get_cmap('Paired')(1.*i/NUM_COLORS) for i in range(NUM_COLORS)]
+n_colors = 9
+my_blues = [plt.get_cmap('YlGnBu')(1.*i/n_colors) for i in range(n_colors)]
+my_reds = [plt.get_cmap('YlOrRd')(1.*i/n_colors) for i in range(n_colors)]
+cm_pastel = [plt.get_cmap('Paired')(1.*i/n_colors) for i in range(n_colors)]
 
-def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
-	""" 
-	plots of the weights, with superimposed colouring for target digit and L2 weights 
-	"""
+def plotRF(W, target=None, W_act=None, cmap='Greys', not_same=np.array([])):
+	""" plots of the weights, with superimposed colouring for target digit and out layer weights """
+	
 	#plot parameters
 	n_hid_neurons = np.size(W,1)
 	v = int(np.sqrt(n_hid_neurons))
@@ -40,7 +39,7 @@ def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
 			plt.imshow(target[i], cmap=cmap, vmin=0., vmax=3, extent=(0,im_size,0,im_size))
 		plt.imshow(np.reshape(W[:,i], (im_size,im_size)), interpolation='nearest', cmap=cmap_trans, extent=(0,im_size,0,im_size), vmin=Wmin)
 		if type(W_act)!=type(None):
-			if i in notsame:
+			if i in not_same:
 				plt.imshow([[0]], cmap='RdYlBu', vmin=0., vmax=3, extent=(im_size,im_size+2,0,im_size))
 			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(im_size,im_size+2,0,im_size))
 			plt.imshow([[0.]], interpolation='nearest', cmap='binary', alpha=0, extent=(0,im_size+2,0,im_size))
@@ -54,10 +53,7 @@ def plotRF(W, target=None, W_act=None, cmap='Greys', notsame=np.array([])):
 	return fig
 
 def plotCM(confusMatrix, classes):
-	""" 
-	plots the confusion matrix, with color on the diagonal, and with the alphas indicating the magnitude of the
-	error 
-	"""
+	""" plots the confusion matrix, with color on the diagonal, and with the alphas indicating the magnitude of the error """
 
 	#create a transparent colormap
 	nClasses = len(classes)
@@ -101,9 +97,8 @@ def plotCM(confusMatrix, classes):
 	return fig
 
 def plotHist(h, bins, h_err=None):
-	"""
-	plots the histogram of receptive field class distribution
-	"""
+	""" plots the histogram of receptive field class distribution """
+
 	fig, ax = plt.subplots(figsize=(1+0.5*len(h),3))
 	Xs = np.arange(len(h))
 	y_max = np.ceil(np.sum(h))

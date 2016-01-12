@@ -110,9 +110,9 @@ class Network:
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
-		self.hid_W_save = {}
-		self.out_W_save = {}
-		self.perf_save = {}
+		self.hid_W_runs = {}
+		self.out_W_runs = {}
+		self.perf_runs = {}
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
@@ -182,11 +182,13 @@ class Network:
 				if self.verbose: print 'train performance: ' + str(np.round(perf_train[-1]*100,1)) + '%'
 
 			#save data
-			self.hid_W_save[str(r).zfill(3)] = np.copy(self.hid_W)
-			self.out_W_save[str(r).zfill(3)] = np.copy(self.out_W)
-			self.perf_save[str(r).zfill(3)] = np.copy(perf_train)
+			self.hid_W_runs[str(r).zfill(3)] = np.copy(self.hid_W)
+			self.out_W_runs[str(r).zfill(3)] = np.copy(self.out_W)
+			self.perf_runs[str(r).zfill(3)] = np.copy(perf_train)
 
 		if self.verbose and self._train_class_layer: print 'correct out weight assignment:\n' + str(correct_out_W) + ' of ' + str(self.n_hid_neurons)
+
+		return perf_train[-1]
 
 	def test(self, images_test, labels_test, images_train=None, labels_train=None):
 		""" 
@@ -211,55 +213,42 @@ class Network:
 		return allCMs, allPerf
 
 	def assess(self, images, labels):
-		""" compute histogram of RF self.classes """
+		""" compute histogram of RF classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = an.hist(self, self.hid_W_save, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
-
+			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
 		elif self.protocol=='gabor':
-			n_bins = 10
-			bin_size = 180./n_bins
-			orientations_bin = np.zeros(len(orientations), dtype=int)
-			for i in range(n_bins): 
-				mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
-				orientations_bin[mask_bin] = i
-
-			pref_ori = gr.preferred_orientations(self.hid_W_save)
-			RFproba = np.zeros((self.n_run, self.n_hid_neurons, self.n_out_neurons), dtype=int)
-			for r in pref_ori.keys():
-				RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
-				RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
-			_, _, _ = hist(self, self.hid_W_save, range(n_bins), images, orientations_bin, self.protocol, n_bins=n_bins, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
+			RFproba = an.hist_gabor(orientations, 10, self.name, self.hid_W_runs, images, self.protocol, self.save_data, self.verbose)
 
 		""" compute correct weight assignment in the ouput layer """
 		if self._train_class_layer:
 			correct_out_W = 0.
-			notsame = {}
-			for k in self.out_W_save.keys():
-				same = np.argmax(RFproba[int(k)],1) == self.classes[np.argmax(self.out_W_save[k],1)]
-				notsame[k] = np.argwhere(~same)
+			not_same = {}
+			for k in self.out_W_runs.keys():
+				same = np.argmax(RFproba[int(k)],1) == self.classes[np.argmax(self.out_W_runs[k],1)]
+				not_same[k] = np.argwhere(~same)
 				correct_out_W += np.sum(same)
 			correct_out_W/=len(RFproba)
 		else:
-			notsame = None
+			not_same = None
 			correct_out_W = 0.
 
 		""" plot weights """
 		if self.save_data:
-			if self.show_W_act: W_act_pass=self.out_W_save
+			if self.show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
 			if self.protocol=='digit':
-				an.plot(self, self.hid_W_save, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, notsame=notsame, verbose=self.verbose)
+				an.plot(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
 				slopes = {}
 			elif self.protocol=='gabor':
-				an.plot(self, self.hid_W_save, RFproba, W_act=W_act_pass, notsame=notsame, verbose=self.verbose)
-				curves = gr.tuning_curves(self.hid_W_save, method='no_softmax', plot=True) #basic, no_softmax, with_noise
-				slopes = gr.slopes(self.hid_W_save, curves, pref_ori)
+				an.plot(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
+				curves = gr.tuning_curves(self.hid_W_runs, method='no_softmax', plot=True)
+				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori)
 			if self.test_each_epi:
-				pl.perf_progress(self, self.perf_save)
+				pl.perf_progress(self, self.perf_runs)
 
 	def save(self):
 		"""" save data """
-		if self.save_data: ex.save_data(self, self.hid_W_save, self.out_W_save, self.perf_save)
+		if self.save_data: ex.save_data(self, self.hid_W_runs, self.out_W_runs, self.perf_runs)
 
 	def _init_weights(self):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
@@ -295,15 +284,16 @@ class Network:
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
 
-	def _update_pdf(self, e, b, rnd_images, rnd_labels):
+	def _update_pdf(self, e, b, rnd_images, rnd_labels, threshold=0.01):
 		""" re-compute the pdf for bayesian inference if any weights have changed more than a threshold """
 		if self.classifier=='bayesian' and (e >= self.n_epi_crit or self.test_each_epi):
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
-			if (W_mschange/940 > 0.01).any() or (e==0 and b==0): ## > 0.005 
+			if (W_mschange/940 > threshold).any() or (e==0 and b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
 				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
 
 	def _propagate(self, b_images, e):
+		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
 			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
 		else:
@@ -312,6 +302,7 @@ class Network:
 		return out_greedy, out_explore, posterior
 
 	def _propagate_neural(self, b_images, e):
+		""" propagate input images through the network with a layer of neurons on top """
 		#compute activation of hidden neurons
 		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
@@ -338,6 +329,7 @@ class Network:
 		return out_greedy, out_explore, None
 
 	def _propagate_bayesian(self, b_images, e):
+		""" propagate input images through the network with a bayesian decoder on top """
 		#compute activation of hidden neurons
 		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
@@ -366,6 +358,7 @@ class Network:
 		return out_greedy, out_explore, posterior
 
 	def _dopa_release(self, e, predicted_reward, reward):
+		""" compute dopa release based on predicted and delivered reward """
 		if e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
 			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
@@ -388,13 +381,13 @@ class Network:
 
 		return dopa_hid, dopa_out
 
-	def _learning_step(self, preNeurons, postNeurons, W, lr, dopa=None, numba=True):
+	def _learning_step(self, pre_neurons, post_neurons, W, lr, dopa=None, numba=True):
 		"""
 		One learning step for the hebbian network
 
 		Args:
-			preNeurons (numpy array): activation of the pre-synaptic neurons
-			postNeurons (numpy array): activation of the post-synaptic neurons
+			pre_neurons (numpy array): activation of the pre-synaptic neurons
+			post_neurons (numpy array): activation of the post-synaptic neurons
 			W (numpy array): weight matrix
 			lr (float): learning rate
 			dopa (numpy array, optional): learning rate increase for the effect of acetylcholine and dopamine
@@ -402,15 +395,15 @@ class Network:
 		returns:
 			numpy array: change in weight; must be added to the weight matrix W
 		"""
-		if dopa is None or dopa.shape[0]!=postNeurons.shape[0]: dopa=np.ones(postNeurons.shape[0])
+		if dopa is None or dopa.shape[0]!=post_neurons.shape[0]: dopa=np.ones(post_neurons.shape[0])
 
 		if numba:
-			postNeurons_lr = ex.disinhibition(postNeurons, lr, dopa, np.zeros_like(postNeurons))
-			dot = np.dot(preNeurons.T, postNeurons_lr)
+			postNeurons_lr = ex.disinhibition(post_neurons, lr, dopa, np.zeros_like(post_neurons))
+			dot = np.dot(pre_neurons.T, postNeurons_lr)
 			dW = ex.regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
 		else:
-			postNeurons_lr = postNeurons * (lr * dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
-			dW = (np.dot(preNeurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
+			postNeurons_lr = post_neurons * (lr * dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
+			dW = (np.dot(pre_neurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 		#update weights		
 		if self.lim_weights and e>=self.n_epi_crit: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
@@ -423,15 +416,17 @@ class Network:
 		
 		return W
 
-	def _check_out_W(self, images, labels):
+	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """
-		if self.protocol=='digit':
-			RFproba, _, _ = an.hist(self, {'000':self.hid_W}, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
-		elif self.protocol=='gabor':
-			pref_ori = gr.preferred_orientations({'000':self.hid_W})
-			RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
-			RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
-			RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
+		if RFproba is None:
+			if self.protocol=='digit':
+				RFproba, _, _ = an.hist(self.name, {'000':self.hid_W}, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
+			elif self.protocol=='gabor':
+				pref_ori = gr.preferred_orientations({'000':self.hid_W})
+				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
+				RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
+				RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
+		
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.
 		correct_out_W += np.sum(same)

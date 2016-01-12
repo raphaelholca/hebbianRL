@@ -3,34 +3,37 @@
 import numpy as np
 import plots as pl
 import external as ex
+import grating as gr 
 import matplotlib.pyplot as pyplot
 import helper.mnist as mnist
 import pickle
 pl = reload(pl)
 ex = reload(ex)
+gr = reload(gr)
 
-def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_data=True, verbose=True):
+def hist(name, W, classes, images, labels, protocol, n_bins=10, SVM=False, save_data=True, verbose=True):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
-		W (numpy array) : weight matrix from input to hidden layer; shape = (input x hidden)
+		name (str): name of the network, used to save to file
+		W (numpy array): weight matrix from input to hidden layer; shape = (input x hidden)
 		classes (numpy array): all classes of the MNIST dataset used in the current run
-		images (numpy array) : images of the MNIST dataset used for training
-		labels (numpy array) : labels corresponding to the images of the MNIST dataset
+		images (numpy array): images of the MNIST dataset used for training
+		labels (numpy array): labels corresponding to the images of the MNIST dataset
 		n_bins (int, optional): number of bins in the histogram
-		SVM (bool, optional) : whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
-		save_data (bool, optional) : whether save data
-		verbose (bool, optional) : whether to display text ouput
+		SVM (bool, optional): whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
+		save_data (bool, optional): whether save data
+		verbose (bool, optional): whether to display text ouput
 
 	return:
-		RFproba (numpy array) : probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron (when SVM=False abd lr_ratio=1.0) by taking np.max(RFproba,2)
-		RFclass (numpy array) : count of weights/RFs responsive of each digit class (shape= nRun x 10)
-		RFselec (numpy array) : mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
+		RFproba (numpy array): probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
+		RFclass (numpy array): count of neurons responsive of each digit class (shape= nRun x 10)
+		RFselec (numpy array): mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
 	if verbose: print "\ncomputing RF classes..."
-	nRun = len(W.keys())
+	nRun = len(W)
 	nNeurons = np.size(W['000'],1)
 
 	if SVM:
@@ -63,7 +66,7 @@ def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_da
 	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	if save_data:
-		pfile = open('output/'+ net.name +'/RFclass', 'w')
+		pfile = open('output/'+ name +'/RFclass', 'w')
 		pickle.dump(pRFclass, pfile)
 		pfile.close()
 
@@ -75,12 +78,31 @@ def hist(net, W, classes, images, labels, protocol, n_bins=10, SVM=True, save_da
 			for i in range(n_bins):
 				bin_names[i] = str(int(bin_size*i + bin_size/2.))
 		fig = pl.plotHist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
-		pyplot.savefig('./output/'+net.name+'/' +net.name+ '_RFhist.pdf')
+		pyplot.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
 		pyplot.close(fig)
 
 	return RFproba, RFclass, RFselec
 
-def plot(net, W, RFproba, target=None, W_act=None, sort=None, notsame=None, verbose=True):
+def hist_gabor(orientations, n_bins, name, hid_W_runs, images, protocol, save_data, verbose):
+	""" 
+	Computes the distribution of orientation preference of neurons in the network.
+	"""
+	bin_size = 180./n_bins
+	orientations_bin = np.zeros(len(orientations), dtype=int)
+	for i in range(n_bins): 
+		mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
+		orientations_bin[mask_bin] = i
+
+	pref_ori = gr.preferred_orientations(hid_W_runs)
+	RFproba = np.zeros((len(hid_W_runs), np.size(hid_W_runs['000'],0), np.size(hid_W_runs['000'],1)), dtype=int)
+	for r in pref_ori.keys():
+		RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
+		RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
+	_, _, _ = hist(name, hid_W_runs, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, save_data=save_data, verbose=verbose)
+
+	return RFproba
+
+def plot(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True):
 	if verbose: print "\nploting RFs..."
 
 	if sort=='tSNE':
@@ -106,13 +128,13 @@ def plot(net, W, RFproba, target=None, W_act=None, sort=None, notsame=None, verb
 		W_act_pass=None
 		if W_act:
 			W_act_pass = W_act[r]
-		if notsame:
-			notsame_pass = notsame[r]
+		if not_same:
+			notsame_pass = not_same[r]
 		else: 
 			notsame_pass = np.array([])
 
-		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, notsame=notsame_pass)
-		pyplot.savefig('output/' + net.name + '/RFs/' +net.name+ '_' + str(r).zfill(3)+'.png')
+		fig = pl.plotRF(W_sort, target=target_pass, W_act=W_act_pass, not_same=notsame_pass)
+		pyplot.savefig('output/' + name + '/RFs/' + name+ '_' + str(r).zfill(3)+'.png')
 		pyplot.close(fig)
 
 def clockwise(r):

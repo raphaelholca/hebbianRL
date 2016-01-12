@@ -28,10 +28,10 @@ def neural(net, images, labels):
 	allCMs = []
 	allPerf = []
 
-	for iw in sorted(net.hid_W_save.keys()):
+	for iw in sorted(net.hid_W_runs.keys()):
 		if net.verbose: print 'run: ' + str(int(iw)+1)
-		W_in = net.hid_W_save[iw]
-		W_act = net.out_W_save[iw]
+		W_in = net.hid_W_runs[iw]
+		W_act = net.out_W_runs[iw]
 
 		""" testing of the classifier """
 		hidNeurons = ex.propagate_layerwise(images, W_in, t=net.t)
@@ -66,9 +66,9 @@ def bayesian(net, images, labels, images_test, labels_test):
 	allCMs = []
 	allPerf = []
 
-	for iw in sorted(net.hid_W_save.keys()):
+	for iw in sorted(net.hid_W_runs.keys()):
 		if net.verbose: print 'run: ' + str(int(iw)+1)
-		W_in = net.hid_W_save[iw]
+		W_in = net.hid_W_runs[iw]
 
 		""" compute pdf """
 		pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images, labels, W_in, net.pdf_method, net.t)

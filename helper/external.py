@@ -13,55 +13,134 @@ import shutil
 import numba
 import time	
 import grating as gr
-import helper.mnist as mnist
+import struct
+from array import array
 
 gr = reload(gr)
 
-def load_images(net, classes, dataset_train, dataset_path, gabor_params={}):
-	# target orientation around which to discriminate clock-wise vs. counter clock-wise
-	# degree range within wich to test the network (on each side of target orientation)
-	# noise injected in the gabor filter for the pre-training (critical period)
-	# noise injected in the gabor filter for the training
-	# noise injected in the gabor filter for the testing
-	# side of the gabor filter image (total pixels = im_size * im_size)
-	if net.protocol == 'digit':
+def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
+	""" 
+	Load images training and testing images 
 
-		imPath = '/Users/raphaelholca/Documents/data-sets/MNIST'
-		if net.verbose: print 'loading train images...'
-		images, labels = mnist.read_images_from_mnist(classes = classes, dataset = dataset_train, path = imPath)
-		images, labels = evenLabels(images, labels, classes)
-		images = normalize(images, net.A*np.size(images,1))
+		Args:
+			protocol (str): experimental protocol, maybe 'digit' or 'gabor'
+			A (float): normalization constant for the images
+			verbose (bool, optional): whether to print comments to console
+			digit_params (dict): parameters for loading the MNIST dataset. These are:
+				classes (numpy array): classes of the MNIST dataset to load
+				dataset_train (str): name of the dataset to load for training the network; maybe 'test' or 'train'
+				dataset_path (str): path of the MNIST dataset
+			gabor_params (dict): parameters for creating the gabor patches. These are:
+				target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
+				excentricity (float): degree range within wich to test the network (on each side of target orientation)
+				noise_crit (float): noise injected in the gabor filter for the pre-training (critical period)
+				noise_train (float): noise injected in the gabor filter for the training
+				noise_test (float): noise injected in the gabor filter for the testing
+				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 
-		if net.verbose: print 'loading test images...'
-		test_dataset='test' if dataset_train=='train' else 'train'
-		images_test, labels_test = mnist.read_images_from_mnist(classes = classes, dataset = test_dataset, path = imPath)
-		images_test, labels_test = evenLabels(images_test, labels_test, classes)
+		returns:
+			(2D numpy array): training images
+			(numpy array): training labels
+			(2D numpy array): test images 
+			(numpy array): testing labels 
+			(2D numpy array): training images for gabor task 
+			(numpy array): training labels
+
+	"""
+
+	if protocol == 'digit':
+		if verbose: print 'loading train images...'
+		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
+		images, labels = evenLabels(images, labels, digit_params['classes'])
+		images = normalize(images, A*np.size(images,1))
+
+		if verbose: print 'loading test images...'
+		dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
+		images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
+		images_test, labels_test = evenLabels(images_test, labels_test, digit_params['classes'])
 		images_test, labels_test = shuffle([images_test, labels_test])
-		images_test = normalize(images_test, net.A*np.size(images_test,1))
+		images_test = normalize(images_test, A*np.size(images_test,1))
 		
-		orientations = None
 		images_task = None
 		labels_task = None
-		orientations_task = None
-		orientations_test = None
 
-	elif net.protocol == 'gabor':
-		if net.verbose: print 'creating gabor training images...'
-		set_global(classes)
+	elif protocol == 'gabor':
+		if verbose: print 'creating gabor training images...'
 
 		n_train = 50000
 		n_test = 1000
 
 		orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
-		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_crit'], net.A)
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_crit'], A)
 
-		orientations_task = np.random.random(n_train)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] #orientations of gratings (in degrees)
-		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_train'], net.A)
+		orientations_task = np.random.random(n_train)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
+		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_train'], A)
 
-		orientations_test = np.random.random(n_test)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] #orientations of gratings (in degrees)
-		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_test'], net.A)
+		orientations_test = np.random.random(n_test)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
+		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_test'], A)
 
-	return images, labels, orientations, images_test, labels_test, orientations_test, images_task, labels_task, orientations_task
+	return images, labels, images_test, labels_test, images_task, labels_task
+
+def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
+    """ imports the MNIST data set. """
+
+    if not os.path.exists(path): #in case the code is running on the server
+        path = '/mnt/antares_raid/home/raphaelholca/Documents/data-sets/MNIST'
+
+
+    if dataset is "train":
+        fname_img = os.path.join(path, 'train-images.idx3-ubyte')
+        fname_lbl = os.path.join(path, 'train-labels.idx1-ubyte')
+    elif dataset is "test":
+        fname_img = os.path.join(path, 't10k-images.idx3-ubyte')
+        fname_lbl = os.path.join(path, 't10k-labels.idx1-ubyte')
+    else:
+        raise ValueError, "dataset must be 'test' or 'train'"
+
+    flbl = open(fname_lbl, 'rb')
+    #magic_nr, size = struct.unpack(">II", flbl.read(8))
+    struct.unpack(">II", flbl.read(8))
+    lbl = array("b", flbl.read())
+    flbl.close()
+
+    fimg = open(fname_img, 'rb')
+    #magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
+    size, rows, cols = struct.unpack(">IIII", fimg.read(16))[1:4]
+    img = array("B", fimg.read())
+    fimg.close()
+
+    ind = [ k for k in xrange(size) if lbl[k] in classes ]
+    images = np.zeros(shape=(len(ind), rows*cols))
+    labels = np.zeros(shape=(len(ind)), dtype=int)
+    for i in xrange(len(ind)):
+        images[i, :] = img[ ind[i]*rows*cols : (ind[i]+1)*rows*cols ]
+        labels[i] = lbl[ind[i]]
+
+    return images, labels
+
+def evenLabels(images, labels, classes):
+	"""
+	Even out images and labels distribution so that they are evenly distributed over the labels.
+
+	Args:
+		images (numpy array): images
+		labels (numpy array): labels constant
+
+	returns:
+		numpy array: evened-out images
+		numpy array: evened-out labels
+	"""
+
+	nClasses = len(classes)
+	nDigits, bins = np.histogram(labels, bins=10, range=(0,9))
+	m = np.min(nDigits[nDigits!=0])
+	images_even = np.zeros((m*nClasses, np.size(images,1)))
+	labels_even = np.zeros(m*nClasses, dtype=int)
+	for i, c in enumerate(classes):
+		images_even[i*m:(i+1)*m,:] = images[labels==c,:][0:m,:]
+		labels_even[i*m:(i+1)*m] = labels[labels==c][0:m]
+	images, labels = np.copy(images_even), np.copy(labels_even)
+	return images, labels
 
 def normalize(images, A):
 	"""
@@ -180,30 +259,6 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def evenLabels(images, labels, classes):
-	"""
-	Even out images and labels distribution so that they are evenly distributed over the labels.
-
-	Args:
-		images (numpy array): images
-		labels (numpy array): labels constant
-
-	returns:
-		numpy array: evened-out images
-		numpy array: evened-out labels
-	"""
-
-	nClasses = len(classes)
-	nDigits, bins = np.histogram(labels, bins=10, range=(0,9))
-	m = np.min(nDigits[nDigits!=0])
-	images_even = np.zeros((m*nClasses, np.size(images,1)))
-	labels_even = np.zeros(m*nClasses, dtype=int)
-	for i, c in enumerate(classes):
-		images_even[i*m:(i+1)*m,:] = images[labels==c,:][0:m,:]
-		labels_even[i*m:(i+1)*m] = labels[labels==c][0:m]
-	images, labels = np.copy(images_even), np.copy(labels_even)
-	return images, labels
-
 def propagate_layerwise(bInput, W_in, SM=True, t=1.):
 	"""
 	One propagation step
@@ -304,9 +359,9 @@ def compute_dopa(predicted_reward, bReward, dopa_values):
 
 	dopa = np.zeros(len(bReward))
 
-	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dopa_values['dHigh']			#unpredicted reward
+	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dopa_values['dHigh']		#unpredicted reward
 	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dopa_values['dMid']			#correct reward prediction
-	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dopa_values['dNeut']			#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dopa_values['dNeut']		#correct no reward prediction
 	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dopa_values['dLow']			#incorrect reward prediction
 
 	return dopa
