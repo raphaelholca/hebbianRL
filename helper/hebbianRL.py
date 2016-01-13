@@ -92,7 +92,7 @@ class Network:
 		np.random.seed(self.seed)
 
 
-	def train(self, images, labels, images_task=None, labels_task=None):
+	def train(self, images, labels, images_task=None, labels_task=None, images_params={}):
 		""" 
 		Train Hebbian neural network
 
@@ -101,11 +101,13 @@ class Network:
 				labels (1D numpy array): labels of the training images.
 				images (2D numpy array, optional): subset of images to train the Network on in the gabor protocol. 
 				labels (1D numpy array, optional): subset of labels in the gabor protocol.
+				images_params (dict, optional): parameters used to create the images
 
 			returns:
 				(float): training performance of the network.
 		"""
 
+		self.images_params = images_params
 		self.classes = np.sort(np.unique(labels))
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
@@ -215,9 +217,9 @@ class Network:
 	def assess(self, images, labels):
 		""" compute histogram of RF classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
+			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
 		elif self.protocol=='gabor':
-			RFproba = an.hist_gabor(orientations, 10, self.name, self.hid_W_runs, images, self.protocol, self.save_data, self.verbose)
+			RFproba = an.hist_gabor(10, self.name, self.hid_W_runs, self.t, self.images_params['target_ori'], self.save_data, self.verbose)
 
 		""" compute correct weight assignment in the ouput layer """
 		if self._train_class_layer:
@@ -241,14 +243,18 @@ class Network:
 				slopes = {}
 			elif self.protocol=='gabor':
 				an.plot(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
-				curves = gr.tuning_curves(self.hid_W_runs, method='no_softmax', plot=True)
-				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori)
+				curves = gr.tuning_curves(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=True)
+				pref_ori = gr.preferred_orientations(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name)
+				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.n_run, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
 			if self.test_each_epi:
 				pl.perf_progress(self, self.perf_runs)
 
 	def save(self):
 		"""" save data """
-		if self.save_data: ex.save_data(self, self.hid_W_runs, self.out_W_runs, self.perf_runs)
+		if self.save_data: 
+			n_file = open('output/' + self.name + '/Network', 'w')
+			pickle.dump(self, n_file)
+			n_file.close()
 
 	def _init_weights(self):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
@@ -420,12 +426,12 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba, _, _ = an.hist(self.name, {'000':self.hid_W}, self.classes, images, labels, self.protocol, SVM=self.SVM, save_data=False, verbose=False)
+				RFproba, _, _ = an.hist(self.name, {'000':self.hid_W}, self.classes, images, labels, SVM=self.SVM, save_data=False, verbose=False)
 			elif self.protocol=='gabor':
-				pref_ori = gr.preferred_orientations({'000':self.hid_W})
+				pref_ori = gr.preferred_orientations({'000':self.hid_W}, self.t, self.images_params['target_ori'], self.name)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
-				RFproba[0,:,:][pref_ori['000']<=target_ori] = [1,0]
-				RFproba[0,:,:][pref_ori['000']>target_ori] = [0,1]
+				RFproba[0,:,:][pref_ori['000'] <= self.images_params['target_ori']] = [1,0]
+				RFproba[0,:,:][pref_ori['000'] > self.images_params['target_ori']] = [0,1]
 		
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.

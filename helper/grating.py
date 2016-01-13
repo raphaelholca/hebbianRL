@@ -56,13 +56,15 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	return gratings
 
-def tuning_curves(W, params, method='basic', plot=True):
+def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 	"""
 	compute the tuning curve of the neurons
 
 	Args:
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
-		params (dict): parameters of the main simulation (kwargs)
+		t (float): temperature of the softmax function used during training
+		target_ori (float): target orientation on side of which to discrimate the gabor patches
+		name (str): name of the network, used for saving figures
 		method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
 		plot (bool, optional): whether or not to create plots
 
@@ -73,10 +75,6 @@ def tuning_curves(W, params, method='basic', plot=True):
 	if method not in ['basic', 'no_softmax', 'with_noise']:
 		print '!!! invalid method - using \'basic\' method !!!'
 		method='basic'
-
-	t = params['t_hid']
-	target_ori = params['target_ori']
-	runName = params['runName']
 
 	noise = 1.0
 	noise_trial = 100
@@ -101,7 +99,7 @@ def tuning_curves(W, params, method='basic', plot=True):
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		curves[r] = np.zeros((n_input, n_neurons))
 		for i in range(len(test_input)):
-			curves[r] += ex.propL1(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+			curves[r] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			if plot:
 				pref_ori_sorter = np.argmax(curves[r], 0).argsort()
 				
@@ -121,24 +119,26 @@ def tuning_curves(W, params, method='basic', plot=True):
 				plt.tight_layout()
 		
 		if plot:
-			plt.savefig('output/' + runName + '/TCs/' + 'TCs_'  +runName+ '_' + str(r).zfill(3) + '.pdf')
+			plt.savefig('output/' + name + '/TCs/' + 'TCs_'  +name+ '_' + str(r).zfill(3) + '.pdf')
 			plt.close(fig)
 
 	return curves
 
-def preferred_orientations(W, params):
+def preferred_orientations(W, t, target_ori, name):
 	"""
 	compute the preferred orientation of neurons
 
 	Args:
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
-		params (dict): parameters of the main simulation (kwargs)
+		t (float): temperature of the softmax function used during training
+		target_ori (float): target orientation on side of which to discrimate the gabor patches
+		name (str): name of the network, used for saving figures
 
 	returns:
 		the preferred orientation of all neurons in all runs
 	"""
 
-	curves = tuning_curves(W, params, method='no_softmax', plot=False)
+	curves = tuning_curves(W, t, target_ori, name, method='no_softmax', plot=False)
 
 
 	n_input = np.size(curves[curves.keys()[0]],0)
@@ -150,7 +150,7 @@ def preferred_orientations(W, params):
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, params, plot=True):
+def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=True):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -158,7 +158,11 @@ def slopes(W, curves, pref_ori, params, plot=True):
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
 		curves (dict): the tuning curves for each neuron of each run; *!!* for now does not support curves if computed with 'with_noise' method)
 		pref_ori (dict): the preferred orientation of all neurons in all runs
-		params (dict): parameters of the main simulation (kwargs)
+		n_run (int): number of runs
+		t (float): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
+		target_ori (float): target orientation on side of which to discrimate the gabor patches
+		name (str): name of the network, used for saving figures
+		n_hid_neurons (int): number of hidden neurons
 		plot (bool, optional): whether or not to create plots
 
 	returns:
@@ -167,19 +171,13 @@ def slopes(W, curves, pref_ori, params, plot=True):
 		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
 
-	nRun = params['nRun']
-	t = params['t_hid']
-	target_ori = params['target_ori']
-	runName = params['runName']
-	nHidNeurons = params['nHidNeurons']
-
 	n_input = np.size(curves[curves.keys()[0]],0)
 
 	slopes = {}
 	all_slopes = {}
 	all_deg = {}
-	all_dist_from_target = np.empty((nRun, nHidNeurons))
-	all_slope_at_target = np.empty((nRun, nHidNeurons))
+	all_dist_from_target = np.empty((n_run, n_hid_neurons))
+	all_slope_at_target = np.empty((n_run, n_hid_neurons))
 
 	for i_r, r in enumerate(W.keys()):
 		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
@@ -190,7 +188,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 		dist_target[dist_target>90]-=180
 		dist_target[dist_target<-90]+=180
 		target_idx = int(target_ori * (n_input/180))
-		slope_at_target = slopes[r][target_idx, np.arange(nHidNeurons)]
+		slope_at_target = slopes[r][target_idx, np.arange(n_hid_neurons)]
 
 		all_dist_from_target[i_r, :] = dist_target
 		all_slope_at_target[i_r, :] = slope_at_target
@@ -225,7 +223,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 		
-			plt.savefig('output/' + runName + '/TCs/' + 'slopes_' + runName+ '_' + str(r).zfill(3) + '.pdf')
+			plt.savefig('output/' + name + '/TCs/' + 'slopes_' + name+ '_' + str(r).zfill(3) + '.pdf')
 			plt.close(fig)
 
 			""" plot of slope at target orientation """
@@ -241,7 +239,7 @@ def slopes(W, curves, pref_ori, params, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 
-			plt.savefig('output/' + runName + '/TCs/' + 'slopes_at_target' + '.pdf')
+			plt.savefig('output/' + name + '/TCs/' + 'slopes_at_target' + '.pdf')
 			plt.close(fig)
 
 	return {'slopes':slopes, 'all_slopes':all_slopes, 'all_deg':all_deg, 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}

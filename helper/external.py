@@ -31,6 +31,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 				dataset_train (str): name of the dataset to load for training the network; maybe 'test' or 'train'
 				dataset_path (str): path of the MNIST dataset
 			gabor_params (dict): parameters for creating the gabor patches. These are:
+				n_train (int): number of training images
+				n_test (int): number of testing images
 				target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 				excentricity (float): degree range within wich to test the network (on each side of target orientation)
 				noise_crit (float): noise injected in the gabor filter for the pre-training (critical period)
@@ -63,23 +65,23 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 		
 		images_task = None
 		labels_task = None
+		images_params = digit_params
 
 	elif protocol == 'gabor':
 		if verbose: print 'creating gabor training images...'
 
-		n_train = 50000
-		n_test = 1000
-
-		orientations = np.random.random(n_train)*180 #orientations of gratings (in degrees)
+		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_crit'], A)
 
-		orientations_task = np.random.random(n_train)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
+		orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
 		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_train'], A)
 
-		orientations_test = np.random.random(n_test)*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
+		orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
 		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise_test'], A)
 
-	return images, labels, images_test, labels_test, images_task, labels_task
+		images_params = gabor_params
+
+	return images, labels, images_test, labels_test, images_task, labels_task, images_params
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
     """ imports the MNIST data set. """
@@ -366,34 +368,6 @@ def compute_dopa(predicted_reward, bReward, dopa_values):
 
 	return dopa
 
-def save_data(net, W_in, W_act, perf, slopes=None, save_weights=True):
-	"""
-	Save passed data to file. Use pickle for weights and ConfigObj for the setting parameters 
-
-	Args:
-		W_in (numpy array): weight matrix to be saved to pickle file
-		W_act (numpy array): weight matrix to be saved to pickle file
-		perf (list): performance at each episode of the training
-		slopes (dict): dictionary of various measurements of slope values
-	"""
-
-	if save_weights:
-		pFile = open('output/' + net.name + '/W_in', 'w')
-		pickle.dump(W_in, pFile)
-		pFile.close()
-
-		pFile = open('output/' + net.name + '/W_act', 'w')
-		pickle.dump(W_act, pFile)
-		pFile.close()
-
-		pFile = open('output/' + net.name + '/perf_epi', 'w')
-		pickle.dump(perf, pFile)
-		pFile.close()
-
-		pFile = open('output/' + net.name + '/slopes', 'w')
-		pickle.dump(slopes, pFile)
-		pFile.close()
-
 def checkdir(net, OW_bool=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
@@ -414,8 +388,7 @@ def checkdir(net, OW_bool=True):
 			checkdir(net.name)
 			return net.name
 	os.makedirs('output/' + net.name)
-	if net.protocol=='digit' and net.save_data==True:
-		os.makedirs('output/' + net.name + '/RFs')
+	os.makedirs('output/' + net.name + '/RFs')
 	if net.protocol=='gabor' and net.save_data==True:
 		os.makedirs('output/' + net.name + '/TCs')
 

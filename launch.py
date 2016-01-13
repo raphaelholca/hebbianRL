@@ -27,10 +27,10 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 										'dNeut' 	: -0.1,
 										'dLow' 		: -2.0,
 										},
-					name 			= 'test_2',
-					n_run 			= 1,		
-					n_epi_crit		= 10,				
-					n_epi_dopa		= 10,				
+					name 			= 'gabor_2',
+					n_run 			= 2,		
+					n_epi_crit		= 2,				
+					n_epi_dopa		= 2,				
 					t				= 0.1, 							
 					A 				= 1.2,
 					n_hid_neurons	= 49,
@@ -40,7 +40,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					exploration		= True,
 					pdf_method 		= 'fit',
 					batch_size 		= 20,
-					protocol		= 'digit',
+					protocol		= 'gabor',
 					classifier		= 'neural',
 					init_file		= None,					#'digit_479_16'
 					test_each_epi	= True,
@@ -54,27 +54,27 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					)
 
 """ load and pre-process training and testing images """
-images, labels, images_test, labels_test, images_task, labels_task = ex.load_images(protocol 		= net.protocol,
-																					A 				= net.A,
-																					verbose 		= net.verbose,
-																					digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																										'dataset_train'	: 'test',
-																										'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																										},
-																					gabor_params 	= {	'target_ori' 	: 85.,
-																										'excentricity' 	: 3.,
-																										'noise_crit'	: 0.,
-																										'noise_train'	: 0.,
-																										'noise_test'	: 0.2,
-																										'im_size'		: 28,
-																										}
-																					)
-
-
+images, labels, images_test, labels_test, images_task, labels_task, images_params = ex.load_images(protocol 		= net.protocol,
+																									A 				= net.A,
+																									verbose 		= net.verbose,
+																									digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																														'dataset_train'	: 'test',
+																														'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																														},
+																									gabor_params 	= {	'n_train' 		: 50000,
+																														'n_test' 		: 1000,
+																														'target_ori' 	: 85.,
+																														'excentricity' 	: 3.,
+																														'noise_crit'	: 0.,
+																														'noise_train'	: 0.,
+																														'noise_test'	: 0.2,
+																														'im_size'		: 28,
+																														}
+																									)
 
 tic = time.time()
 
-perf = net.train(images, labels, images_task, labels_task)
+perf = net.train(images, labels, images_task, labels_task, images_params)
 
 allCMs, allPerf = net.test(images_test, labels_test, images, labels)
 

@@ -11,7 +11,7 @@ pl = reload(pl)
 ex = reload(ex)
 gr = reload(gr)
 
-def hist(name, W, classes, images, labels, protocol, n_bins=10, SVM=False, save_data=True, verbose=True):
+def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True, verbose=True):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -70,39 +70,41 @@ def hist(name, W, classes, images, labels, protocol, n_bins=10, SVM=False, save_
 		pickle.dump(pRFclass, pfile)
 		pfile.close()
 
-		if protocol=='digit':
-			bin_names = classes
-		elif protocol=='gabor':
-			bin_size = 180./n_bins
-			bin_names = np.zeros(n_bins, dtype='|S3')
-			for i in range(n_bins):
-				bin_names[i] = str(int(bin_size*i + bin_size/2.))
+		bin_names = classes
 		fig = pl.plotHist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
 		pyplot.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
 		pyplot.close(fig)
 
 	return RFproba, RFclass, RFselec
 
-def hist_gabor(orientations, n_bins, name, hid_W_runs, images, protocol, save_data, verbose):
-	""" 
-	Computes the distribution of orientation preference of neurons in the network.
-	"""
-	bin_size = 180./n_bins
-	orientations_bin = np.zeros(len(orientations), dtype=int)
-	for i in range(n_bins): 
-		mask_bin = np.logical_and(orientations >= i*bin_size, orientations < (i+1)*bin_size)
-		orientations_bin[mask_bin] = i
-
-	pref_ori = gr.preferred_orientations(hid_W_runs)
-	RFproba = np.zeros((len(hid_W_runs), np.size(hid_W_runs['000'],0), np.size(hid_W_runs['000'],1)), dtype=int)
+def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
+	""" Computes the distribution of orientation preference of neurons in the network. """
+	pref_ori = gr.preferred_orientations(hid_W_runs, t, target_ori, name)
+	RFproba = np.zeros((len(hid_W_runs), np.size(hid_W_runs['000'],0), 2), dtype=int)
 	for r in pref_ori.keys():
 		RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
 		RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
-	_, _, _ = hist(name, hid_W_runs, range(n_bins), images, orientations_bin, protocol, n_bins=n_bins, save_data=save_data, verbose=verbose)
+
+	h_all = np.zeros((len(pref_ori.keys()), n_bins))
+	for r in pref_ori.keys():
+		h_all[int(r), :] = np.histogram(pref_ori[r], n_bins, range=(0.,180.))[0]
+	h_mean = np.mean(h_all,0)
+	h_ste = np.std(h_all,0)/np.sqrt(len(pref_ori.keys()))
+
+	if save_data:
+		bin_size = 180./n_bins
+		bin_names = np.zeros(n_bins, dtype='|S3')
+		for i in range(n_bins):
+			bin_names[i] = str(int(bin_size*i + bin_size/2.))
+
+		fig = pl.plotHist(h_mean, bin_names, h_err=h_ste)
+		pyplot.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
+		pyplot.close(fig)
 
 	return RFproba
 
 def plot(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True):
+	""" Plot the RFs of neurons """
 	if verbose: print "\nploting RFs..."
 
 	if sort=='tSNE':
