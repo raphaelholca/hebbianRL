@@ -53,13 +53,13 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 	if protocol == 'digit':
 		if verbose: print 'loading train images...'
 		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-		images, labels = evenLabels(images, labels, digit_params['classes'])
+		images, labels = even_labels(images, labels, digit_params['classes'])
 		images = normalize(images, A*np.size(images,1))
 
 		if verbose: print 'loading test images...'
 		dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
 		images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
-		images_test, labels_test = evenLabels(images_test, labels_test, digit_params['classes'])
+		images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
 		images_test, labels_test = shuffle([images_test, labels_test])
 		images_test = normalize(images_test, A*np.size(images_test,1))
 		
@@ -84,7 +84,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 	return images, labels, images_test, labels_test, images_task, labels_task, images_params
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
-    """ imports the MNIST data set. """
+    """ Import the MNIST data set """
 
     if not os.path.exists(path): #in case the code is running on the server
         path = '/mnt/antares_raid/home/raphaelholca/Documents/data-sets/MNIST'
@@ -120,28 +120,30 @@ def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelhol
 
     return images, labels
 
-def evenLabels(images, labels, classes):
+def even_labels(images, labels, classes):
 	"""
 	Even out images and labels distribution so that they are evenly distributed over the labels.
 
 	Args:
 		images (numpy array): images
 		labels (numpy array): labels constant
+		classes (numpy array): classes of the MNIST dataset used to train the network
 
 	returns:
 		numpy array: evened-out images
 		numpy array: evened-out labels
 	"""
 
-	nClasses = len(classes)
-	nDigits, bins = np.histogram(labels, bins=10, range=(0,9))
-	m = np.min(nDigits[nDigits!=0])
-	images_even = np.zeros((m*nClasses, np.size(images,1)))
-	labels_even = np.zeros(m*nClasses, dtype=int)
+	n_classes = len(classes)
+	n_digits, bins = np.histogram(labels, bins=10, range=(0,9))
+	m = np.min(n_digits[n_digits!=0])
+	images_even = np.zeros((m*n_classes, np.size(images,1)))
+	labels_even = np.zeros(m*n_classes, dtype=int)
 	for i, c in enumerate(classes):
 		images_even[i*m:(i+1)*m,:] = images[labels==c,:][0:m,:]
 		labels_even[i*m:(i+1)*m] = labels[labels==c][0:m]
 	images, labels = np.copy(images_even), np.copy(labels_even)
+	
 	return images, labels
 
 def normalize(images, A):
@@ -261,13 +263,13 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def propagate_layerwise(bInput, W_in, SM=True, t=1.):
+def propagate_layerwise(input, W, SM=True, t=1.):
 	"""
 	One propagation step
 
 	Args:
-		bInput (numpy array): input vector to the neurons of layer 1
-		W_in (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
+		input (numpy array): input vector to the neurons of layer 1
+		W (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 		t (float): temperature parameter for the softmax function (only passed to the function, not used here)
 
@@ -275,29 +277,29 @@ def propagate_layerwise(bInput, W_in, SM=True, t=1.):
 		numpy array: the activation of the hidden neurons
 	"""
 
-	hidNeurons = np.dot(bInput, np.log(W_in))
-	if SM: hidNeurons = softmax(hidNeurons, t=t)
-	return hidNeurons
+	activ = np.dot(input, np.log(W))
+	if SM: activ = softmax(activ, t=t)
+	return activ
 
 @numba.njit
-def disinhibition(postNeurons, lr, disinhib, postNeurons_lr):
+def disinhibition(post_neurons, lr, dopa, post_neurons_lr):
 	"""
 	support function for numba implementation of learning_step() 
 	"""
-	for b in range(postNeurons.shape[0]):
-		for pn in range(postNeurons.shape[1]):
-			postNeurons_lr[b, pn] = postNeurons[b, pn] * lr * disinhib[b]
+	for b in range(post_neurons.shape[0]):
+		for pn in range(post_neurons.shape[1]):
+			post_neurons_lr[b, pn] = post_neurons[b, pn] * lr * dopa[b]
 
-	return postNeurons_lr
+	return post_neurons_lr
 
 @numba.njit
-def regularization(dot, postNeurons, W, sum_ar):
+def regularization(dot, post_neurons, W, sum_ar):
 	"""
 	support function for numba implementation of learning_step() 
 	"""
-	for j in range(postNeurons.shape[1]):
-		for i in range(postNeurons.shape[0]):
-			sum_ar[j] += postNeurons[i,j]
+	for j in range(post_neurons.shape[1]):
+		for i in range(post_neurons.shape[0]):
+			sum_ar[j] += post_neurons[i,j]
 	
 	for i in range(dot.shape[0]):
 		for j in range(dot.shape[1]):
@@ -329,8 +331,8 @@ def reward_prediction(best_action, action_taken, proba_predict=False, posterior=
 	Args:
 		best_action (numpy array): best (greedy) action for each trial of a batch
 		action_taken (numpy array): action taken for each trial of a batch
-		proba_predict (boolean): whether reward prediction is probabilistic (i.e., the expected value of the reward) or deterministic (i.e., binary)
-		posterior (numpy array): posterior probability of the bayesian decoder 
+		proba_predict (boolean, optional): whether reward prediction is probabilistic (i.e., the expected value of the reward) or deterministic (i.e., binary)
+		posterior (numpy array, optional): posterior probability of the bayesian decoder 
 
 	returns:
 		numpy array: reward prediction, either deterministic or expected value (depending on proba_predict)
@@ -343,56 +345,55 @@ def reward_prediction(best_action, action_taken, proba_predict=False, posterior=
 
 	return reward_prediction
 
-def compute_dopa(predicted_reward, bReward, dopa_values):
+def compute_dopa(predicted_reward, reward, dopa_values):
 	"""
 	Computes the dopa signal based on the actual and predicted rewards
 
 	Args:
 		predicted_reward (numpy array, bool): predicted reward (True, False)
-		bReward (numpy array, int): reward received (0, 1)
-		dHigh (numpy array): dopa value for unpredicted reward
-		dMid (numpy array): dopa value for correct reward prediction
-		dNeut (numpy array): dopa value for correct no reward prediction
-		dLow (numpy array): dopa value for incorrect reward prediction
+		reward (numpy array, int): reward received (0, 1)
+		dopa_values (dict): dopa value for unpredicted reward, must includes keys: 'dHigh', 'dMid', 'dNeut' and 'dLow'
 
 	returns:
 		numpy array: array of dopamine release value
 	"""
 
-	dopa = np.zeros(len(bReward))
+	dopa = np.zeros(len(reward))
 
-	dopa[np.logical_and(predicted_reward==0, bReward==1)] = dopa_values['dHigh']		#unpredicted reward
-	dopa[np.logical_and(predicted_reward==1, bReward==1)] = dopa_values['dMid']			#correct reward prediction
-	dopa[np.logical_and(predicted_reward==0, bReward==0)] = dopa_values['dNeut']		#correct no reward prediction
-	dopa[np.logical_and(predicted_reward==1, bReward==0)] = dopa_values['dLow']			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward==0, reward==1)] = dopa_values['dHigh']		#unpredicted reward
+	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']			#correct reward prediction
+	dopa[np.logical_and(predicted_reward==0, reward==0)] = dopa_values['dNeut']		#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']			#incorrect reward prediction
 
 	return dopa
 
-def checkdir(net, OW_bool=True):
+def checkdir(name, protocol, overwrite=True):
 	"""
 	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
 
 	Args:
-		kwargs (dict): parameters of the model
+		name (str): name of the network, used to save data to disk
+		protocol (str): experimental protocol
+		overwrite (bool, optional): whether to overwrite existing directory
 	"""
 
-	if os.path.exists('output/' + net.name):
-		if OW_bool: overwrite='yes'
-		else: overwrite = raw_input('Folder \''+net.name+'\' already exists. Overwrite? (y/n/<new name>) ')
+	if os.path.exists('output/' + name):
+		if overwrite: overwrite='yes'
+		else: overwrite = raw_input('Folder \''+name+'\' already exists. Overwrite? (y/n/<new name>) ')
 		if overwrite in ['n', 'no', 'not', ' ', '']:
 			sys.exit('Folder exits - not overwritten')
 		elif overwrite in ['y', 'yes']:
-			shutil.rmtree('output/' + net.name)
+			shutil.rmtree('output/' + name)
 		else:
-			net.name = overwrite
-			checkdir(net.name)
-			return net.name
-	os.makedirs('output/' + net.name)
-	os.makedirs('output/' + net.name + '/RFs')
-	if net.protocol=='gabor' and net.save_data==True:
-		os.makedirs('output/' + net.name + '/TCs')
+			name = overwrite
+			checkdir(name)
+			return name
+	os.makedirs('output/' + name)
+	os.makedirs('output/' + name + '/RFs')
+	if protocol=='gabor':
+		os.makedirs('output/' + name + '/TCs')
 
-	return net.name
+	return name
 
 def shuffle(arrays):
 	"""
@@ -403,43 +404,18 @@ def shuffle(arrays):
 
 	returns:
 		list: list of shuffled arrays
-		numpy array: indices of the random shuffling
 	"""
 
-	rndIdx = np.arange(len(arrays[0]))
-	np.random.shuffle(rndIdx)
+	rnd_idx = np.arange(len(arrays[0]))
+	np.random.shuffle(rnd_idx)
 	shuffled_arrays = []
 	for a in arrays:
 		if len(np.shape(a))==1:
-			shuffled_arrays.append(a[rndIdx])
+			shuffled_arrays.append(a[rnd_idx])
 		elif len(np.shape(a))==2:
-			shuffled_arrays.append(a[rndIdx,:])
+			shuffled_arrays.append(a[rnd_idx,:])
 
-	return shuffled_arrays#, rndIdx
-
-
-def computeCM(classResults, labels_test, classes):
-	"""
-	Computes the confusion matrix for a set of classification results
-
-	Args:
-		classResults (numpy array): result of the classifcation task
-		labels_test (numpy array): labels of the test dataset
-		classes (numpy array): all classes of the MNIST dataset used in the current run
-
-	returns:
-		numpy array: confusion matrix of shape (actual class x predicted class)
-	"""
-
-	nClasses = len(classes)
-	confusMatrix = np.zeros((nClasses, nClasses))
-	for ilabel,label in enumerate(classes):
-		for iclassif, classif in enumerate(classes):
-			classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
-			overTot = np.sum(labels_test==label)
-			confusMatrix[ilabel, iclassif] = float(classifiedAs)/overTot
-	
-	return confusMatrix
+	return shuffled_arrays
 
 
 

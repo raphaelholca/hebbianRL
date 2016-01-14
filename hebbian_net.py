@@ -84,7 +84,7 @@ class Network:
 		self.seed 			= seed
 
 		if self.save_data: 
-			self.name = ex.checkdir(self, OW_bool=True)
+			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
 		else:
 			print "!!! ----- not saving data ----- !!! \n"
 		

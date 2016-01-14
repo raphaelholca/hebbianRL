@@ -28,14 +28,14 @@ def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True,
 		verbose (bool, optional): whether to display text ouput
 
 	return:
-		RFproba (numpy array): probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= nRun x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
-		RFclass (numpy array): count of neurons responsive of each digit class (shape= nRun x 10)
+		RFproba (numpy array): probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= n_run x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
+		RFclass (numpy array): count of neurons responsive of each digit class (shape= n_run x 10)
 		RFselec (numpy array): mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
 	if verbose: print "\ncomputing RF classes..."
-	nRun = len(W)
-	nNeurons = np.size(W['000'],1)
+	n_run = len(W)
+	n_neurons = np.size(W['000'],1)
 
 	if SVM:
 		#load classifier from file; parameters of the model from:
@@ -45,16 +45,16 @@ def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True,
 		svm_mnist = pickle.load(pfile)
 		pfile.close()
 
-	RFproba = np.zeros((nRun,nNeurons,n_bins))
-	RFclass = np.zeros((nRun,n_bins))
-	RFselec = np.zeros((nRun,n_bins))
+	RFproba = np.zeros((n_run,n_neurons,n_bins))
+	RFclass = np.zeros((n_run,n_bins))
+	RFselec = np.zeros((n_run,n_bins))
 	for i,r in enumerate(sorted(W.keys())):
 		if verbose: print 'run: ' + str(i+1)
 		if SVM:
 			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r].T),2)
 		else:
 			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
-			for n in range(nNeurons):
+			for n in range(n_neurons):
 				RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 				RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
 		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=n_bins, range=(-0.5,9.5))
@@ -113,13 +113,13 @@ def selectivity(W, RFproba, images, labels, classes):
 		RFproba (numpy array) : 
 	"""
 	acti = ex.propagate_layerwise(images, W, SM=False)
-	nNeurons = np.size(acti,1)
-	nClasses = len(classes)
+	n_neurons = np.size(acti,1)
+	n_classes = len(classes)
 	best_neuron = np.argmax(acti, 1)
 	RFclass = np.argmax(RFproba,1)
-	select_neuron = np.zeros(nNeurons)
-	select_class = np.zeros(nClasses)
-	for n in range(nNeurons):
+	select_neuron = np.zeros(n_neurons)
+	select_class = np.zeros(n_classes)
+	for n in range(n_neurons):
 		all_acti, _ = np.histogram(labels[best_neuron==n], bins=10, range=(0,9))
 		select_neuron[n] = float(all_acti[RFclass[n]])/np.sum(all_acti)
 	for i, c in enumerate(classes):
@@ -251,7 +251,7 @@ def plot_CM(confusMatrix, classes):
 	""" plots the confusion matrix, with color on the diagonal, and with the alphas indicating the magnitude of the error """
 
 	#create a transparent colormap
-	nClasses = len(classes)
+	n_classes = len(classes)
 	cmap_trans = mpl.colors.LinearSegmentedColormap.from_list('my_cmap',['white','white'],256) 
 	cmap_trans._init()
 	alphas = np.linspace(1.0, 0, cmap_trans.N+3)
@@ -262,13 +262,13 @@ def plot_CM(confusMatrix, classes):
 	np.fill_diagonal(colorMatrix, -1.0)
 
 	#plot the matrix and number values
-	sH = 1.0+0.5*nClasses
-	sV = 0.9+0.5*nClasses
+	sH = 1.0+0.5*n_classes
+	sV = 0.9+0.5*n_classes
 	fig, ax = plt.subplots(figsize=(sH,sV))
 	ax.imshow(colorMatrix, interpolation='nearest', cmap='RdYlGn_r', vmin=-1.2, vmax=1.2)
 	ax.imshow(confusMatrix, interpolation='nearest', cmap=cmap_trans, vmin=-0.0, vmax=1)
-	for i in range(nClasses):
-		for j in range(nClasses):
+	for i in range(n_classes):
+		for j in range(n_classes):
 			perc = int(np.round(confusMatrix[i,j],2)*100)
 			ax.annotate(perc, xy=(0, 0),  xycoords='data', xytext=(j, i), textcoords='data', size=15, ha='center', va='center')
 
@@ -278,8 +278,8 @@ def plot_CM(confusMatrix, classes):
 	ax.spines['left'].set_visible(False)
 	ax.spines['bottom'].set_visible(False)
 	ax.spines['top'].set_visible(False)
-	ax.set_xticks(np.arange(nClasses))
-	ax.set_yticks(np.arange(nClasses))
+	ax.set_xticks(np.arange(n_classes))
+	ax.set_yticks(np.arange(n_classes))
 	ax.set_xticklabels(classes, fontsize=18)
 	ax.set_yticklabels(classes, fontsize=18)
 	ax.xaxis.set_ticks_position('none')

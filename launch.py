@@ -13,45 +13,43 @@ if 'Documents' in os.getcwd():
 import numpy as np
 import pickle
 import time
-import helper.hebbianRL as rl
+import hebbian_net
 import helper.external as ex
-import helper.plots as pl
 
-rl = reload(rl)
+hebbian_net = reload(hebbian_net)
 ex = reload(ex)
-pl = reload(pl)
 
 """ create Hebbian neural network """
-net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
-										'dMid' 		: 0.02,
-										'dNeut' 	: -0.1,
-										'dLow' 		: -2.0,
-										},
-					name 			= 'gabor_2',
-					n_run 			= 2,		
-					n_epi_crit		= 2,				
-					n_epi_dopa		= 2,				
-					t				= 0.1, 							
-					A 				= 1.2,
-					n_hid_neurons	= 49,
-					lim_weights		= False,
-					lr				= 0.01,
-					noise_std		= 0.2, 					#digit: 4.0 	; gabor: 0.2 (?)
-					exploration		= True,
-					pdf_method 		= 'fit',
-					batch_size 		= 20,
-					protocol		= 'digit',
-					classifier		= 'neural',
-					init_file		= None,					#'digit_479_16'
-					test_each_epi	= True,
-					SVM				= False,
-					save_data		= True,
-					verbose			= True,
-					show_W_act		= False,
-					sort 			= None,
-					target			= None,
-					seed 			= 995 					#np.random.randint(1000)
-					)
+net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
+												'dMid' 		: 0.02,
+												'dNeut' 	: -0.1,
+												'dLow' 		: -2.0,
+												},
+							name 			= 'gabor_2',
+							n_run 			= 2,		
+							n_epi_crit		= 2,				
+							n_epi_dopa		= 2,				
+							t				= 0.1, 							
+							A 				= 1.2,
+							n_hid_neurons	= 49,
+							lim_weights		= False,
+							lr				= 0.01,
+							noise_std		= 0.2, 					#digit: 4.0 	; gabor: 0.2 (?)
+							exploration		= True,
+							pdf_method 		= 'fit',
+							batch_size 		= 20,
+							protocol		= 'digit',
+							classifier		= 'neural',
+							init_file		= None,					#'digit_479_16'
+							test_each_epi	= True,
+							SVM				= False,
+							save_data		= True,
+							verbose			= True,
+							show_W_act		= False,
+							sort 			= None,
+							target			= None,
+							seed 			= 995 					#np.random.randint(1000)
+							)
 
 """ load and pre-process training and testing images """
 images, labels, images_test, labels_test, images_task, labels_task, images_params = ex.load_images(protocol 		= net.protocol,

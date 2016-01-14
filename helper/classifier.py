@@ -42,7 +42,7 @@ def neural(net, images, labels):
 		""" compute classification performance """
 		correct_classif = float(np.sum(classResults==labels))
 		allPerf.append(correct_classif/len(labels))
-		CM = ex.computeCM(classResults, labels, net.classes)
+		CM = compute_CM(classResults, labels, net.classes)
 		allCMs.append(CM)
 
 	""" print and save performance measures """
@@ -81,12 +81,35 @@ def bayesian(net, images, labels, images_test, labels_test):
 		""" compute classification performance """
 		correct_classif = float(np.sum(classResults==labels_test))
 		allPerf.append(correct_classif/len(labels_test))
-		CM = ex.computeCM(classResults, labels_test, net.classes)
+		CM = compute_CM(classResults, labels_test, net.classes)
 		allCMs.append(CM)
 
 	""" print and save performance measures """
 	print_save(allCMs, allPerf, net.classes, net.name, net.verbose, net.save_data)
 	return allCMs, allPerf
+
+def compute_CM(classResults, labels_test, classes):
+	"""
+	Computes the confusion matrix for a set of classification results
+
+	Args:
+		classResults (numpy array): result of the classifcation task
+		labels_test (numpy array): labels of the test dataset
+		classes (numpy array): all classes of the MNIST dataset used in the current run
+
+	returns:
+		numpy array: confusion matrix of shape (actual class x predicted class)
+	"""
+
+	nClasses = len(classes)
+	confusMatrix = np.zeros((nClasses, nClasses))
+	for ilabel,label in enumerate(classes):
+		for iclassif, classif in enumerate(classes):
+			classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
+			overTot = np.sum(labels_test==label)
+			confusMatrix[ilabel, iclassif] = float(classifiedAs)/overTot
+	
+	return confusMatrix
 
 def print_save(allCMs, allPerf, classes, name, verbose, save_data):
 	""" print and save performance measures """
