@@ -27,8 +27,8 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 												},
 							name 			= 'gabor_2',
 							n_runs 			= 2,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 10,				
+							n_epi_crit		= 2,				
+							n_epi_dopa		= 2,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							n_hid_neurons	= 49,
@@ -38,7 +38,7 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							batch_size 		= 20,
-							protocol		= 'gabor',
+							protocol		= 'digit',
 							classifier		= 'neural',
 							init_file		= None,					#'digit_479_16'
 							test_each_epi	= True,
@@ -71,19 +71,32 @@ images, labels, images_test, labels_test, images_task, labels_task, images_param
 
 tic = time.time()
 
-perf = net.train(images, labels, images_task, labels_task, images_params)
+perf_train = net.train(images, labels, images_task, labels_task, images_params)
 
-allCMs, allPerf = net.test(images_test, labels_test, images, labels)
+perf_test = net.test(images_test, labels_test, images, labels)
 
 net.assess(images, labels)
-
-net.save()
-
-
 
 print '\n\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
 print 'run time:\t' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

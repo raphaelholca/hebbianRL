@@ -306,7 +306,7 @@ def plot_hist(h, bins, h_err=None):
 
 	return fig
 
-def perf_progress(name, perf, epi_start=0):
+def plot_perf_progress(name, perf, epi_start=0):
 	"""
 	plots the progression of the error rate over training episodes
 

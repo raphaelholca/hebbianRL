@@ -23,8 +23,8 @@ def neural(net, images, labels):
 	if net.verbose: print "\nassessing performance..."
 
 	""" variable initialization """
-	allCMs = []
-	allPerf = []
+	CM_all = []
+	perf_all = []
 
 	for iw in range(net.n_runs):
 		if net.verbose: print 'run: ' + str(iw+1)
@@ -39,13 +39,13 @@ def neural(net, images, labels):
 		
 		""" compute classification performance """
 		correct_classif = float(np.sum(classResults==labels))
-		allPerf.append(correct_classif/len(labels))
+		perf_all.append(correct_classif/len(labels))
 		CM = compute_CM(classResults, labels, net.classes)
-		allCMs.append(CM)
+		CM_all.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, net.classes, net.name, net.verbose, net.save_data)
-	return allCMs, allPerf
+	perf_dict = print_save(CM_all, perf_all, net.classes, net.name, net.verbose, net.save_data)
+	return perf_dict
 
 def bayesian(net, images, labels, images_test, labels_test):
 	"""
@@ -61,8 +61,8 @@ def bayesian(net, images, labels, images_test, labels_test):
 	if net.verbose: print "\nassessing performance..."
 
 	""" variable initialization """
-	allCMs = []
-	allPerf = []
+	CM_all = []
+	perf_all = []
 
 	for iw in sorted(net.hid_W_runs.keys()):
 		if net.verbose: print 'run: ' + str(int(iw)+1)
@@ -78,13 +78,13 @@ def bayesian(net, images, labels, images_test, labels_test):
 		
 		""" compute classification performance """
 		correct_classif = float(np.sum(classResults==labels_test))
-		allPerf.append(correct_classif/len(labels_test))
+		perf_all.append(correct_classif/len(labels_test))
 		CM = compute_CM(classResults, labels_test, net.classes)
-		allCMs.append(CM)
+		CM_all.append(CM)
 
 	""" print and save performance measures """
-	print_save(allCMs, allPerf, net.classes, net.name, net.verbose, net.save_data)
-	return allCMs, allPerf
+	perf_dict = print_save(CM_all, perf_all, net.classes, net.name, net.verbose, net.save_data)
+	return perf_dict
 
 def compute_CM(classResults, labels_test, classes):
 	"""
@@ -109,12 +109,12 @@ def compute_CM(classResults, labels_test, classes):
 	
 	return confusMatrix
 
-def print_save(allCMs, allPerf, classes, name, verbose, save_data):
+def print_save(CM_all, perf_all, classes, name, verbose, save_data):
 	""" print and save performance measures """
-	avgCM = np.mean(allCMs,0)
-	steCM = np.std(allCMs,0)/np.sqrt(np.shape(allCMs)[0])
-	avgPerf = np.mean(allPerf)
-	stePerf = np.std(allPerf)/np.sqrt(len(allPerf))
+	CM_avg = np.mean(CM_all,0)
+	CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
+	perf_avg = np.mean(perf_all)
+	perf_avg = np.std(perf_all)/np.sqrt(len(perf_all))
 
 	if verbose:
 		perf_print = ''
@@ -123,30 +123,30 @@ def print_save(allCMs, allPerf, classes, name, verbose, save_data):
 		for c in classes: c_str += str(c).rjust(6)
 		perf_print += c_str + '\n'
 		perf_print += '-'*(len(c_str)+3) + '\n'
-		perf_print += str(np.round(avgCM,2)) + '\n'
+		perf_print += str(np.round(CM_avg,2)) + '\n'
 		perf_print += '\naverage correct classification:' + '\n'
-		perf_print += str(np.round(100*avgPerf,2)) + ' +/- ' + str(np.round(100*stePerf,2)) + ' %' + '\n'
-		if len(allPerf)>1:
+		perf_print += str(np.round(100*perf_avg,2)) + ' +/- ' + str(np.round(100*perf_avg,2)) + ' %' + '\n'
+		if len(perf_all)>1:
 			perf_print += '\nof which best performance is:' + '\n'
-			perf_print += str(np.round(100*(np.max(allPerf)),2)) + '%' + ' (run ' + str(np.argmax(allPerf)) + ')' + '\n'
+			perf_print += str(np.round(100*(np.max(perf_all)),2)) + '%' + ' (run ' + str(np.argmax(perf_all)) + ')' + '\n'
 			perf_print += 'and worse performance is:' + '\n'
-			perf_print += str(np.round(100*(np.min(allPerf)),2)) + '%' + ' (run ' + str(np.argmin(allPerf)) + ')' + '\n'
+			perf_print += str(np.round(100*(np.min(perf_all)),2)) + '%' + ' (run ' + str(np.argmin(perf_all)) + ')' + '\n'
 
 		print perf_print
 
 	if save_data:
-		pFile = open('output/' + name + '/classResults', 'w')
-		pDict = {'allCMs':allCMs, 'avgCM':avgCM, 'steCM':steCM, 'allPerf':allPerf, 'avgPerf':avgPerf, 'stePerf':stePerf}
-		pickle.dump(pDict, pFile)
-		pFile.close()
-
 		perf_file = open('./output/' + name + '/' +name+ '_perf.txt', 'w')
 		perf_file.write(perf_print)
 		perf_file.close()
 
-		fig = an.plot_CM(avgCM, classes)
+		fig = an.plot_CM(CM_avg, classes)
 		pyplot.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
 		pyplot.close(fig)
+
+	return {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_avg}
+
+
+
 
 
 

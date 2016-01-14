@@ -203,11 +203,11 @@ class Network:
 		"""
 
 		if self.classifier=='neural':
-			allCMs, allPerf = cl.neural(self, images_test, labels_test)
+			self.perf_dict = cl.neural(self, images_test, labels_test)
 		elif self.classifier=='bayesian':
-			allCMs, allPerf = cl.bayesian(self, images_train, labels_train, images_test, labels_test)
+			self.perf_dict = cl.bayesian(self, images_train, labels_train, images_test, labels_test)
 
-		return allCMs, allPerf
+		return self.perf_dict
 
 	def assess(self, images, labels):
 		""" compute histogram of RF classes """
@@ -235,18 +235,18 @@ class Network:
 			else: W_act_pass=None
 			if self.protocol=='digit':
 				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
-				slopes = np.array([])
+				self.TC = {}
 			elif self.protocol=='gabor':
 				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
 				curves = gr.tuning_curves(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=True)
 				pref_ori = gr.preferred_orientations(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name)
 				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
-			if self.test_each_epi:
-				an.perf_progress(self.name, self.perf_runs, epi_start=0)
+				self.TC = {'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes}
 
-	def save(self):
-		"""" save data """
-		if self.save_data: 
+			an.plot_perf_progress(self.name, self.perf_runs, epi_start=0)
+
+		""" save network to file """
+		if self.save_data:
 			n_file = open('output/' + self.name + '/Network', 'w')
 			pickle.dump(self, n_file)
 			n_file.close()
