@@ -25,28 +25,24 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 												'dNeut' 	: -0.1,
 												'dLow' 		: -2.0,
 												},
+							protocol		= 'digit',
 							name 			= 'gabor_2',
-							n_runs 			= 2,		
-							n_epi_crit		= 2,				
-							n_epi_dopa		= 2,				
+							n_runs 			= 1,		
+							n_epi_crit		= 10,				
+							n_epi_dopa		= 3,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							n_hid_neurons	= 49,
-							lim_weights		= False,
 							lr				= 0.01,
+							batch_size 		= 20,
+							n_hid_neurons	= 49,
+							init_file		= None,					#'digit_479_16'
+							lim_weights		= False,
 							noise_std		= 0.2, 					#digit: 4.0 	; gabor: 0.2 (?)
 							exploration		= True,
 							pdf_method 		= 'fit',
-							batch_size 		= 20,
-							protocol		= 'digit',
-							classifier		= 'neural',
-							init_file		= None,					#'digit_479_16'
+							classifier		= 'bayesian',
 							test_each_epi	= True,
-							save_data		= True,
 							verbose			= True,
-							show_W_act		= False,
-							sort 			= None,
-							target			= None,
 							seed 			= 995 					#np.random.randint(1000)
 							)
 
@@ -58,7 +54,7 @@ images, labels, images_params = ex.load_images(	protocol 		= net.protocol,
 																	'dataset_train'	: 'test',
 																	'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																	},
-												gabor_params 	= {	'n_train' 		: 5000,
+												gabor_params 	= {	'n_train' 		: 10000,
 																	'n_test' 		: 1000,
 																	'target_ori' 	: 85.,
 																	'excentricity' 	: 3.,
@@ -71,13 +67,29 @@ images, labels, images_params = ex.load_images(	protocol 		= net.protocol,
 
 tic = time.time()
 
-perf_train = net.train(images['train'], labels['train'], images['task'], labels['task'], images_params)
+perf_train = net.train(	images['train'], 
+						labels['train'], 
+						images['task'], 
+						labels['task'], 
+						images_params
+						)
 
-perf_test = net.test(images['test'], labels['test'], images['train'], labels['train'])
+perf_test = net.test(	images['test'], 
+						labels['test'], 
+						images['train'], 
+						labels['train'], 
+						)
 
-net.assess(images['train'], labels['train'])
+net.assess(	images['train'], 
+			labels['train'],
+			save_data	= True, 
+			show_W_act	= True, 
+			sort		= None, 
+			target 		= None
+			)
 
-print '\n\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
+print '\nrun name:\t' + net.name
+print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
 print 'run time:\t' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
 

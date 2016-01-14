@@ -21,7 +21,7 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, dopa_values, name, n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
+	def __init__(self, dopa_values, name, n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -45,11 +45,7 @@ class Network:
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
 				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
-				save_data (bool, optional): whether to save data to disk. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
-				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
-				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
-				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
 				seed (int, optional): seed of the random number generator. Default: None
 		"""
 		
@@ -71,21 +67,11 @@ class Network:
 		self.classifier		= classifier
 		self.init_file		= init_file
 		self.test_each_epi	= test_each_epi			##not implemented
-		self.save_data 		= save_data
 		self.verbose 		= verbose
-		self.show_W_act 	= show_W_act
-		self.sort 			= sort
-		self.target 		= target
 		self.seed 			= seed
-
-		if self.save_data: 
-			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
-		else:
-			print "!!! ----- not saving data ----- !!! \n"
-		
+	
 		self._check_parameters()
 		np.random.seed(self.seed)
-
 
 	def train(self, images, labels, images_task=None, labels_task=None, images_params={}):
 		""" 
@@ -110,7 +96,6 @@ class Network:
 		self.hid_W_runs = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_runs = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_runs = np.zeros((self.n_runs, self.n_epi_tot))
-		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
 		n_batches = int(np.ceil(float(n_images)/self.batch_size))
@@ -183,8 +168,6 @@ class Network:
 			self.out_W_runs[r,:,:] = np.copy(self.out_W)
 			self.perf_runs[r, :] = np.copy(perf_train)
 
-		if self.verbose and self._train_class_layer: print 'correct out weight assignment:\n' + str(correct_out_W) + ' of ' + str(self.n_hid_neurons)
-
 		return perf_train[-1]
 
 	def test(self, images_test, labels_test, images_train=None, labels_train=None):
@@ -194,59 +177,110 @@ class Network:
 			Args: 
 				images_test (2D numpy array): images to test the Network on.
 				labels_test (1D numpy array): labels of the testing images.
-				images_train (2D numpy array): images the Network was trained on (used to compute posterior for bayesian inference).
-				labels_train (1D numpy array): labels of the training images.
+				images_train (2D numpy array, optional): images the Network was trained on (used to compute posterior for bayesian inference).
+				labels_train (1D numpy array, optional): labels of the training images.
 
 			returns:
-				(numpy array): confusion matrix of the network for all runs
-				(numpy array): performance of the network for all runs
+				(dict): confusion matrix and performance of the network for all runs
 		"""
 
-		if self.classifier=='neural':
-			self.perf_dict = cl.neural(self, images_test, labels_test)
-		elif self.classifier=='bayesian':
-			self.perf_dict = cl.bayesian(self, images_train, labels_train, images_test, labels_test)
+		if self.verbose: print "\ntesting network..."
+
+		""" variable initialization """
+		CM_all = []
+		perf_all = []
+
+		for iw in range(self.n_runs):
+			if self.verbose: print 'run: ' + str(iw+1)
+			hid_W = self.hid_W_runs[iw,:,:]
+			out_W = self.out_W_runs[iw,:,:]
+
+			""" testing of the classifier """
+			if self.classifier=='neural':
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t)
+				actNeurons = ex.propagate_layerwise(hidNeurons, out_W)
+				classIdx = np.argmax(actNeurons, 1)
+				classResults = self.classes[classIdx]
+			elif self.classifier=='bayesian':
+				pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images_train, labels_train, hid_W, self.pdf_method, self.t)
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t)
+				posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
+				classIdx = np.argmax(posterior, 1)
+				classResults = self.classes[classIdx]
+			correct_classif = float(np.sum(classResults==labels_test))
+			perf_all.append(correct_classif/len(labels_test))
+			
+			""" compute classification performance """
+			CM = np.zeros((len(self.classes), len(self.classes)))
+			for ilabel,label in enumerate(self.classes):
+				for iclassif, classif in enumerate(self.classes):
+					classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
+					overTot = np.sum(labels_test==label)
+					CM[ilabel, iclassif] = float(classifiedAs)/overTot
+			CM_all.append(CM)
+
+		""" create classification results to save """
+		CM_avg = np.mean(CM_all,0)
+		CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
+		perf_avg = np.mean(perf_all)
+		perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
+		self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste}
 
 		return self.perf_dict
 
-	def assess(self, images, labels):
+	def assess(self, images, labels, save_data=True, show_W_act=True, sort=None, target=None):
+		"""
+		Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
+
+			Args:
+				save_data (bool, optional): whether to save data to disk. Default: True
+				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
+				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
+				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
+				save_data (bool, optional): whether to save test result to disk
+		"""
+
+		if save_data: 
+			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
+
+		""" plot and save confusion matrices """
+		an.print_save_CM(self.perf_dict, self.name, self.classes, self.verbose, save_data)
+
 		""" compute histogram of RF classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, save_data=self.save_data, verbose=self.verbose)
+			RFproba, self.RF_info = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, save_data=save_data, verbose=self.verbose)
 		elif self.protocol=='gabor':
-			RFproba = an.hist_gabor(10, self.name, self.hid_W_runs, self.t, self.images_params['target_ori'], self.save_data, self.verbose)
+			RFproba, self.RF_info = an.hist_gabor(10, self.name, self.hid_W_runs, self.t, self.images_params['target_ori'], save_data=save_data, verbose=self.verbose)
 
 		""" compute correct weight assignment in the ouput layer """
 		if self._train_class_layer:
-			correct_out_W = 0.
+			self.correct_out_W = np.zeros(self.n_runs)
 			not_same = {}
 			for r in range(self.n_runs):
 				same = np.argmax(RFproba[r],1) == self.classes[np.argmax(self.out_W_runs[r],1)]
 				not_same[r] = np.argwhere(~same)
-				correct_out_W += np.sum(same)
-			correct_out_W/=len(RFproba)
+				self.correct_out_W[r] = np.sum(same)
+
+			if self.verbose: 
+				print '\ncorrect out weight assignment:\n' + str(np.mean(self.correct_out_W)) + ' of ' + str(self.n_hid_neurons)
 		else:
 			not_same = None
 			correct_out_W = 0.
 
 		""" plot weights """
-		if self.save_data:
-			if self.show_W_act: W_act_pass=self.out_W_runs
+		if save_data:
+			if show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
 			if self.protocol=='digit':
-				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
-				self.TC = {}
+				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)
 			elif self.protocol=='gabor':
 				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
-				curves = gr.tuning_curves(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=True)
-				pref_ori = gr.preferred_orientations(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name)
-				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
-				self.TC = {'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes}
+				
 
 			an.plot_perf_progress(self.name, self.perf_runs, epi_start=0)
 
 		""" save network to file """
-		if self.save_data:
+		if save_data:
 			n_file = open('output/' + self.name + '/Network', 'w')
 			pickle.dump(self, n_file)
 			n_file.close()
@@ -421,7 +455,7 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba, _, _ = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)
+				RFproba, _ = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)
 			elif self.protocol=='gabor':
 				pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)

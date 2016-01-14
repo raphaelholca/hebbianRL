@@ -145,43 +145,55 @@ def even_labels(images, labels, classes):
 	
 	return images, labels
 
-def normalize(images, A):
+def checkdir(name, protocol, overwrite=True):
 	"""
-	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
+	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
 
 	Args:
-
-		images (numpy array): image to normalize
-		A (int): normalization constant
-
-	returns:
-		numpy array: normalized images
+		name (str): name of the network, used to save data to disk
+		protocol (str): experimental protocol
+		overwrite (bool, optional): whether to overwrite existing directory
 	"""
 
-	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
+	if os.path.exists('output/' + name):
+		if overwrite: overwrite='yes'
+		else: overwrite = raw_input('Folder \''+name+'\' already exists. Overwrite? (y/n/<new name>) ')
+		if overwrite in ['n', 'no', 'not', ' ', '']:
+			sys.exit('Folder exits - not overwritten')
+		elif overwrite in ['y', 'yes']:
+			shutil.rmtree('output/' + name)
+		else:
+			name = overwrite
+			checkdir(name)
+			return name
+	os.makedirs('output/' + name)
+	os.makedirs('output/' + name + '/RFs')
+	if protocol=='gabor':
+		os.makedirs('output/' + name + '/TCs')
 
-@numba.njit
-def normalize_numba(images, A):
+	return name
+
+def shuffle(arrays):
 	"""
-	numba-optimized version of the normalize function; Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
+	Shuffles the passed vectors according to the same random order
 
 	Args:
-
-		images (numpy array): image to normalize
-		A (int): normalization constant
+		arrays (list): list of arrays to shuffle
 
 	returns:
-		numpy array: normalized images
+		list: list of shuffled arrays
 	"""
-	A_i = (A-images.shape[1])
-	for im in range(images.shape[0]):
-		sum_px = 0
-		for px in range(images.shape[1]):
-			sum_px += images[im,px]
-		for px in range(images.shape[1]):
-			images[im,px] = A_i*images[im,px]/sum_px + 1.
 
-	return images
+	rnd_idx = np.arange(len(arrays[0]))
+	np.random.shuffle(rnd_idx)
+	shuffled_arrays = []
+	for a in arrays:
+		if len(np.shape(a))==1:
+			shuffled_arrays.append(a[rnd_idx])
+		elif len(np.shape(a))==2:
+			shuffled_arrays.append(a[rnd_idx,:])
+
+	return shuffled_arrays
 
 def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 	"""
@@ -207,6 +219,21 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 	images = normalize(images, A*np.size(images,1))
 
 	return images, labels
+
+def normalize(images, A):
+	"""
+	Normalize each image to the sum of its pixel value (equivalent to feedforward inhibition)
+
+	Args:
+
+		images (numpy array): image to normalize
+		A (int): normalization constant
+
+	returns:
+		numpy array: normalized images
+	"""
+
+	return (A-images.shape[1])*images/np.sum(images,1)[:,np.newaxis] + 1.
 
 def softmax(activ, implementation='numba', t=1.):
 	"""
@@ -365,57 +392,6 @@ def compute_dopa(predicted_reward, reward, dopa_values):
 	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']			#incorrect reward prediction
 
 	return dopa
-
-def checkdir(name, protocol, overwrite=True):
-	"""
-	Checks if directory exits. If not, creates it. If yes, asks whether to overwrite. If user choose not to overwrite, execution is terminated
-
-	Args:
-		name (str): name of the network, used to save data to disk
-		protocol (str): experimental protocol
-		overwrite (bool, optional): whether to overwrite existing directory
-	"""
-
-	if os.path.exists('output/' + name):
-		if overwrite: overwrite='yes'
-		else: overwrite = raw_input('Folder \''+name+'\' already exists. Overwrite? (y/n/<new name>) ')
-		if overwrite in ['n', 'no', 'not', ' ', '']:
-			sys.exit('Folder exits - not overwritten')
-		elif overwrite in ['y', 'yes']:
-			shutil.rmtree('output/' + name)
-		else:
-			name = overwrite
-			checkdir(name)
-			return name
-	os.makedirs('output/' + name)
-	os.makedirs('output/' + name + '/RFs')
-	if protocol=='gabor':
-		os.makedirs('output/' + name + '/TCs')
-
-	return name
-
-def shuffle(arrays):
-	"""
-	Shuffles the passed vectors according to the same random order
-
-	Args:
-		arrays (list): list of arrays to shuffle
-
-	returns:
-		list: list of shuffled arrays
-	"""
-
-	rnd_idx = np.arange(len(arrays[0]))
-	np.random.shuffle(rnd_idx)
-	shuffled_arrays = []
-	for a in arrays:
-		if len(np.shape(a))==1:
-			shuffled_arrays.append(a[rnd_idx])
-		elif len(np.shape(a))==2:
-			shuffled_arrays.append(a[rnd_idx,:])
-
-	return shuffled_arrays
-
 
 
 

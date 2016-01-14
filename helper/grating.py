@@ -155,7 +155,7 @@ def preferred_orientations(W, t, target_ori, name):
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, t, target_ori, name, n_hid_neurons, plot=True):
+def slopes(W, curves, pref_ori, t, target_ori, name, plot=True):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -166,7 +166,6 @@ def slopes(W, curves, pref_ori, t, target_ori, name, n_hid_neurons, plot=True):
 		t (float): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 		target_ori (float): target orientation on side of which to discrimate the gabor patches
 		name (str): name of the network, used for saving figures
-		n_hid_neurons (int): number of hidden neurons
 		plot (bool, optional): whether or not to create plots
 
 	returns:
@@ -182,8 +181,8 @@ def slopes(W, curves, pref_ori, t, target_ori, name, n_hid_neurons, plot=True):
 	slopes = np.zeros((n_runs, n_input, n_neurons))
 	all_slopes = []
 	all_deg = []
-	all_dist_from_target = np.empty((n_runs, n_hid_neurons))
-	all_slope_at_target = np.empty((n_runs, n_hid_neurons))
+	all_dist_from_target = np.empty((n_runs, n_neurons))
+	all_slope_at_target = np.empty((n_runs, n_neurons))
 
 	for r in range(n_runs):
 		slopes[r,:,:] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
@@ -194,7 +193,7 @@ def slopes(W, curves, pref_ori, t, target_ori, name, n_hid_neurons, plot=True):
 		dist_target[dist_target>90]-=180
 		dist_target[dist_target<-90]+=180
 		target_idx = int(target_ori * (n_input/180))
-		slope_at_target = slopes[r,:,:][target_idx, np.arange(n_hid_neurons)]
+		slope_at_target = slopes[r,:,:][target_idx, np.arange(n_neurons)]
 
 		all_dist_from_target[r, :] = dist_target
 		all_slope_at_target[r, :] = slope_at_target

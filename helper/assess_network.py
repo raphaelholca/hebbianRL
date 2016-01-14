@@ -32,7 +32,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 		RFselec (numpy array): mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
-	if verbose: print "\ncomputing RF classes..."
+	if verbose: print "computing RF classes..."
 	n_runs = np.size(W,0)
 	n_neurons = np.size(W,2)
 
@@ -52,24 +52,25 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-	pRFclass = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	if save_data:
-		pfile = open('output/'+ name +'/RFclass', 'w')
-		pickle.dump(pRFclass, pfile)
-		pfile.close()
-
 		bin_names = classes
 		fig = plot_hist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
 		plt.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
 		plt.close(fig)
 
-	return RFproba, RFclass, RFselec
+	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
+
+	return RFproba, RF_info
 
 def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
 	""" Computes the distribution of orientation preference of neurons in the network. """
+	
+	curves = gr.tuning_curves(hid_W_runs, t, target_ori, name, method='no_softmax', plot=True)
 	pref_ori = gr.preferred_orientations(hid_W_runs, t, target_ori, name)
-	RFproba = np.zeros((np.size(hid_W_runs,0), np.size(hid_W_runs,1), 2), dtype=int)
+	slopes = gr.slopes(hid_W_runs, curves, pref_ori, t, target_ori, name)
+	
+	RFproba = np.zeros((np.size(hid_W_runs,0), np.size(hid_W_runs,2), 2), dtype=int)
 	
 	n_runs = np.size(pref_ori,0)
 	for r in range(n_runs):
@@ -91,8 +92,10 @@ def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
 		fig = plot_hist(h_mean, bin_names, h_err=h_ste)
 		plt.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
 		plt.close(fig)
-
-	return RFproba
+	
+	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes}
+	
+	return RFproba, RF_info
 
 def selectivity(W, RFproba, images, labels, classes):
 	"""
@@ -123,6 +126,42 @@ my_blues = [plt.get_cmap('YlGnBu')(1.*i/n_colors) for i in range(n_colors)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/n_colors) for i in range(n_colors)]
 cm_pastel = [plt.get_cmap('Paired')(1.*i/n_colors) for i in range(n_colors)]
 
+def print_save_CM(perf_dict, name, classes, verbose, save_data):
+	""" print and save performance measures """
+
+	CM_avg = perf_dict['CM_avg']
+	perf_all = perf_dict['perf_all']
+	perf_avg = perf_dict['perf_avg']
+	perf_ste = perf_dict['perf_ste']
+
+	if verbose or save_data:
+		perf_print = ''
+		perf_print += '\naverage confusion matrix:' + '\n'
+		c_str = ''
+		for c in classes: c_str += str(c).rjust(6)
+		perf_print += c_str + '\n'
+		perf_print += '-'*(len(c_str)+3) + '\n'
+		perf_print += str(np.round(CM_avg,2)) + '\n'
+		perf_print += '\naverage correct classification:' + '\n'
+		perf_print += str(np.round(100*perf_avg,2)) + ' +/- ' + str(np.round(100*perf_ste,2)) + ' %' + '\n'
+		if len(perf_all)>1:
+			perf_print += '\nof which best performance is:' + '\n'
+			perf_print += str(np.round(100*(np.max(perf_all)),2)) + '%' + ' (run ' + str(np.argmax(perf_all)) + ')' + '\n'
+			perf_print += 'and worse performance is:' + '\n'
+			perf_print += str(np.round(100*(np.min(perf_all)),2)) + '%' + ' (run ' + str(np.argmin(perf_all)) + ')' + '\n'
+
+		print perf_print
+
+	if save_data:
+		perf_file = open('./output/' + name + '/' +name+ '_perf.txt', 'w')
+		perf_file.write(perf_print)
+		perf_file.close()
+
+		fig = plot_CM(CM_avg, classes)
+		plt.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
+		plt.close(fig)
+
+
 def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True):
 	""" Plot the RFs of neurons """
 	if verbose: print "\nploting RFs..."
@@ -149,7 +188,7 @@ def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=N
 			target_pass = np.zeros((np.size(W_sort,0),1,1))
 			target_pass[T_idx,:,:]=1.0
 		W_act_pass=None
-		if W_act:
+		if W_act is not None:
 			W_act_pass = W_act[r]
 		if not_same:
 			notsame_pass = not_same[r]
