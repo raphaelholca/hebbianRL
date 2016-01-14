@@ -6,9 +6,7 @@ This function trains a Hebbian neural network to learn a representation from the
 """
 
 import numpy as np
-import matplotlib.pyplot as pyplot
 import helper.external as ex
-import helper.plots as pl
 import helper.classifier as cl
 import helper.assess_network as an
 import helper.grating as gr
@@ -16,7 +14,6 @@ import helper.bayesian_decoder as bc
 import pickle
 
 ex = reload(ex)
-pl = reload(pl)
 cl = reload(cl)
 an = reload(an)
 gr = reload(gr)
@@ -24,7 +21,7 @@ bc = reload(bc)
 
 class Network:
 
-	def __init__(self, dopa_values, name, n_run=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, SVM=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
+	def __init__(self, dopa_values, name, n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, save_data=True, verbose=True, show_W_act=True, sort=None, target=None, seed=None):
 
 		"""
 		Sets network parameters 
@@ -32,7 +29,7 @@ class Network:
 			Args:
 				dopa_values (dict): values of dopamine release for different reward prediction error scenarios
 				name (str, optional): name of the folder where to save results. Default: 'net'
-				n_run (int, optional): number of runs. Default: 1
+				n_runs (int, optional): number of runs. Default: 1
 				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 10
 				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 10
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
@@ -48,7 +45,6 @@ class Network:
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
 				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
-				SVM (bool, optional): whether to use an SVM or the number of stimuli that activate a neuron to determine the class of the neuron. Default: False
 				save_data (bool, optional): whether to save data to disk. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
 				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
@@ -59,7 +55,7 @@ class Network:
 		
 		self.dopa_values 	= dopa_values
 		self.name 			= name
-		self.n_run 			= n_run
+		self.n_runs 		= n_runs
 		self.n_epi_crit		= n_epi_crit				
 		self.n_epi_dopa		= n_epi_dopa				
 		self.t				= t 						
@@ -75,7 +71,6 @@ class Network:
 		self.classifier		= classifier
 		self.init_file		= init_file
 		self.test_each_epi	= test_each_epi			##not implemented
-		self.SVM 			= SVM
 		self.save_data 		= save_data
 		self.verbose 		= verbose
 		self.show_W_act 	= show_W_act
@@ -112,9 +107,9 @@ class Network:
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
-		self.hid_W_runs = {}
-		self.out_W_runs = {}
-		self.perf_runs = {}
+		self.hid_W_runs = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
+		self.out_W_runs = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
+		self.perf_runs = np.zeros((self.n_runs, self.n_epi_tot))
 		self.show_W_act = False if self.classifier=='bayesian' else self.show_W_act
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
@@ -126,7 +121,7 @@ class Network:
 			print '\ntraining network...'
 		
 		""" execute multiple training runs """
-		for r in range(self.n_run):
+		for r in range(self.n_runs):
 			if self.verbose: print '\nrun: ' + str(r+1)
 
 			np.random.seed(self.seed+r)
@@ -184,9 +179,9 @@ class Network:
 				if self.verbose: print 'train performance: ' + str(np.round(perf_train[-1]*100,1)) + '%'
 
 			#save data
-			self.hid_W_runs[str(r).zfill(3)] = np.copy(self.hid_W)
-			self.out_W_runs[str(r).zfill(3)] = np.copy(self.out_W)
-			self.perf_runs[str(r).zfill(3)] = np.copy(perf_train)
+			self.hid_W_runs[r,:,:] = np.copy(self.hid_W)
+			self.out_W_runs[r,:,:] = np.copy(self.out_W)
+			self.perf_runs[r, :] = np.copy(perf_train)
 
 		if self.verbose and self._train_class_layer: print 'correct out weight assignment:\n' + str(correct_out_W) + ' of ' + str(self.n_hid_neurons)
 
@@ -217,7 +212,7 @@ class Network:
 	def assess(self, images, labels):
 		""" compute histogram of RF classes """
 		if self.protocol=='digit':
-			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, SVM=self.SVM, save_data=self.save_data, verbose=self.verbose)
+			RFproba, RFclass, _ = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, save_data=self.save_data, verbose=self.verbose)
 		elif self.protocol=='gabor':
 			RFproba = an.hist_gabor(10, self.name, self.hid_W_runs, self.t, self.images_params['target_ori'], self.save_data, self.verbose)
 
@@ -225,9 +220,9 @@ class Network:
 		if self._train_class_layer:
 			correct_out_W = 0.
 			not_same = {}
-			for k in self.out_W_runs.keys():
-				same = np.argmax(RFproba[int(k)],1) == self.classes[np.argmax(self.out_W_runs[k],1)]
-				not_same[k] = np.argwhere(~same)
+			for r in range(self.n_runs):
+				same = np.argmax(RFproba[r],1) == self.classes[np.argmax(self.out_W_runs[r],1)]
+				not_same[r] = np.argwhere(~same)
 				correct_out_W += np.sum(same)
 			correct_out_W/=len(RFproba)
 		else:
@@ -239,15 +234,15 @@ class Network:
 			if self.show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
 			if self.protocol=='digit':
-				pl.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
-				slopes = {}
+				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
+				slopes = np.array([])
 			elif self.protocol=='gabor':
-				pl.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
+				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
 				curves = gr.tuning_curves(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=True)
 				pref_ori = gr.preferred_orientations(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name)
-				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.n_run, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
+				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
 			if self.test_each_epi:
-				pl.perf_progress(self, self.perf_runs)
+				an.perf_progress(self.name, self.perf_runs, epi_start=0)
 
 	def save(self):
 		"""" save data """
@@ -426,12 +421,12 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba, _, _ = an.hist(self.name, {'000':self.hid_W}, self.classes, images, labels, SVM=self.SVM, save_data=False, verbose=False)
+				RFproba, _, _ = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)
 			elif self.protocol=='gabor':
-				pref_ori = gr.preferred_orientations({'000':self.hid_W}, self.t, self.images_params['target_ori'], self.name)
+				pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
-				RFproba[0,:,:][pref_ori['000'] <= self.images_params['target_ori']] = [1,0]
-				RFproba[0,:,:][pref_ori['000'] > self.images_params['target_ori']] = [0,1]
+				RFproba[0,:,:][pref_ori[0,:] <= self.images_params['target_ori']] = [1,0]
+				RFproba[0,:,:][pref_ori[0,:] > self.images_params['target_ori']] = [0,1]
 		
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.

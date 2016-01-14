@@ -11,7 +11,6 @@ import os
 import sys
 import shutil
 import numba
-import time	
 import grating as gr
 import struct
 from array import array

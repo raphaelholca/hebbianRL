@@ -2,15 +2,13 @@
 
 import numpy as np
 import matplotlib.pyplot as pyplot
-import helper.mnist as mnist
 import helper.external as ex
-import helper.plots as pl
+import helper.assess_network as an
 import helper.bayesian_decoder as bc
 import pickle
-from sklearn.svm import SVC
 
 ex = reload(ex)
-pl = reload(pl)
+an = reload(an)
 bc = reload(bc)
 
 def neural(net, images, labels):
@@ -28,10 +26,10 @@ def neural(net, images, labels):
 	allCMs = []
 	allPerf = []
 
-	for iw in sorted(net.hid_W_runs.keys()):
-		if net.verbose: print 'run: ' + str(int(iw)+1)
-		W_in = net.hid_W_runs[iw]
-		W_act = net.out_W_runs[iw]
+	for iw in range(net.n_runs):
+		if net.verbose: print 'run: ' + str(iw+1)
+		W_in = net.hid_W_runs[iw,:,:]
+		W_act = net.out_W_runs[iw,:,:]
 
 		""" testing of the classifier """
 		hidNeurons = ex.propagate_layerwise(images, W_in, t=net.t)
@@ -146,7 +144,7 @@ def print_save(allCMs, allPerf, classes, name, verbose, save_data):
 		perf_file.write(perf_print)
 		perf_file.close()
 
-		fig = pl.plot_CM(avgCM, classes)
+		fig = an.plot_CM(avgCM, classes)
 		pyplot.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
 		pyplot.close(fig)
 

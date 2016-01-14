@@ -1,3 +1,5 @@
+""" Support functions for bayesian inference; used to decode the activity of the neuron population  """
+
 import numpy as np
 import external as ex
 from sklearn.neighbors import KernelDensity

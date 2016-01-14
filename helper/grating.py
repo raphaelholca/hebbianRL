@@ -1,7 +1,10 @@
+""" Support functions for the gabor experimental protocol.  """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import external as ex
+
 ex = reload(ex)
 
 def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
@@ -80,8 +83,9 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 	noise_trial = 100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
-	im_size = int(np.sqrt(np.size(W[W.keys()[0]],0)))
-	n_neurons = int(np.size(W[W.keys()[0]],1))
+	n_runs = np.size(W,0)
+	im_size = int(np.sqrt(np.size(W,1)))
+	n_neurons = np.size(W,2)
 
 	orientations = np.arange(0,180,ori_step)
 	SM = False if method=='no_softmax' else True
@@ -92,19 +96,18 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 		for _ in range(noise_trial):
 			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise))
 
-	curves = {}
-	for r in W.keys():
+	curves = np.zeros((n_runs, n_input, n_neurons))
+	for r in range(n_runs):
 		if plot: 
 			fig, ax = plt.subplots()
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
-		curves[r] = np.zeros((n_input, n_neurons))
 		for i in range(len(test_input)):
-			curves[r] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			if plot:
-				pref_ori_sorter = np.argmax(curves[r], 0).argsort()
+				pref_ori_sorter = np.argmax(curves[r,:,:], 0).argsort()
 				
-				ax.plot(orientations, curves[r][:,pref_ori_sorter], lw=2)
-				ax.vlines(target_ori, 0, np.max(curves[r])*1.2, colors=u'k', linewidth=3, linestyle=':')
+				ax.plot(orientations, curves[r,:,:][:,pref_ori_sorter], lw=2)
+				ax.vlines(target_ori, 0, np.max(curves[r,:,:])*1.2, colors=u'k', linewidth=3, linestyle=':')
 
 				fig.patch.set_facecolor('white')
 				ax.spines['right'].set_visible(False)
@@ -114,7 +117,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 				ax.set_xlabel('angle (deg)', fontsize=18)
 				ax.set_ylabel('response', fontsize=18)
 				if method=='no_softmax' and False: ax.set_ylim([119,138])
-				else: ax.set_ylim([np.min(curves[r])-(np.max(curves[r])-np.min(curves[r]))*.1, np.max(curves[r])+(np.max(curves[r])-np.min(curves[r]))*.1])
+				else: ax.set_ylim([np.min(curves[r,:,:])-(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1, np.max(curves[r,:,:])+(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1])
 				ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 				plt.tight_layout()
 		
@@ -141,16 +144,18 @@ def preferred_orientations(W, t, target_ori, name):
 	curves = tuning_curves(W, t, target_ori, name, method='no_softmax', plot=False)
 
 
-	n_input = np.size(curves[curves.keys()[0]],0)
+	n_runs = np.size(curves,0)
+	n_input = np.size(curves,1)
+	n_neurons = np.size(curves,2)
 
-	pref_ori = {}
-	for r in curves.keys():
-		pref_ori[r] = np.argmax(curves[r],0) * (180./n_input) ##180??
+	pref_ori = np.zeros((n_runs, n_neurons))
+	for r in range(n_runs):
+		pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input) ##180??
 
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=True):
+def slopes(W, curves, pref_ori, t, target_ori, name, n_hid_neurons, plot=True):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -158,7 +163,6 @@ def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
 		curves (dict): the tuning curves for each neuron of each run; *!!* for now does not support curves if computed with 'with_noise' method)
 		pref_ori (dict): the preferred orientation of all neurons in all runs
-		n_run (int): number of runs
 		t (float): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition)
 		target_ori (float): target orientation on side of which to discrimate the gabor patches
 		name (str): name of the network, used for saving figures
@@ -171,27 +175,29 @@ def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=
 		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
 
-	n_input = np.size(curves[curves.keys()[0]],0)
+	n_runs = np.size(curves,0)
+	n_input = np.size(curves,1)
+	n_neurons = np.size(curves,2)
 
-	slopes = {}
-	all_slopes = {}
-	all_deg = {}
-	all_dist_from_target = np.empty((n_run, n_hid_neurons))
-	all_slope_at_target = np.empty((n_run, n_hid_neurons))
+	slopes = np.zeros((n_runs, n_input, n_neurons))
+	all_slopes = []
+	all_deg = []
+	all_dist_from_target = np.empty((n_runs, n_hid_neurons))
+	all_slope_at_target = np.empty((n_runs, n_hid_neurons))
 
-	for i_r, r in enumerate(W.keys()):
-		slopes[r] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
-		all_slopes[r] =[]
-		all_deg[r] =[]
+	for r in range(n_runs):
+		slopes[r,:,:] = np.abs(curves[r] - np.roll(curves[r], 1, axis=0))
+		all_slopes.append([])
+		all_deg.append([])
 
 		dist_target = pref_ori[r] - target_ori
 		dist_target[dist_target>90]-=180
 		dist_target[dist_target<-90]+=180
 		target_idx = int(target_ori * (n_input/180))
-		slope_at_target = slopes[r][target_idx, np.arange(n_hid_neurons)]
+		slope_at_target = slopes[r,:,:][target_idx, np.arange(n_hid_neurons)]
 
-		all_dist_from_target[i_r, :] = dist_target
-		all_slope_at_target[i_r, :] = slope_at_target
+		all_dist_from_target[r, :] = dist_target
+		all_slope_at_target[r, :] = slope_at_target
 
 		if plot: 
 			fig, ax = plt.subplots()
@@ -202,7 +208,7 @@ def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=
 			deg = pref_ori[r]-o
 			deg[deg>90]-=180
 			deg[deg<-90]+=180
-			y = slopes[r][deg_idx, :]
+			y = slopes[r,:,:][deg_idx, :]
 			
 			all_slopes[r].append(y)
 			all_deg[r].append(deg)
@@ -242,7 +248,7 @@ def slopes(W, curves, pref_ori, n_run, t, target_ori, name, n_hid_neurons, plot=
 			plt.savefig('output/' + name + '/TCs/' + 'slopes_at_target' + '.pdf')
 			plt.close(fig)
 
-	return {'slopes':slopes, 'all_slopes':all_slopes, 'all_deg':all_deg, 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
+	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
 

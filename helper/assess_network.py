@@ -6,15 +6,15 @@ import grating as gr
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
-import helper.mnist as mnist
 import pickle
+
 ex = reload(ex)
 gr = reload(gr)
 
 
-def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True, verbose=True):
+def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True):
 	"""
-	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron: use SVM=False. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
+	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
 		name (str): name of the network, used to save to file
@@ -23,43 +23,31 @@ def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True,
 		images (numpy array): images of the MNIST dataset used for training
 		labels (numpy array): labels corresponding to the images of the MNIST dataset
 		n_bins (int, optional): number of bins in the histogram
-		SVM (bool, optional): whether to compute the class of the weight of each neuron using an SVM (i.e., classify the weight matrix according to an SVM trained on the MNIST dataset) (True) or based on the number of example of each class that activates a neuron (a weight is classified as a '9' if '9' is the most frequent class to activate the neuron) (False) - SVM = False will not work with ACh signaling
 		save_data (bool, optional): whether save data
 		verbose (bool, optional): whether to display text ouput
 
 	return:
-		RFproba (numpy array): probability that a each RF belongs to a certain class. For SVM=True, this probability is computed by predict_proba of scikit-learn. For SVM=False, the probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= n_run x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
-		RFclass (numpy array): count of neurons responsive of each digit class (shape= n_run x 10)
+		RFproba (numpy array): probability that a each RF belongs to a certain class. The probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= n_runs x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
+		RFclass (numpy array): count of neurons responsive of each digit class (shape= n_runs x 10)
 		RFselec (numpy array): mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
 	"""
 
 	if verbose: print "\ncomputing RF classes..."
-	n_run = len(W)
-	n_neurons = np.size(W['000'],1)
+	n_runs = np.size(W,0)
+	n_neurons = np.size(W,2)
 
-	if SVM:
-		#load classifier from file; parameters of the model from:
-		#http://peekaboo-vision.blogspot.co.uk/2010/09/mnist-for-ever.html
-		#svm_mnist = SVC(kernel="rbf", C=2.8, gamma=.0073, probability=True, verbose=True)
-		pfile = open('support/SVM-MNIST-proba', 'r')
-		svm_mnist = pickle.load(pfile)
-		pfile.close()
-
-	RFproba = np.zeros((n_run,n_neurons,n_bins))
-	RFclass = np.zeros((n_run,n_bins))
-	RFselec = np.zeros((n_run,n_bins))
-	for i,r in enumerate(sorted(W.keys())):
-		if verbose: print 'run: ' + str(i+1)
-		if SVM:
-			RFproba[r,:,:] = np.round(svm_mnist.predict_proba(W[r].T),2)
-		else:
-			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
-			for n in range(n_neurons):
-				RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
-				RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
-		RFclass[i,:], _ = np.histogram(np.argmax(RFproba[i],1), bins=n_bins, range=(-0.5,9.5))
+	RFproba = np.zeros((n_runs,n_neurons,n_bins))
+	RFclass = np.zeros((n_runs,n_bins))
+	RFselec = np.zeros((n_runs,n_bins))
+	for r in range(n_runs):
+		if verbose: print 'run: ' + str(r+1)
+		mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
+		for n in range(n_neurons):
+			RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
+			RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
+		RFclass[r,:], _ = np.histogram(np.argmax(RFproba[r],1), bins=n_bins, range=(-0.5,9.5))
 		for c in range(n_bins):
-			RFselec[i,c] = np.mean(np.max(RFproba[i],1)[np.argmax(RFproba[i],1)==c])
+			RFselec[r,c] = np.mean(np.max(RFproba[r],1)[np.argmax(RFproba[r],1)==c])
 
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
@@ -81,16 +69,18 @@ def hist(name, W, classes, images, labels, n_bins=10, SVM=False, save_data=True,
 def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	pref_ori = gr.preferred_orientations(hid_W_runs, t, target_ori, name)
-	RFproba = np.zeros((len(hid_W_runs), np.size(hid_W_runs['000'],0), 2), dtype=int)
-	for r in pref_ori.keys():
-		RFproba[int(r),:,:][pref_ori[r]<=target_ori] = [1,0]
-		RFproba[int(r),:,:][pref_ori[r]>target_ori] = [0,1]
+	RFproba = np.zeros((np.size(hid_W_runs,0), np.size(hid_W_runs,1), 2), dtype=int)
+	
+	n_runs = np.size(pref_ori,0)
+	for r in range(n_runs):
+		RFproba[r,:,:][pref_ori[r,:]<=target_ori] = [1,0]
+		RFproba[r,:,:][pref_ori[r,:]>target_ori] = [0,1]
 
-	h_all = np.zeros((len(pref_ori.keys()), n_bins))
-	for r in pref_ori.keys():
-		h_all[int(r), :] = np.histogram(pref_ori[r], n_bins, range=(0.,180.))[0]
+	h_all = np.zeros((n_runs, n_bins))
+	for r in range(n_runs):
+		h_all[r, :] = np.histogram(pref_ori[r,:], n_bins, range=(0.,180.))[0]
 	h_mean = np.mean(h_all,0)
-	h_ste = np.std(h_all,0)/np.sqrt(len(pref_ori.keys()))
+	h_ste = np.std(h_all,0)/np.sqrt(n_runs)
 
 	if save_data:
 		bin_size = 180./n_bins
@@ -106,7 +96,7 @@ def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
 
 def selectivity(W, RFproba, images, labels, classes):
 	"""
-	computes the selectivity of a neuron, using the already computed RFproba. This RFproba must have been computed using hist() with SVM=False and lr_ratio=1.0
+	computes the selectivity of a neuron, using the already computed RFproba. This RFproba must have been computed using hist()
 
 	Args:
 		W (numpy array) : weights from input to hidden neurons
@@ -142,19 +132,20 @@ def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=N
 			print '!! number of neurons not square; using class sorting for display !!'
 			sort='class'
 
-	for i,r in enumerate(sorted(W.keys())):
+	n_runs = np.size(W,0)
+	for r in range(n_runs):
 		W_sort = np.copy(W[r])
-		if verbose: print 'run: ' + str(i+1)
+		if verbose: print 'run: ' + str(r+1)
 		if sort=='class': #sort weights according to their class
-			RFclass = np.argmax(RFproba[i],1)
+			RFclass = np.argmax(RFproba[r],1)
 			sort_idx = np.array([x for (y,x) in sorted(zip(RFclass, np.arange(len(RFclass))), key=lambda pair: pair[0])])
 			W_sort = W[r][:,sort_idx] 
-			RFproba[i] = np.array([x for (y,x) in sorted(zip(RFclass, RFproba[i]), key=lambda pair: pair[0])])
+			RFproba[r] = np.array([x for (y,x) in sorted(zip(RFclass, RFproba[r]), key=lambda pair: pair[0])])
 		elif sort=='tSNE':
 			W_sort = tSNE_sort(W_sort)
 		target_pass=None
 		if target:
-			T_idx = np.argwhere(np.argmax(RFproba[i],1)==target[r])
+			T_idx = np.argwhere(np.argmax(RFproba[r],1)==target[r])
 			target_pass = np.zeros((np.size(W_sort,0),1,1))
 			target_pass[T_idx,:,:]=1.0
 		W_act_pass=None
@@ -315,17 +306,23 @@ def plot_hist(h, bins, h_err=None):
 
 	return fig
 
-def perf_progress(net, perf, nEpi=None):
+def perf_progress(name, perf, epi_start=0):
 	"""
 	plots the progression of the error rate over training episodes
+
+	Args:
+		name (str): name of the network, used for saving purposes
+		perf (numpy array): training performance at each episode of each run
+		epi_start (int, optional): episode at which to start the plot (used epi_start=n_epi_crit to plot only after statistical pre-training). Default: 0 
 	"""
 
 	fig, ax = plt.subplots()
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
-	for r in perf.keys():
-		X = np.arange( len(perf[r][net.n_epi_crit:]) )+1
-		ax.plot(X, perf[r][net.n_epi_crit:]*100, lw=3)
+	n_runs = np.size(perf, 0)
+	for r in range(n_runs):
+		X = np.arange( len(perf[r, epi_start:]) )+1
+		ax.plot(X, perf[r, epi_start:]*100, lw=3)
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
@@ -338,7 +335,7 @@ def perf_progress(net, perf, nEpi=None):
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + net.name + '/' + net.name+ '_progress.pdf')
+	plt.savefig('output/' + name + '/' + name+ '_progress.pdf')
 	plt.close(fig)	
 
 
