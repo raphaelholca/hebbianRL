@@ -12,6 +12,7 @@ import sys
 import shutil
 import numba
 import grating as gr
+import time
 import struct
 from array import array
 
@@ -219,6 +220,30 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 	images = normalize(images, A*np.size(images,1))
 
 	return images, labels
+
+def print_params(net):
+	""" Print parameters of Network object to human-readable file """
+
+	tab_length = 25
+	params_to_print = ['batch_size', 'classes', 'classifier', 'dopa_values', 'exploration', 'images_params', 'init_file', 'lim_weights', 'lr', 'n_epi_crit', 'n_epi_dopa', 'n_hid_neurons', 'n_runs', 'name', 'noise_std', 'pdf_method', 'protocol', 'seed', 't']
+	
+	param_file = open(os.path.join('output', net.name, 'params.txt'), 'w')
+	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
+	param_file.write(time_line)
+
+	for p in params_to_print:
+		if not isinstance(vars(net)[p], dict):
+			line = ('%s \t: %s\n' %( p, str(vars(net)[p]) )).expandtabs(tab_length)
+			param_file.write(line)
+		else:
+			for ik, k in enumerate(vars(net)[p].keys()):
+				if ik==0:
+					line = ('%s \t: %s: %s\n' % (p, k, str(vars(net)[p][k]))).expandtabs(tab_length)
+				else:
+					line = ('\t  %s: %s\n' % (k, str(vars(net)[p][k]))).expandtabs(tab_length)
+				param_file.write(line)
+	param_file.close()
 
 def normalize(images, A):
 	"""

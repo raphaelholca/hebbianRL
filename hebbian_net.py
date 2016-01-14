@@ -7,14 +7,12 @@ This function trains a Hebbian neural network to learn a representation from the
 
 import numpy as np
 import helper.external as ex
-import helper.classifier as cl
 import helper.assess_network as an
 import helper.grating as gr
 import helper.bayesian_decoder as bc
 import pickle
 
 ex = reload(ex)
-cl = reload(cl)
 an = reload(an)
 gr = reload(gr)
 bc = reload(bc)
@@ -271,13 +269,11 @@ class Network:
 		if save_data:
 			if show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
-			if self.protocol=='digit':
-				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)
-			elif self.protocol=='gabor':
-				an.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
-				
-
+			an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)	
 			an.plot_perf_progress(self.name, self.perf_runs, epi_start=0)
+
+		""" save network parameters to file """
+		ex.print_params(self)
 
 		""" save network to file """
 		if save_data:
