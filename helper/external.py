@@ -80,7 +80,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 
 		images_params = gabor_params
 
-	return images, labels, images_test, labels_test, images_task, labels_task, images_params
+	return {'train':images, 'test':images_test, 'task':images_task}, {'train':labels, 'test':labels_test, 'task':labels_task}, images_params
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
     """ Import the MNIST data set """
