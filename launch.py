@@ -40,7 +40,7 @@ net = rl.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 					exploration		= True,
 					pdf_method 		= 'fit',
 					batch_size 		= 20,
-					protocol		= 'gabor',
+					protocol		= 'digit',
 					classifier		= 'neural',
 					init_file		= None,					#'digit_479_16'
 					test_each_epi	= True,

@@ -123,7 +123,7 @@ def print_save(allCMs, allPerf, classes, name, verbose, save_data):
 		perf_file.write(perf_print)
 		perf_file.close()
 
-		fig = pl.plotCM(avgCM, classes)
+		fig = pl.plot_CM(avgCM, classes)
 		pyplot.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
 		pyplot.close(fig)
 

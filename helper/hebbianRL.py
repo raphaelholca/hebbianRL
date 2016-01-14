@@ -239,10 +239,10 @@ class Network:
 			if self.show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
 			if self.protocol=='digit':
-				an.plot(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
+				pl.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=self.target, W_act=W_act_pass, sort=self.sort, not_same=not_same, verbose=self.verbose)
 				slopes = {}
 			elif self.protocol=='gabor':
-				an.plot(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
+				pl.plot_all_RF(self.name, self.hid_W_runs, RFproba, W_act=W_act_pass, not_same=not_same, verbose=self.verbose)
 				curves = gr.tuning_curves(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=True)
 				pref_ori = gr.preferred_orientations(self.hid_W_runs, self.t, self.images_params['target_ori'], self.name)
 				slopes = gr.slopes(self.hid_W_runs, curves, pref_ori, self.n_run, self.t, self.images_params['target_ori'], self.name, self.n_hid_neurons)
