@@ -7,13 +7,11 @@ This function trains a Hebbian neural network to learn a representation from the
 
 import numpy as np
 import helper.external as ex
-import helper.assess_network as an
 import helper.grating as gr
 import helper.bayesian_decoder as bc
 import pickle
 
 ex = reload(ex)
-an = reload(an)
 gr = reload(gr)
 bc = reload(bc)
 
@@ -94,8 +92,8 @@ class Network:
 		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
-		self.perf_train_prog = np.zeros((self.n_runs, self.n_epi_tot))
-		self.perf_test_prog = np.zeros((self.n_runs, self.n_epi_tot)) if self.test_each_epi else None
+		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
+		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
 		n_batches = int(np.ceil(float(n_images)/self.batch_size))
@@ -229,61 +227,6 @@ class Network:
 			return self.perf_dict
 		else:
 			return correct_classif
-
-	def assess(self, images, labels, save_data=True, show_W_act=True, sort=None, target=None):
-		"""
-		Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
-
-			Args:
-				save_data (bool, optional): whether to save data to disk. Default: True
-				show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
-				sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
-				target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
-				save_data (bool, optional): whether to save test result to disk
-		"""
-
-		if save_data: 
-			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
-
-		""" plot and save confusion matrices """
-		an.print_save_CM(self.perf_dict, self.name, self.classes, self.verbose, save_data)
-
-		""" compute histogram of RF classes and properties of tuning curves """
-		if self.protocol=='digit':
-			RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images, labels, save_data=save_data, verbose=self.verbose)
-		elif self.protocol=='gabor':
-			RFproba, self.RF_info = an.hist_gabor(10, self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=save_data, verbose=self.verbose)
-
-		""" compute correct weight assignment in the ouput layer """
-		if self._train_class_layer:
-			self.correct_out_W = np.zeros(self.n_runs)
-			not_same = {}
-			for r in range(self.n_runs):
-				same = np.argmax(RFproba[r],1) == self.classes[np.argmax(self.out_W_trained[r],1)]
-				not_same[r] = np.argwhere(~same)
-				self.correct_out_W[r] = np.sum(same)
-
-			if self.verbose: 
-				print 'correct out weight assignment:\n' + str(np.mean(self.correct_out_W)) + ' of ' + str(self.n_hid_neurons)
-		else:
-			not_same = None
-			correct_out_W = 0.
-
-		""" plot weights and performance progression """
-		if save_data:
-			if show_W_act: W_act_pass=self.out_W_trained
-			else: W_act_pass=None
-			an.plot_all_RF(self.name, self.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)	
-			an.plot_perf_progress(self.name, self.perf_train_prog, self.perf_test_prog, self.n_epi_crit, epi_start=0)
-
-		""" save network parameters to file """
-		ex.print_params(self)
-
-		""" save network to file """
-		if save_data:
-			n_file = open('output/' + self.name + '/Network', 'w')
-			pickle.dump(self, n_file)
-			n_file.close()
 
 	def _init_weights(self):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
@@ -458,7 +401,10 @@ class Network:
 			if self._train_class_layer:
 				correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 				print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
-			print_perf += 'train performance: ' + str(np.round(perf_train*100,1)) + '%'
+			if self.classifier=='neural' or e>=self.n_epi_crit:
+				print_perf += 'train performance: ' + str(np.round(perf_train*100,1)) + '%'
+			else:
+				print_perf += 'train performance: ' + '-N/A-'
 			if self.test_each_epi:
 				perf_test = self.test(images_dict, labels_dict, during_training=True)
 				print_perf += ' ; test performance: ' + str(np.round(perf_test*100,1)) + '%'

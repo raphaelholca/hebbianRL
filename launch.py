@@ -15,9 +15,11 @@ import pickle
 import time
 import hebbian_net
 import helper.external as ex
+import helper.assess_network as an
 
 hebbian_net = reload(hebbian_net)
 ex = reload(ex)
+an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
@@ -26,10 +28,10 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 												'dLow' 		: -2.0,
 												},
 							protocol		= 'gabor',
-							name 			= 'gabor_1',
-							n_runs 			= 2,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 10,				
+							name 			= 'test',
+							n_runs 			= 1,		
+							n_epi_crit		= 5,				
+							n_epi_dopa		= 5,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							lr				= 0.01,
@@ -73,7 +75,8 @@ toc = time.time()
 
 perf_dict = net.test(images_dict, labels_dict)
 
-net.assess(	images_dict['train'], 
+an.assess(	net,
+			images_dict['train'], 
 			labels_dict['train'],
 			save_data	= True, 
 			show_W_act	= True, 

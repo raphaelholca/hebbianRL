@@ -11,6 +11,62 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
+def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, target=None):
+	"""
+	Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
+
+		Args:
+			net (Network object): network object to assess
+			save_data (bool, optional): whether to save data to disk. Default: True
+			show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
+			sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
+			target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
+			save_data (bool, optional): whether to save test result to disk
+	"""
+
+	if save_data: 
+		net.name = ex.checkdir(net.name, net.protocol, overwrite=True)
+
+	""" plot and save confusion matrices """
+	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data)
+
+	""" compute histogram of RF classes and properties of tuning curves """
+	if net.protocol=='digit':
+		RFproba, net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose)
+	elif net.protocol=='gabor':
+		RFproba, net.RF_info = hist_gabor(10, net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose)
+
+	""" compute correct weight assignment in the ouput layer """
+	if net._train_class_layer:
+		net.correct_out_W = np.zeros(net.n_runs)
+		not_same = {}
+		for r in range(net.n_runs):
+			same = np.argmax(RFproba[r],1) == net.classes[np.argmax(net.out_W_trained[r],1)]
+			not_same[r] = np.argwhere(~same)
+			net.correct_out_W[r] = np.sum(same)
+
+		if net.verbose: 
+			print 'correct out weight assignment:\n' + str(np.mean(net.correct_out_W)) + ' of ' + str(net.n_hid_neurons)
+	else:
+		not_same = None
+		correct_out_W = 0.
+
+	""" plot weights and performance progression """
+	if save_data:
+		if show_W_act: W_act_pass=net.out_W_trained
+		else: W_act_pass=None
+		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose)	
+		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0)
+
+	""" save network parameters to file """
+	ex.print_params(net)
+
+	""" save network to file """
+	if save_data:
+		n_file = open('output/' + net.name + '/Network', 'w')
+		pickle.dump(net, n_file)
+		n_file.close()
+
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True):
 	"""
