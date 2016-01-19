@@ -345,33 +345,37 @@ def plot_hist(h, bins, h_err=None):
 
 	return fig
 
-def plot_perf_progress(name, perf, epi_start=0):
+def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0):
 	"""
 	plots the progression of the error rate over training episodes
 
 	Args:
 		name (str): name of the network, used for saving purposes
-		perf (numpy array): training performance at each episode of each run
+		perf_train (numpy array): training performance at each episode of each run
+		perf_test (numpy array): testing performance at each episode of each run
 		epi_start (int, optional): episode at which to start the plot (used epi_start=n_epi_crit to plot only after statistical pre-training). Default: 0 
 	"""
 
 	fig, ax = plt.subplots()
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
 
-	n_runs = np.size(perf, 0)
+	n_runs = np.size(perf_train, 0)
 	for r in range(n_runs):
-		X = np.arange( len(perf[r, epi_start:]) )+1
-		ax.plot(X, perf[r, epi_start:]*100, lw=3)
+		if epi_start <= dopa_start:
+			plt.axvline(x=dopa_start, ymin=0, ymax=100, lw=2.5, ls='--', c='k', alpha=0.25)
+		X = np.arange( len(perf_train[r, epi_start:]) )+1
+		ax.plot(X, perf_train[r, epi_start:]*100, lw=3, ls='-')
+		if perf_test is not None:
+			ax.plot(X, perf_test[r, epi_start:]*100, lw=3, ls=':')
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
 	ax.spines['top'].set_visible(False)
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
-	ax.set_ylim([50,100])
-	ax.set_xticks(np.arange(1, len(perf[epi_start:])+1))
+	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_xlabel('episodes after dopa', fontsize=18)
+	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 

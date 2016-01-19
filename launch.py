@@ -28,8 +28,8 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 							protocol		= 'gabor',
 							name 			= 'gabor_0',
 							n_runs 			= 1,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 10,				
+							n_epi_crit		= 5,				
+							n_epi_dopa		= 5,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							lr				= 0.01,
@@ -47,7 +47,7 @@ net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
 							)
 
 """ load and pre-process training and testing images """
-images, labels, images_params = ex.load_images(	protocol 		= net.protocol,
+images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 												A 				= net.A,
 												verbose 		= net.verbose,
 												digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
@@ -67,21 +67,14 @@ images, labels, images_params = ex.load_images(	protocol 		= net.protocol,
 
 tic = time.time()
 
-perf_train = net.train(	images['train'], 
-						labels['train'], 
-						images['task'], 
-						labels['task'], 
-						images_params
-						)
+net.train(images_dict, labels_dict, images_params)
 
-perf_test = net.test(	images['test'], 
-						labels['test'], 
-						images['train'], 
-						labels['train'], 
-						)
+toc = time.time()
 
-net.assess(	images['train'], 
-			labels['train'],
+perf_dict = net.test(images_dict, labels_dict)
+
+net.assess(	images_dict['train'], 
+			labels_dict['train'],
 			save_data	= True, 
 			show_W_act	= True, 
 			sort		= None, 
@@ -90,8 +83,8 @@ net.assess(	images['train'],
 
 print '\nrun name:\t' + net.name
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
-print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(time.time()))
-print 'run time:\t' + time.strftime("%H:%M:%S", time.gmtime(time.time()-tic))
+print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
+print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
 
 
 

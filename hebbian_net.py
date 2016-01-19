@@ -65,27 +65,25 @@ class Network:
 		self.protocol		= protocol
 		self.classifier		= classifier
 		self.init_file		= init_file
-		self.test_each_epi	= test_each_epi			##not implemented
+		self.test_each_epi	= test_each_epi
 		self.verbose 		= verbose
 		self.seed 			= seed
 	
 		self._check_parameters()
 		np.random.seed(self.seed)
 
-	def train(self, images, labels, images_task=None, labels_task=None, images_params={}):
+	def train(self, images_dict, labels_dict, images_params={}):
 		""" 
 		Train Hebbian neural network
 
 			Args: 
-				images (2D numpy array): images to train the Network on. 
-				labels (1D numpy array): labels of the training images.
-				images (2D numpy array, optional): subset of images to train the Network on in the gabor protocol. 
-				labels (1D numpy array, optional): subset of labels in the gabor protocol.
+				images_dict (dict): dictionary of 2D image arrays to test the Network on, with keys: 'train', 'test'.
+				labels_dict (dict): dictionary of label arrays of the images.
 				images_params (dict, optional): parameters used to create the images
-
-			returns:
-				(float): training performance of the network.
 		"""
+
+		images, images_task = images_dict['train'], images_dict['task']
+		labels, labels_task = labels_dict['train'], labels_dict['task']
 
 		self.images_params = images_params
 		self.classes = np.sort(np.unique(labels))
@@ -94,7 +92,8 @@ class Network:
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
 		self.hid_W_runs = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_runs = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
-		self.perf_runs = np.zeros((self.n_runs, self.n_epi_tot))
+		self.perf_train_prog = np.zeros((self.n_runs, self.n_epi_tot))
+		self.perf_test_prog = np.zeros((self.n_runs, self.n_epi_tot)) if self.test_each_epi else None
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		n_images = np.size(images,0)
 		n_batches = int(np.ceil(float(n_images)/self.batch_size))
@@ -110,9 +109,7 @@ class Network:
 
 			np.random.seed(self.seed+r)
 			self._init_weights()
-
 			self._W_in_since_update = np.copy(self.hid_W)
-			perf_train = []
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -155,44 +152,44 @@ class Network:
 
 					correct += np.sum(out_greedy == b_labels)
 
-				#print train performance
-				perf_train.append(correct/n_images)
-				if self._train_class_layer and self.verbose:
-					correct_out_W = self._check_out_W(images, labels)
-					print ('correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '),
-				if self.verbose: print 'train performance: ' + str(np.round(perf_train[-1]*100,1)) + '%'
+				#assess performance
+				self._assess_perf_progress(correct/n_images, r, e, images_dict, labels_dict)
 
 			#save data
 			self.hid_W_runs[r,:,:] = np.copy(self.hid_W)
 			self.out_W_runs[r,:,:] = np.copy(self.out_W)
-			self.perf_runs[r, :] = np.copy(perf_train)
 
-		return perf_train[-1]
-
-	def test(self, images_test, labels_test, images_train=None, labels_train=None):
+	def test(self, images_dict, labels_dict, during_training=False):
 		""" 
 		Test Hebbian convolutional neural network
 
 			Args: 
-				images_test (2D numpy array): images to test the Network on.
-				labels_test (1D numpy array): labels of the testing images.
-				images_train (2D numpy array, optional): images the Network was trained on (used to compute posterior for bayesian inference).
-				labels_train (1D numpy array, optional): labels of the training images.
+				images_dict (dict): dictionary of 2D image arrays to test the Network on, with keys: 'train', 'test'.
+				labels_dict (dict): dictionary of label arrays of the images.
+				during_training (bool, optional): whether testing error is assessed during training of the network (is True, less information is computed)
 
 			returns:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
 
-		if self.verbose: print "\ntesting network..."
+		images_train, images_test = images_dict['train'], images_dict['test']
+		labels_train, labels_test = labels_dict['train'], labels_dict['test']
+
+		if self.verbose and not during_training: print "\ntesting network..."
 
 		""" variable initialization """
 		CM_all = []
 		perf_all = []
+		n_runs = self.n_runs if not during_training else 1
 
-		for iw in range(self.n_runs):
-			if self.verbose: print 'run: ' + str(iw+1)
-			hid_W = self.hid_W_runs[iw,:,:]
-			out_W = self.out_W_runs[iw,:,:]
+		for iw in range(n_runs):
+			if not during_training:
+				if self.verbose: print 'run: ' + str(iw+1)
+				hid_W = self.hid_W_runs[iw,:,:]
+				out_W = self.out_W_runs[iw,:,:]
+			else:
+				hid_W = np.copy(self.hid_W)
+				out_W = np.copy(self.out_W)
 
 			""" testing of the classifier """
 			if self.classifier=='neural':
@@ -206,26 +203,30 @@ class Network:
 				posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
 				classIdx = np.argmax(posterior, 1)
 				classResults = self.classes[classIdx]
-			correct_classif = float(np.sum(classResults==labels_test))
-			perf_all.append(correct_classif/len(labels_test))
+			correct_classif = float(np.sum(classResults==labels_test))/len(labels_test)
+			perf_all.append(correct_classif)
 			
-			""" compute classification performance """
-			CM = np.zeros((len(self.classes), len(self.classes)))
-			for ilabel,label in enumerate(self.classes):
-				for iclassif, classif in enumerate(self.classes):
-					classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
-					overTot = np.sum(labels_test==label)
-					CM[ilabel, iclassif] = float(classifiedAs)/overTot
-			CM_all.append(CM)
+			""" compute classification matrix """
+			if not during_training:
+				CM = np.zeros((len(self.classes), len(self.classes)))
+				for ilabel,label in enumerate(self.classes):
+					for iclassif, classif in enumerate(self.classes):
+						classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
+						overTot = np.sum(labels_test==label)
+						CM[ilabel, iclassif] = float(classifiedAs)/overTot
+				CM_all.append(CM)
 
 		""" create classification results to save """
-		CM_avg = np.mean(CM_all,0)
-		CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
-		perf_avg = np.mean(perf_all)
-		perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
-		self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste}
+		if not during_training:
+			CM_avg = np.mean(CM_all,0)
+			CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
+			perf_avg = np.mean(perf_all)
+			perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
+			self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste}
 
-		return self.perf_dict
+			return self.perf_dict
+		else:
+			return correct_classif
 
 	def assess(self, images, labels, save_data=True, show_W_act=True, sort=None, target=None):
 		"""
@@ -266,12 +267,12 @@ class Network:
 			not_same = None
 			correct_out_W = 0.
 
-		""" plot weights """
+		""" plot weights and performance progression """
 		if save_data:
 			if show_W_act: W_act_pass=self.out_W_runs
 			else: W_act_pass=None
 			an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)	
-			an.plot_perf_progress(self.name, self.perf_runs, epi_start=0)
+			an.plot_perf_progress(self.name, self.perf_train_prog, self.perf_test_prog, self.n_epi_crit, epi_start=0)
 
 		""" save network parameters to file """
 		ex.print_params(self)
@@ -447,6 +448,23 @@ class Network:
 		W = np.clip(W, 1e-10, np.inf)
 		
 		return W
+
+	def _assess_perf_progress(self, perf_train, r, e, images_dict, labels_dict):
+		""" assesses progression of performance of network as it is being trained """
+		if self.verbose:
+			print_perf = ''
+			if self._train_class_layer:
+				correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
+				print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
+			print_perf += 'train performance: ' + str(np.round(perf_train*100,1)) + '%'
+			if self.test_each_epi:
+				perf_test = self.test(images_dict, labels_dict, during_training=True)
+				print_perf += ' ; test performance: ' + str(np.round(perf_test*100,1)) + '%'
+			print print_perf
+
+		self.perf_train_prog[r, e] = perf_train
+		if self.test_each_epi: self.perf_test_prog[r, e] = perf_test
+
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """
