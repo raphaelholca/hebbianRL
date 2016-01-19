@@ -368,6 +368,7 @@ def plot_perf_progress(name, perf, epi_start=0):
 	ax.spines['top'].set_visible(False)
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
 	ax.set_ylim([50,100])
+	ax.set_xticks(np.arange(1, len(perf[epi_start:])+1))
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
 	ax.set_xlabel('episodes after dopa', fontsize=18)

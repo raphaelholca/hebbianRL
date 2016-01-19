@@ -18,6 +18,7 @@ gr = reload(gr)
 bc = reload(bc)
 
 class Network:
+	""" Hebbian neural network with dopamine-inspired learning """
 
 	def __init__(self, dopa_values, name, n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
 
@@ -260,7 +261,7 @@ class Network:
 				self.correct_out_W[r] = np.sum(same)
 
 			if self.verbose: 
-				print '\ncorrect out weight assignment:\n' + str(np.mean(self.correct_out_W)) + ' of ' + str(self.n_hid_neurons)
+				print 'correct out weight assignment:\n' + str(np.mean(self.correct_out_W)) + ' of ' + str(self.n_hid_neurons)
 		else:
 			not_same = None
 			correct_out_W = 0.
