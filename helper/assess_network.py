@@ -63,14 +63,22 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RFproba, RF_info
 
-def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
+def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
-	curves = gr.tuning_curves(hid_W_runs, t, target_ori, name, method='no_softmax', plot=True)
-	pref_ori = gr.preferred_orientations(hid_W_runs, t, target_ori, name)
-	slopes = gr.slopes(hid_W_runs, curves, pref_ori, t, target_ori, name)
+	#compute RFs info for the naive network
+	curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False)
+	pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name)
+	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False)
+
+	#compute RFs info for the trained network
+	curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=True)
+	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name)
+	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name)
 	
-	RFproba = np.zeros((np.size(hid_W_runs,0), np.size(hid_W_runs,2), 2), dtype=int)
+	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, binned=True, plot=True)
+
+	RFproba = np.zeros((np.size(hid_W_trained,0), np.size(hid_W_trained,2), 2), dtype=int)
 	
 	n_runs = np.size(pref_ori,0)
 	for r in range(n_runs):
@@ -93,7 +101,7 @@ def hist_gabor(n_bins, name, hid_W_runs, t, target_ori, save_data, verbose):
 		plt.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
 		plt.close(fig)
 	
-	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes}
+	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RFproba, RF_info
 

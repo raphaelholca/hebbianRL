@@ -90,8 +90,10 @@ class Network:
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
-		self.hid_W_runs = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
-		self.out_W_runs = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
+		self.hid_W_naive = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
+		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
+		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
+		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_train_prog = np.zeros((self.n_runs, self.n_epi_tot))
 		self.perf_test_prog = np.zeros((self.n_runs, self.n_epi_tot)) if self.test_each_epi else None
 		self._train_class_layer = False if self.classifier=='bayesian' else True
@@ -156,8 +158,8 @@ class Network:
 				self._assess_perf_progress(correct/n_images, r, e, images_dict, labels_dict)
 
 			#save data
-			self.hid_W_runs[r,:,:] = np.copy(self.hid_W)
-			self.out_W_runs[r,:,:] = np.copy(self.out_W)
+			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
+			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
 	def test(self, images_dict, labels_dict, during_training=False):
 		""" 
@@ -185,8 +187,8 @@ class Network:
 		for iw in range(n_runs):
 			if not during_training:
 				if self.verbose: print 'run: ' + str(iw+1)
-				hid_W = self.hid_W_runs[iw,:,:]
-				out_W = self.out_W_runs[iw,:,:]
+				hid_W = self.hid_W_trained[iw,:,:]
+				out_W = self.out_W_trained[iw,:,:]
 			else:
 				hid_W = np.copy(self.hid_W)
 				out_W = np.copy(self.out_W)
@@ -246,18 +248,18 @@ class Network:
 		""" plot and save confusion matrices """
 		an.print_save_CM(self.perf_dict, self.name, self.classes, self.verbose, save_data)
 
-		""" compute histogram of RF classes """
+		""" compute histogram of RF classes and properties of tuning curves """
 		if self.protocol=='digit':
-			RFproba, self.RF_info = an.hist(self.name, self.hid_W_runs, self.classes, images, labels, save_data=save_data, verbose=self.verbose)
+			RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images, labels, save_data=save_data, verbose=self.verbose)
 		elif self.protocol=='gabor':
-			RFproba, self.RF_info = an.hist_gabor(10, self.name, self.hid_W_runs, self.t, self.images_params['target_ori'], save_data=save_data, verbose=self.verbose)
+			RFproba, self.RF_info = an.hist_gabor(10, self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=save_data, verbose=self.verbose)
 
 		""" compute correct weight assignment in the ouput layer """
 		if self._train_class_layer:
 			self.correct_out_W = np.zeros(self.n_runs)
 			not_same = {}
 			for r in range(self.n_runs):
-				same = np.argmax(RFproba[r],1) == self.classes[np.argmax(self.out_W_runs[r],1)]
+				same = np.argmax(RFproba[r],1) == self.classes[np.argmax(self.out_W_trained[r],1)]
 				not_same[r] = np.argwhere(~same)
 				self.correct_out_W[r] = np.sum(same)
 
@@ -269,9 +271,9 @@ class Network:
 
 		""" plot weights and performance progression """
 		if save_data:
-			if show_W_act: W_act_pass=self.out_W_runs
+			if show_W_act: W_act_pass=self.out_W_trained
 			else: W_act_pass=None
-			an.plot_all_RF(self.name, self.hid_W_runs, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)	
+			an.plot_all_RF(self.name, self.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=self.verbose)	
 			an.plot_perf_progress(self.name, self.perf_train_prog, self.perf_test_prog, self.n_epi_crit, epi_start=0)
 
 		""" save network parameters to file """
@@ -465,6 +467,10 @@ class Network:
 		self.perf_train_prog[r, e] = perf_train
 		if self.test_each_epi: self.perf_test_prog[r, e] = perf_test
 
+		#save weights just after the end of statistical pre-training
+		if e==self.n_epi_crit-1:
+			self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
+			self.out_W_naive[r,:,:] = np.copy(self.out_W)
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """

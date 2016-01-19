@@ -250,6 +250,55 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=True):
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, binned=True, plot=True):
+	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
+
+	if binned:
+		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
+		bin_edges = np.arange(-90 - bin_width/2 + (180%bin_width)/2, 90+bin_width, bin_width)
+		bin_centers = np.arange(-90 + (180%bin_width)/2, bin_edges[-1], bin_width)
+		pre_slopes_binned = np.zeros(len(bin_edges)-1)
+		pre_slopes_ste = np.zeros(len(bin_edges)-1)
+		post_slopes_binned = np.zeros(len(bin_edges)-1)
+		post_slopes_ste = np.zeros(len(bin_edges)-1)
+
+		for ib in range(len(bin_edges)-1):
+			values = pre_slopes[np.logical_and(pre_dist>=bin_edges[ib], pre_dist<bin_edges[ib+1])]
+			pre_slopes_binned[ib] = np.mean(values) ##returns NaN for empty bin_edges
+			pre_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
+
+			values = post_slopes[np.logical_and(post_dist>=bin_edges[ib], post_dist<bin_edges[ib+1])]
+			post_slopes_binned[ib] = np.mean(values) ##returns NaN for empty bin_edges
+			post_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
+
+	""" plot of slope at target orientation """
+	if plot:
+		fig, ax = plt.subplots(figsize=(8,4.5))
+		fig.patch.set_facecolor('white')
+		if binned:
+			ax.plot(bin_centers, pre_slopes_binned, ls='--', lw=3, c='b')
+			ax.errorbar(bin_centers, pre_slopes_binned, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', mew=2)
+			ax.errorbar(bin_centers, post_slopes_binned, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', mew=2)
+		else:
+			ax.scatter(pre_dist, pre_slopes, c='b')
+			ax.scatter(post_dist, post_slopes, c='r')
+
+		# ax.spines['right'].set_visible(False)
+		# ax.spines['top'].set_visible(False)
+		ax.xaxis.set_ticks_position('bottom')
+		ax.yaxis.set_ticks_position('left')
+		if binned: ax.set_xticks(bin_centers)
+		ax.set_xlim([-50,50])
+		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
+		ax.set_ylabel('slope at TO', fontsize=18)
+		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
+		plt.tight_layout()
+
+		if binned:
+			plt.savefig('output/' + name + '/TCs/' + 'slopes_pre_post_binned' + '.pdf')
+		else:
+			plt.savefig('output/' + name + '/TCs/' + 'slopes_pre_post' + '.pdf')
+		plt.close(fig)
 
 
 
