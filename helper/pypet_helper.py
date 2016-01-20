@@ -1,26 +1,32 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import hebbian_net
 import pypet
+import pickle
 
 
-def launch_exploration(traj, images_dict, labels_dict, images_params):
+def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
 	""" launch all the exploration of the parameters """
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 	try:
-		test_perf = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params)
+		test_perf = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
 	except ValueError:
-		test_perf = [-1.]
+		test_perf = [-1.]	
 
 	traj.f_add_result('test_perf', perf=test_perf)
 
-def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params):
+def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path):
 	""" launch one instance of the network """
 	net = hebbian_net.Network(**parameter_dict)
 
 	net.train(images_dict, labels_dict, images_params)
 
 	perf_dict = net.test(images_dict, labels_dict)
+
+	p_file = open(os.path.join(save_path, 'networks', net.name), 'w')
+	pickle.dump(net, p_file)
+	p_file.close()
 
 	return perf_dict['perf_all']
 

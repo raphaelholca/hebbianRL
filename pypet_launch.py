@@ -13,12 +13,14 @@ if 'Documents' in os.getcwd():
 import numpy as np
 import pypet
 import time
+import shutil
 import hebbian_net
 import helper.external as ex
-import helper.external_pypet as ex_py
+import helper.pypet_helper as pp
 
 hebbian_net = reload(hebbian_net)
 ex = reload(ex)
+pp = reload(pp)
 
 parameter_dict = {	'dHigh' 		: 4.5,
 					'dMid' 			: 0.02,
@@ -46,8 +48,8 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ parameters for exploration """
-explore_dict = {	'dMid'			: [0.02, 0.03], 
-					'dLow'			: [-2.0, -1.0]
+explore_dict = {	'dMid'			: [0.02], 
+					'dLow'			: [-2.0]
 				}
 
 """ load and pre-process images """
@@ -70,24 +72,29 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															)
 
 """ launch simulation with pypet for parameter exploration """
+save_path = 'output/' + parameter_dict['name']
+if os.path.exists(os.path.join(save_path)):
+	shutil.rmtree(save_path)
+	os.mkdir(save_path)
+	os.mkdir(os.path.join(save_path, 'networks'))
 env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
 						ncores 			= 2,
-						filename		= 'output/' + parameter_dict['name'] + '/explore_perf.hdf5',
+						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
 						overwrite_file	= True)
 
 traj = env.v_trajectory
-ex_py.add_parameters(traj, parameter_dict)
+pp.add_parameters(traj, parameter_dict)
 
 explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys())) #if not all entry of dict need be explored through cartesian product replace tuple(.) only with relevant dict keys in tuple
-explore_dict['name'] = ex_py.set_run_names(explore_dict, parameter_dict['name'])
+explore_dict['name'] = pp.set_run_names(explore_dict, parameter_dict['name'])
 traj.f_explore(explore_dict)
 
 #run the exploration
 tic = time.time()
-env.f_run(ex_py.launch_exploration, images_dict, labels_dict, images_params)
+env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
 toc = time.time()
 
 print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
