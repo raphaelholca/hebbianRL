@@ -221,9 +221,15 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 
 	return images, labels
 
-def print_params(net):
-	""" Print parameters of Network object to human-readable file """
+def save_net(net):
+	""" Print parameters of Network object to human-readable file and save Network to disk """
 
+	""" save network to file """
+	n_file = open('output/' + net.name + '/Network', 'w')
+	pickle.dump(net, n_file)
+	n_file.close()
+
+	""" print parameters """
 	tab_length = 25
 	params_to_print = ['batch_size', 'classes', 'classifier', 'dopa_values', 'exploration', 'images_params', 'init_file', 'lim_weights', 'lr', 'n_epi_crit', 'n_epi_dopa', 'n_hid_neurons', 'n_runs', 'name', 'noise_std', 'pdf_method', 'protocol', 'seed', 't']
 	

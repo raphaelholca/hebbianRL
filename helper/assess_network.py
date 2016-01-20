@@ -58,16 +58,6 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose)	
 		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0)
 
-	""" save network parameters to file """
-	ex.print_params(net)
-
-	""" save network to file """
-	if save_data:
-		n_file = open('output/' + net.name + '/Network', 'w')
-		pickle.dump(net, n_file)
-		n_file.close()
-
-
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron

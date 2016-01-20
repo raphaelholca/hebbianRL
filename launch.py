@@ -25,10 +25,10 @@ net = hebbian_net.Network(	dHigh 			= 4.5,
 							dNeut 			= -0.1,
 							dLow 			= -2.0,
 							protocol		= 'digit',
-							name 			= 'digit_long_highExplr',
-							n_runs 			= 3,		
+							name 			= 'test',
+							n_runs 			= 1,		
 							n_epi_crit		= 10,				
-							n_epi_dopa		= 20,				
+							n_epi_dopa		= 10,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							lr				= 0.01,				#0.005
@@ -36,7 +36,7 @@ net = hebbian_net.Network(	dHigh 			= 4.5,
 							n_hid_neurons	= 49,
 							init_file		= None,	
 							lim_weights		= False,
-							noise_std		= 0.2
+							noise_std		= 0.2,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
@@ -71,6 +71,8 @@ net.train(images_dict, labels_dict, images_params)
 toc = time.time()
 
 perf_dict = net.test(images_dict, labels_dict)
+
+ex.save_net(net)
 
 an.assess(	net,
 			images_dict['train'], 
