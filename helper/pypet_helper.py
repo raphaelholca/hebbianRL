@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import hebbian_net
 import pypet
 import pickle
+import time
 
 
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
@@ -43,6 +44,29 @@ def set_run_names(explore_dict, name):
 			runName_list[n] += k
 			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
 	return runName_list
+
+def print_params(parameter_dict, explore_dict, save_path):
+	tab_length = 25
+	param_file = open(os.path.join(save_path, 'params.txt'), 'w')
+	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
+	param_file.write(time_line)
+
+	print_dict = parameter_dict.copy()
+	print_dict.update(explore_dict)
+
+	for p in print_dict.keys():
+		if isinstance(print_dict[p], dict):
+			for ik, k in enumerate(print_dict[p].keys()):
+				if ik==0:
+					line = ('%s \t: %s: %s\n' % (p, k, str(print_dict[p][k]))).expandtabs(tab_length)
+				else:
+					line = ('\t  %s: %s\n' % (k, str(print_dict[p][k]))).expandtabs(tab_length)
+				param_file.write(line)
+		else:
+			line = ('%s \t: %s\n' %( p, str(print_dict[p]) )).expandtabs(tab_length)
+			param_file.write(line)
+	param_file.close()
 
 def plot_results():
 	# folder_path = '../output/gabor_xplr-5/'

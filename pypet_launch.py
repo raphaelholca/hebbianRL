@@ -77,6 +77,7 @@ if os.path.exists(os.path.join(save_path)):
 	shutil.rmtree(save_path)
 	os.mkdir(save_path)
 	os.mkdir(os.path.join(save_path, 'networks'))
+pp.print_params(parameter_dict, explore_dict, save_path)
 env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
