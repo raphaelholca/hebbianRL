@@ -47,22 +47,22 @@ net = hebbian_net.Network(	dHigh 			= 4.5,
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-												A 				= net.A,
-												verbose 		= net.verbose,
-												digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																	'dataset_train'	: 'test',
-																	'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																	},
-												gabor_params 	= {	'n_train' 		: 10000,
-																	'n_test' 		: 1000,
-																	'target_ori' 	: 85.,
-																	'excentricity' 	: 3.,
-																	'noise_crit'	: 0.,
-																	'noise_train'	: 0.,
-																	'noise_test'	: 0.2,
-																	'im_size'		: 28,
-																	}
-												)
+															A 				= net.A,
+															verbose 		= net.verbose,
+															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				'dataset_train'	: 'test',
+																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				},
+															gabor_params 	= {	'n_train' 		: 10000,
+																				'n_test' 		: 1000,
+																				'target_ori' 	: 85.,
+																				'excentricity' 	: 3.,
+																				'noise_crit'	: 0.,
+																				'noise_train'	: 0.,
+																				'noise_test'	: 0.2,
+																				'im_size'		: 28,
+																				}
+															)
 
 tic = time.time()
 
