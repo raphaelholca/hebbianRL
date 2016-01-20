@@ -293,7 +293,6 @@ class Network:
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and e >= self.n_epi_crit:
 			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
-			# self.hid_neurons += np.random.uniform(0, 50, np.shape(bHidNeurons)) ##from old version
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 			self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
 		else:

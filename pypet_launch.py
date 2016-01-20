@@ -2,7 +2,7 @@
 Author: Raphael Holca-Lamarre
 Date: 23/10/2014
 
-This code creates a hebbian neural network object and trains it on the MNIST dataset. The learning rule is a hebbian learning rule augmented with a learning mechanism inspired from dopamine signalling in animal cortex.
+This code uses PyPet to explore the parameters of the hebbian neural network object.
 """
 
 import os
