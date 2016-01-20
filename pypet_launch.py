@@ -12,121 +12,82 @@ if 'Documents' in os.getcwd():
 
 import numpy as np
 import pypet
-import pickle
 import time
 import hebbian_net
 import helper.external as ex
+import helper.external_pypet as ex_py
 
 hebbian_net = reload(hebbian_net)
 ex = reload(ex)
 
-def set_parameters():
-	parameter_dict = {	'dHigh' 		: 4.5,
-						'dMid' 			: 0.02,
-						'dNeut' 		: -0.1,
-						'dLow' 			: -2.0,
-						'protocol'		: 'digit',
-						'name' 			: 'test_pypet_0',
-						'n_runs' 		: 1,		
-						'n_epi_crit'	: 5,				
-						'n_epi_dopa'	: 5,				
-						't'				: 0.1, 							
-						'A' 			: 1.2,
-						'lr'			: 0.01,	#0.005
-						'batch_size' 	: 20,
-						'n_hid_neurons'	: 49,
-						'init_file'		: '',	
-						'lim_weights'	: False,
-						'noise_std'		: 0.2,
-						'exploration'	: True,
-						'pdf_method' 	: 'fit',
-						'classifier'	: 'neural',
-						'test_each_epi'	: False,
-						'verbose'		: False,
-						'seed' 			: 995 #np.random.randint(1000)
-						}
-
-	""" parameters for exploration """
-	explore_dict = {	'dMid'			: [0.02, 0.03], 
-						'dLow'			: [-2.0, -1.0]
+parameter_dict = {	'dHigh' 		: 4.5,
+					'dMid' 			: 0.02,
+					'dNeut' 		: -0.1,
+					'dLow' 			: -2.0,
+					'protocol'		: 'digit',
+					'name' 			: 'test_pypet_0',
+					'n_runs' 		: 1,		
+					'n_epi_crit'	: 5,				
+					'n_epi_dopa'	: 5,				
+					't'				: 0.1, 							
+					'A' 			: 1.2,
+					'lr'			: 0.01,	#0.005
+					'batch_size' 	: 20,
+					'n_hid_neurons'	: 49,
+					'init_file'		: '',	
+					'lim_weights'	: False,
+					'noise_std'		: 0.2,
+					'exploration'	: False,
+					'pdf_method' 	: 'fit',
+					'classifier'	: 'neural',
+					'test_each_epi'	: False,
+					'verbose'		: False,
+					'seed' 			: 995 #np.random.randint(1000)
 					}
 
-	""" load and pre-process images """
-	images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
-																A 				= parameter_dict['A'],
-																verbose 		= parameter_dict['verbose'],
-																digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																					'dataset_train'	: 'test',
-																					'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																					},
-																gabor_params 	= {	'n_train' 		: 10000,
-																					'n_test' 		: 1000,
-																					'target_ori' 	: 85.,
-																					'excentricity' 	: 3.,
-																					'noise_crit'	: 0.,
-																					'noise_train'	: 0.,
-																					'noise_test'	: 0.2,
-																					'im_size'		: 28,
-																					}
-																)
+""" parameters for exploration """
+explore_dict = {	'dMid'			: [0.02, 0.03], 
+					'dLow'			: [-2.0, -1.0]
+				}
 
-	""" launch simulation with pypet for parameter exploration """
-	env = pypet.Environment(trajectory 		= 'explore_perf',
-							log_stdout		= False,
-							add_time 		= False,
-							multiproc 		= True,
-							ncores 			= 2,
-							filename		= 'output/' + parameter_dict['name'] + '/explore_perf.hdf5',
-							overwrite_file	= False)
+""" load and pre-process images """
+images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
+															A 				= parameter_dict['A'],
+															verbose 		= parameter_dict['verbose'],
+															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				'dataset_train'	: 'test',
+																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				},
+															gabor_params 	= {	'n_train' 		: 10000,
+																				'n_test' 		: 1000,
+																				'target_ori' 	: 85.,
+																				'excentricity' 	: 3.,
+																				'noise_crit'	: 0.,
+																				'noise_train'	: 0.,
+																				'noise_test'	: 0.2,
+																				'im_size'		: 28,
+																				}
+															)
 
-	return env, parameter_dict, explore_dict, images_dict, labels_dict, images_params
-
-def launch_exploration(traj, images_dict, labels_dict, images_params):
-	""" launch all the exploration of the parameters """
-	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
-	try:
-		test_perf = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params)
-	except ValueError:
-		test_perf = [-1.]
-
-	traj.f_add_result('test_perf', perf=test_perf)
-
-def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params):
-	""" launch one instance of the network """
-	net = hebbian_net.Network(**parameter_dict)
-
-	net.train(images_dict, labels_dict, images_params)
-
-	perf_dict = net.test(images_dict, labels_dict)
-
-	return perf_dict['perf_all']
-
-def add_parameters(traj, parameter_dict):
-	for k in parameter_dict.keys():
-		traj.f_add_parameter(k, parameter_dict[k])
-
-def set_run_names(explore_dict, name):
-	nXplr = len(explore_dict[explore_dict.keys()[0]])
-	runName_list = [name for _ in range(nXplr)]
-	for n in range(nXplr):
-		for k in explore_dict.keys():
-			runName_list[n] += '_'
-			runName_list[n] += k
-			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
-	return runName_list
-
-env, parameter_dict, explore_dict, images_dict, labels_dict, images_params = set_parameters()
+""" launch simulation with pypet for parameter exploration """
+env = pypet.Environment(trajectory 		= 'explore_perf',
+						log_stdout		= False,
+						add_time 		= False,
+						multiproc 		= True,
+						ncores 			= 2,
+						filename		= 'output/' + parameter_dict['name'] + '/explore_perf.hdf5',
+						overwrite_file	= True)
 
 traj = env.v_trajectory
-add_parameters(traj, parameter_dict)
+ex_py.add_parameters(traj, parameter_dict)
 
 explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys())) #if not all entry of dict need be explored through cartesian product replace tuple(.) only with relevant dict keys in tuple
-explore_dict['name'] = set_run_names(explore_dict, parameter_dict['name'])
+explore_dict['name'] = ex_py.set_run_names(explore_dict, parameter_dict['name'])
 traj.f_explore(explore_dict)
 
 #run the exploration
 tic = time.time()
-env.f_run(launch_exploration, images_dict, labels_dict, images_params)
+env.f_run(ex_py.launch_exploration, images_dict, labels_dict, images_params)
 toc = time.time()
 
 print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
