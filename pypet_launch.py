@@ -48,8 +48,8 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ parameters for exploration """
-explore_dict = {	'dMid'			: [0.02], 
-					'dLow'			: [-2.0]
+explore_dict = {	'dMid'			: [0.02, 0.01], 
+					'dLow'			: [-2.0, -3.0]
 				}
 
 """ load and pre-process images """
@@ -97,6 +97,9 @@ traj.f_explore(explore_dict)
 tic = time.time()
 env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
 toc = time.time()
+
+print "\nplotting results\n"
+pp.plot_results(folder_path=save_path)
 
 print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))

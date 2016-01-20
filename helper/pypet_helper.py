@@ -68,39 +68,30 @@ def print_params(parameter_dict, explore_dict, save_path):
 			param_file.write(line)
 	param_file.close()
 
-def plot_results():
-	# folder_path = '../output/gabor_xplr-5/'
-	folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/proba_two_lin/'
+def plot_results(folder_path=''):
+	if folder_path=='':
+		folder_path = '/Users/raphaelholca/Dropbox/hebbian_net/output/test_pypet_0/'
+		# folder_path = '/Users/raphaelholca/Mountpoint/hebbianRL/output/proba_two_lin/'
 
-	traj_name = 'xplr'
-	traj = pypet.load_trajectory(traj_name, filename=folder_path + 'perf.hdf5', force=True)
+	traj_name = 'explore_perf'
+	traj = pypet.load_trajectory(traj_name, filename=os.path.join(folder_path, 'explore_perf.hdf5'), force=True)
 	traj.v_auto_load = True
 
-	p_W_act = []
-	skipped_count = 0
-	ok_runs = []
+	perf_all = []
 	for run in traj.f_iter_runs():
-		try:
-			# p_W_act.append(traj.results[run].perc_W_act)
-			p_W_act.append(traj.results[run].perf)
-			ok_runs.append(int(run[4:]))
-		except pypet.pypetexceptions.DataNotInStorageError:
-			skipped_count+=1
-	print str(skipped_count) + ' runs skipped'
-
-	p_W_act_all = np.copy(p_W_act)
-	p_W_act = np.mean(p_W_act,1)
+		perf_all.append(traj.results[run].test_perf['perf'])
+	perf_all = np.array(perf_all)
+	perf = np.mean(perf_all,1)
 
 	param_traj = traj.f_get_explored_parameters()
 	param = {}
 	for k in param_traj:
-		if k[11:] != 'runName':
-			xplr_values = np.array(param_traj[k].f_get_range())[ok_runs]
+		if k[11:] != 'name':
+			xplr_values = np.array(param_traj[k].f_get_range())
 			if len(np.unique(xplr_values)) >1:
 				param[k[11:]] = xplr_values
 
-	arg_best = np.argmax(p_W_act)
-
+	arg_best = np.argmax(perf)
 
 	best_param = {}
 
@@ -109,7 +100,7 @@ def plot_results():
 	for k in param.keys():
 		best_param[k] = param[k][arg_best]
 		print k + ' : ' + str(param[k][arg_best]) + '\t\t' + str(np.round(np.unique(param[k]),3))
-	print "\nbest performance: " + str(np.round(np.max(p_W_act)*100,2)) + "\n"
+	print "\nbest performance: " + str(np.round(np.max(perf)*100,2)) + "\n"
 
 	keys = param.keys()
 	for ik in range(len(keys)):
@@ -126,7 +117,7 @@ def plot_results():
 					mask = np.logical_and(mask, param[o]==best_param[o])
 			pX = param[keys[ik]][mask]
 			pY = param[k][mask]
-			rC = np.hstack(p_W_act)[mask]
+			rC = np.hstack(perf)[mask]
 
 			if True: #True: non-linear representation of results; False: linear representation 
 				ipX = np.zeros(len(pX))
@@ -141,7 +132,7 @@ def plot_results():
 			fig = plt.figure()
 			fig.patch.set_facecolor('white')
 			
-			plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(p_W_act), vmax=np.max(p_W_act), s=1000, marker='s')
+			plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(perf), vmax=np.max(perf), s=1000, marker='s')
 			# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 			for i in range(len(pX)):
 				if pX[i]==param[keys[ik]][arg_best] and pY[i]==param[k][arg_best]:
@@ -154,6 +145,6 @@ def plot_results():
 			plt.ylabel(k, fontsize=25)
 			plt.tick_params(axis='both', which='major', labelsize=18)
 			plt.tight_layout()
-			plt.savefig(folder_path + keys[ik] + '_' + k + '.pdf')
+			plt.savefig(os.path.join(folder_path, keys[ik] + '_' + k + '.pdf'))
 
-	plt.show(block=False)
+	plt.close(fig)
