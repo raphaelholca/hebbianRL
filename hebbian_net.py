@@ -9,11 +9,13 @@ import numpy as np
 import helper.external as ex
 import helper.grating as gr
 import helper.bayesian_decoder as bc
+import helper.assess_network as an
 import pickle
 
 ex = reload(ex)
 gr = reload(gr)
 bc = reload(bc)
+an = reload(an)
 
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
@@ -135,6 +137,7 @@ class Network:
 					
 					#propagate images through the network
 					out_greedy, out_explore, posterior = self._propagate(b_images, e)
+					if None in [out_greedy, out_explore, posterior]: break
 
 					#compute reward prediction
 					predicted_reward = ex.reward_prediction(out_greedy, out_explore, posterior=posterior)
@@ -153,6 +156,7 @@ class Network:
 					correct += np.sum(out_greedy == b_labels)
 
 				#assess performance
+				if None in [out_greedy, out_explore, posterior]: break
 				self._assess_perf_progress(correct/n_images, r, e, images_dict, labels_dict)
 
 			#save data
@@ -268,12 +272,20 @@ class Network:
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
 			if (W_mschange/940 > threshold).any() or (e==0 and b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
-				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
+				try:
+					self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
+				except ValueError:
+					print "ValueError: Array contains NaN or infinity."
+					self._pdf_marginals, self._pdf_evidence, self._pdf_labels = None, None, None
 
 	def _propagate(self, b_images, e):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
-			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
+			try:
+				out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
+			except (ValueError, TypeError):
+				print "ValueError: Array contains NaN or infinity."
+				return None, None, None
 		else:
 			out_greedy, out_explore, posterior = self._propagate_neural(b_images, e)
 
@@ -291,6 +303,7 @@ class Network:
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and e >= self.n_epi_crit:
 			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
+			# self.hid_neurons += np.random.uniform(0, 50, np.shape(bHidNeurons)) ##from old version
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 			self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
 		else:
