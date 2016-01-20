@@ -7,9 +7,7 @@ This code creates a hebbian neural network object and trains it on the MNIST dat
 
 import os
 import matplotlib
-if 'Documents' in os.getcwd():
-	matplotlib.use('Agg') #to avoid sending plots to screen when working on the servers
-
+if 'Documents' in os.getcwd(): matplotlib.use('Agg')
 import numpy as np
 import pickle
 import time
@@ -22,11 +20,10 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dopa_values		= {	'dHigh' 	: 4.5,
-												'dMid' 		: 0.02,
-												'dNeut' 	: -0.1,
-												'dLow' 		: -2.0,
-												},
+net = hebbian_net.Network(	dHigh 			= 4.5,
+							dMid 			= 0.02,
+							dNeut 			= -0.1,
+							dLow 			= -2.0,
 							protocol		= 'digit',
 							name 			= 'digit_long_highExplr',
 							n_runs 			= 3,		

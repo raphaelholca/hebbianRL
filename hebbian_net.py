@@ -11,6 +11,7 @@ import helper.grating as gr
 import helper.bayesian_decoder as bc
 import helper.assess_network as an
 import pickle
+import os
 
 ex = reload(ex)
 gr = reload(gr)
@@ -20,13 +21,16 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dopa_values, name, n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
 
 			Args:
-				dopa_values (dict): values of dopamine release for different reward prediction error scenarios
+				dHigh (float): values of dopamine release for -reward expectation, +reward delivery
+				dMid (float): values of dopamine release for +reward expectation, +reward delivery
+				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
+				dLow (float): values of dopamine release for +reward expectation, -reward delivery
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				n_runs (int, optional): number of runs. Default: 1
 				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 10
@@ -48,7 +52,7 @@ class Network:
 				seed (int, optional): seed of the random number generator. Default: None
 		"""
 		
-		self.dopa_values 	= dopa_values
+		self.dopa_values 	= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
 		self.name 			= name
 		self.n_runs 		= n_runs
 		self.n_epi_crit		= n_epi_crit				
