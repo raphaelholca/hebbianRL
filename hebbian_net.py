@@ -137,7 +137,6 @@ class Network:
 					
 					#propagate images through the network
 					out_greedy, out_explore, posterior = self._propagate(b_images, e)
-					if None in [out_greedy, out_explore, posterior]: break
 
 					#compute reward prediction
 					predicted_reward = ex.reward_prediction(out_greedy, out_explore, posterior=posterior)
@@ -156,7 +155,6 @@ class Network:
 					correct += np.sum(out_greedy == b_labels)
 
 				#assess performance
-				if None in [out_greedy, out_explore, posterior]: break
 				self._assess_perf_progress(correct/n_images, r, e, images_dict, labels_dict)
 
 			#save data
@@ -272,20 +270,12 @@ class Network:
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
 			if (W_mschange/940 > threshold).any() or (e==0 and b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
-				try:
-					self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
-				except ValueError:
-					print "ValueError: Array contains NaN or infinity."
-					self._pdf_marginals, self._pdf_evidence, self._pdf_labels = None, None, None
+				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
 
 	def _propagate(self, b_images, e):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
-			try:
-				out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
-			except (ValueError, TypeError):
-				print "ValueError: Array contains NaN or infinity."
-				return None, None, None
+			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
 		else:
 			out_greedy, out_explore, posterior = self._propagate_neural(b_images, e)
 
