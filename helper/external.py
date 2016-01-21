@@ -223,7 +223,9 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 
 def save_net(net):
 	""" Print parameters of Network object to human-readable file and save Network to disk """
-
+	
+	net.name = checkdir(net.name, net.protocol, overwrite=True)
+	
 	""" save network to file """
 	n_file = open('output/' + net.name + '/Network', 'w')
 	pickle.dump(net, n_file)

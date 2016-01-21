@@ -25,7 +25,7 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
 					'protocol'		: 'digit',
-					'name' 			: 'pypet_noExplr',
+					'name' 			: 'pypet_noExplr_1',
 					'n_runs' 		: 3,		
 					'n_epi_crit'	: 15,				
 					'n_epi_dopa'	: 15,				
@@ -46,8 +46,8 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.2, 0.1, 0.05, 0.02, 0.01], 
-					'dLow'			: [-4.0, -3.0, -2.0, -1.0, -0.5]
+explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
+					'dLow'			: [-7.0, -6.0, -5.0, -4.0, -3.0]
 				}
 
 """ load and pre-process images """
@@ -77,7 +77,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						multiproc 		= True,
 						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
-						overwrite_file	= True)
+						overwrite_file	= False)
 
 pp.print_params(parameter_dict, explore_dict, save_path)
 
