@@ -22,15 +22,16 @@ hebbian_net = reload(hebbian_net)
 ex = reload(ex)
 pp = reload(pp)
 
+""" static parameters """
 parameter_dict = {	'dHigh' 		: 4.5,
 					'dMid' 			: 0.02,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
 					'protocol'		: 'digit',
-					'name' 			: 'test_pypet_0',
-					'n_runs' 		: 1,		
-					'n_epi_crit'	: 5,				
-					'n_epi_dopa'	: 5,				
+					'name' 			: 'no_explr_pypet',
+					'n_runs' 		: 3,		
+					'n_epi_crit'	: 15,				
+					'n_epi_dopa'	: 15,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.01,	#0.005
@@ -47,9 +48,9 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'seed' 			: 995 #np.random.randint(1000)
 					}
 
-""" parameters for exploration """
-explore_dict = {	'dMid'			: [0.02, 0.01], 
-					'dLow'			: [-2.0, -3.0]
+""" explored parameters """
+explore_dict = {	'dMid'			: [0.2, 0.1, 0.05, 0.02, 0.01], 
+					'dLow'			: [-4.0, -3.0, -2.0, -1.0, -0.5]
 				}
 
 """ load and pre-process images """
@@ -71,18 +72,15 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				}
 															)
 
-""" launch simulation with pypet for parameter exploration """
-save_path = 'output/' + parameter_dict['name']
-if os.path.exists(os.path.join(save_path)):
-	shutil.rmtree(save_path)
-	os.mkdir(save_path)
-	os.mkdir(os.path.join(save_path, 'networks'))
+""" create pypet environment """
+save_path = os.path.join('output', parameter_dict['name'])
 pp.print_params(parameter_dict, explore_dict, save_path)
+
 env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 2,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
 						overwrite_file	= True)
 
@@ -93,12 +91,12 @@ explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys()))
 explore_dict['name'] = pp.set_run_names(explore_dict, parameter_dict['name'])
 traj.f_explore(explore_dict)
 
-#run the exploration
+""" launch simulation with pypet for parameter exploration """
 tic = time.time()
 env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
 toc = time.time()
 
-print "\nplotting results\n"
+print "\n\nplotting results"
 pp.plot_results(folder_path=save_path)
 
 print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))

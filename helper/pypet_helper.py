@@ -48,6 +48,12 @@ def set_run_names(explore_dict, name):
 def print_params(parameter_dict, explore_dict, save_path):
 	tab_length = 25
 	param_file = open(os.path.join(save_path, 'params.txt'), 'w')
+
+	if os.path.exists(os.path.join(save_path)):
+		shutil.rmtree(save_path)
+		os.mkdir(save_path)
+		os.mkdir(os.path.join(save_path, 'networks'))
+	
 	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
 	param_file.write(time_line)
@@ -132,7 +138,7 @@ def plot_results(folder_path=''):
 			fig = plt.figure()
 			fig.patch.set_facecolor('white')
 			
-			plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(perf), vmax=np.max(perf), s=1000, marker='s')
+			plt.scatter(ipX, ipY, c=rC, cmap='CMRmap', vmin=np.min(perf)-0.1, vmax=np.max(perf), s=1000, marker='s')
 			# plt.scatter(param[keys[ik]][arg_best], param[k][arg_best], c='r', s=50, marker='x')
 			for i in range(len(pX)):
 				if pX[i]==param[keys[ik]][arg_best] and pY[i]==param[k][arg_best]:
