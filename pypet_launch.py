@@ -13,12 +13,9 @@ if 'Documents' in os.getcwd():
 import numpy as np
 import pypet
 import time
-import shutil
-import hebbian_net
 import helper.external as ex
 import helper.pypet_helper as pp
 
-hebbian_net = reload(hebbian_net)
 ex = reload(ex)
 pp = reload(pp)
 
@@ -28,7 +25,7 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
 					'protocol'		: 'digit',
-					'name' 			: 'no_explr_pypet',
+					'name' 			: 'pypet_noExplr',
 					'n_runs' 		: 3,		
 					'n_epi_crit'	: 15,				
 					'n_epi_dopa'	: 15,				
@@ -74,8 +71,6 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 
 """ create pypet environment """
 save_path = os.path.join('output', parameter_dict['name'])
-pp.print_params(parameter_dict, explore_dict, save_path)
-
 env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
@@ -83,6 +78,8 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
 						overwrite_file	= True)
+
+pp.print_params(parameter_dict, explore_dict, save_path)
 
 traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)

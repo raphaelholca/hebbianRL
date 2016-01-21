@@ -51,7 +51,6 @@ class Network:
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
 		"""
-		np.random.seed(self.seed)
 		
 		self.dopa_values 	= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
 		self.name 			= name
@@ -74,6 +73,7 @@ class Network:
 		self.verbose 		= verbose
 		self.seed 			= seed
 	
+		np.random.seed(self.seed)
 		self._check_parameters()
 
 	def train(self, images_dict, labels_dict, images_params={}):

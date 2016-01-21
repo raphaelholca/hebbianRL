@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 import hebbian_net
 import pypet
 import pickle
+import shutil
 import time
 
+hebbian_net = reload(hebbian_net)
 
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
 	""" launch all the exploration of the parameters """
@@ -47,13 +49,14 @@ def set_run_names(explore_dict, name):
 
 def print_params(parameter_dict, explore_dict, save_path):
 	tab_length = 25
-	param_file = open(os.path.join(save_path, 'params.txt'), 'w')
 
 	if os.path.exists(os.path.join(save_path)):
 		shutil.rmtree(save_path)
+	else:
 		os.mkdir(save_path)
 		os.mkdir(os.path.join(save_path, 'networks'))
-	
+
+	param_file = open(os.path.join(save_path, 'params.txt'), 'w')
 	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
 	param_file.write(time_line)
