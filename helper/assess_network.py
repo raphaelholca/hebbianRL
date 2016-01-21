@@ -24,9 +24,6 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 			save_data (bool, optional): whether to save test result to disk
 	"""
 
-	if save_data:
-		net.name = checkdir(net.name, net.protocol, overwrite=False)
-
 	""" plot and save confusion matrices """
 	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data)
 
