@@ -26,9 +26,9 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dLow' 			: -2.0,
 					'protocol'		: 'gabor',
 					'name' 			: 'pypet_noExplr_gabor_1',
-					'n_runs' 		: 10,		
-					'n_epi_crit'	: 15,				
-					'n_epi_dopa'	: 15,				
+					'n_runs' 		: 1,		
+					'n_epi_crit'	: 5,				
+					'n_epi_dopa'	: 5,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.005,	#0.01
@@ -46,8 +46,8 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
-					'dLow'			: [-7.0, -6.0, -5.0, -4.0, -3.0]
+explore_dict = {	'dMid'			: [0.05],#, 0.10, 0.15, 0.20, 0.25],
+					'dLow'			: [-7.0],#, -6.0, -5.0, -4.0, -3.0]
 				}
 
 """ load and pre-process images """
@@ -79,7 +79,11 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
 						overwrite_file	= False)
 
-pp.print_params(parameter_dict, explore_dict, save_path)
+pp.check_dir(save_path)
+print_dict = parameter_dict.copy()
+print_dict.update(explore_dict)
+save_file = os.path.join(save_path, 'params.txt')
+ex.print_params(print_dict, save_file)
 
 traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)

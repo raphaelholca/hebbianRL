@@ -47,35 +47,13 @@ def set_run_names(explore_dict, name):
 			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
 	return runName_list
 
-def print_params(parameter_dict, explore_dict, save_path):
-	tab_length = 25
-
-	if os.path.exists(os.path.join(save_path)):
+def check_dir(save_path):
+	if os.path.isdir(save_path):
 		shutil.rmtree(save_path)
-	else:
-		os.mkdir(save_path)
-		os.mkdir(os.path.join(save_path, 'networks'))
-
-	param_file = open(os.path.join(save_path, 'params.txt'), 'w')
-	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
-	param_file.write(time_line)
-
-	print_dict = parameter_dict.copy()
-	print_dict.update(explore_dict)
-
-	for p in print_dict.keys():
-		if isinstance(print_dict[p], dict):
-			for ik, k in enumerate(print_dict[p].keys()):
-				if ik==0:
-					line = ('%s \t: %s: %s\n' % (p, k, str(print_dict[p][k]))).expandtabs(tab_length)
-				else:
-					line = ('\t  %s: %s\n' % (k, str(print_dict[p][k]))).expandtabs(tab_length)
-				param_file.write(line)
-		else:
-			line = ('%s \t: %s\n' %( p, str(print_dict[p]) )).expandtabs(tab_length)
-			param_file.write(line)
-	param_file.close()
+	elif os.path.exists(save_path):
+		os.remove(save_path)
+	os.mkdir(save_path)
+	os.mkdir(os.path.join(save_path, 'networks'))
 
 def plot_results(folder_path=''):
 	if folder_path=='':
@@ -156,4 +134,4 @@ def plot_results(folder_path=''):
 			plt.tight_layout()
 			plt.savefig(os.path.join(folder_path, keys[ik] + '_' + k + '.pdf'))
 
-	plt.close(fig)
+			plt.close(fig)
