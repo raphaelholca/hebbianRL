@@ -231,26 +231,31 @@ def save_net(net):
 	pickle.dump(net, n_file)
 	n_file.close()
 
+	save_file = os.path.join('output', net.name, 'params.txt')
+	print_params(vars(net), save_file)
+
+def print_params(param_dict, save_file):
 	""" print parameters """
 	tab_length = 25
 	params_to_print = ['batch_size', 'classes', 'classifier', 'dopa_values', 'exploration', 'images_params', 'init_file', 'lim_weights', 'lr', 'n_epi_crit', 'n_epi_dopa', 'n_hid_neurons', 'n_runs', 'name', 'noise_std', 'pdf_method', 'protocol', 'seed', 't']
 	
-	param_file = open(os.path.join('output', net.name, 'params.txt'), 'w')
+	param_file = open(save_file, 'w')
 	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
 	param_file.write(time_line)
 
 	for p in params_to_print:
-		if not isinstance(vars(net)[p], dict):
-			line = ('%s \t: %s\n' %( p, str(vars(net)[p]) )).expandtabs(tab_length)
-			param_file.write(line)
-		else:
-			for ik, k in enumerate(vars(net)[p].keys()):
-				if ik==0:
-					line = ('%s \t: %s: %s\n' % (p, k, str(vars(net)[p][k]))).expandtabs(tab_length)
-				else:
-					line = ('\t  %s: %s\n' % (k, str(vars(net)[p][k]))).expandtabs(tab_length)
+		if p in param_dict.keys():
+			if not isinstance(param_dict[p], dict):
+				line = ('%s \t: %s\n' %( p, str(param_dict[p]) )).expandtabs(tab_length)
 				param_file.write(line)
+			else:
+				for ik, k in enumerate(param_dict[p].keys()):
+					if ik==0:
+						line = ('%s \t: %s: %s\n' % (p, k, str(param_dict[p][k]))).expandtabs(tab_length)
+					else:
+						line = ('\t  %s: %s\n' % (k, str(param_dict[p][k]))).expandtabs(tab_length)
+					param_file.write(line)
 	param_file.close()
 
 def normalize(images, A):
