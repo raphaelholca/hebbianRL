@@ -9,7 +9,6 @@ import os
 import matplotlib
 if 'Documents' in os.getcwd(): matplotlib.use('Agg')
 import numpy as np
-import pickle
 import time
 import hebbian_net
 import helper.external as ex
@@ -21,11 +20,11 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 4.5,
-							dMid 			= 0.1,
+							dMid 			= 0.2,
 							dNeut 			= -0.1,
-							dLow 			= -3.0,
-							protocol		= 'gabor',
-							name 			= 'gabor_long',
+							dLow 			= -5.0,
+							protocol		= 'digit',
+							name 			= 'digit_noExplr_long',
 							n_runs 			= 10,		
 							n_epi_crit		= 10,				
 							n_epi_dopa		= 30,				

@@ -7,12 +7,10 @@ This code uses PyPet to explore the parameters of the hebbian neural network obj
 
 import os
 import matplotlib
-if 'Documents' in os.getcwd():
-	matplotlib.use('Agg') #to avoid sending plots to screen when working on the servers
-
+if 'Documents' in os.getcwd(): matplotlib.use('Agg') #to avoid sending plots to screen when working on the servers
 import numpy as np
-import pypet
 import time
+import pypet
 import helper.external as ex
 import helper.pypet_helper as pp
 
@@ -24,11 +22,11 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dMid' 			: 0.02,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
-					'protocol'		: 'digit',
+					'protocol'		: 'gabor',
 					'name' 			: 'pypet_noExplr_gabor_1',
-					'n_runs' 		: 1,		
-					'n_epi_crit'	: 2,				
-					'n_epi_dopa'	: 2,				
+					'n_runs' 		: 5,		
+					'n_epi_crit'	: 15,				
+					'n_epi_dopa'	: 15,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.005,	#0.01
@@ -71,7 +69,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
-pp.check_dir(save_path, overwrite=True)
+pp.check_dir(save_path, overwrite=False)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 save_file = os.path.join(save_path, 'params.txt')
@@ -82,7 +80,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 2,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 traj = env.v_trajectory

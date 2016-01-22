@@ -237,7 +237,10 @@ def save_net(net):
 def print_params(param_dict, save_file):
 	""" print parameters """
 	tab_length = 25
-	params_to_print = ['batch_size', 'classes', 'classifier', 'dopa_values', 'exploration', 'images_params', 'init_file', 'lim_weights', 'lr', 'n_epi_crit', 'n_epi_dopa', 'n_hid_neurons', 'n_runs', 'name', 'noise_std', 'pdf_method', 'protocol', 'seed', 't']
+
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_dopa', 't', 'A', 'lr', 'batch_size', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_std',
+		'exploration', 'pdf_method', 'classifier', 'test_each_epi', 'verbose', 'seed']
+
 	
 	param_file = open(save_file, 'w')
 	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
