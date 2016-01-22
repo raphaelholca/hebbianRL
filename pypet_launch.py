@@ -46,8 +46,8 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.05, 0.10],#, 0.15, 0.20, 0.25],
-					'dLow'			: [-7.0, -6.0]#, -5.0, -4.0, -3.0]
+explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
+					'dLow'			: [-7.0, -6.0, -5.0, -4.0, -3.0]
 				}
 
 """ load and pre-process images """
