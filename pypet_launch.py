@@ -24,11 +24,11 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dMid' 			: 0.02,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
-					'protocol'		: 'gabor',
+					'protocol'		: 'digit',
 					'name' 			: 'pypet_noExplr_gabor_1',
 					'n_runs' 		: 1,		
-					'n_epi_crit'	: 5,				
-					'n_epi_dopa'	: 5,				
+					'n_epi_crit'	: 2,				
+					'n_epi_dopa'	: 2,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.005,	#0.01
@@ -46,15 +46,15 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.05],#, 0.10, 0.15, 0.20, 0.25],
-					'dLow'			: [-7.0],#, -6.0, -5.0, -4.0, -3.0]
+explore_dict = {	'dMid'			: [0.05, 0.10],#, 0.15, 0.20, 0.25],
+					'dLow'			: [-7.0, -6.0]#, -5.0, -4.0, -3.0]
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+															digit_params 	= {	'classes' 		: np.array([ 4 ], dtype=int),
 																				'dataset_train'	: 'test',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
@@ -69,21 +69,21 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				}
 															)
 
-""" create pypet environment """
+""" create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
-env = pypet.Environment(trajectory 		= 'explore_perf',
-						log_stdout		= False,
-						add_time 		= False,
-						multiproc 		= True,
-						ncores 			= 10,
-						filename		=  os.path.join(save_path, 'explore_perf.hdf5'),
-						overwrite_file	= False)
-
-pp.check_dir(save_path)
+pp.check_dir(save_path, overwrite=True)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 save_file = os.path.join(save_path, 'params.txt')
 ex.print_params(print_dict, save_file)
+
+""" create pypet environment """
+env = pypet.Environment(trajectory 		= 'explore_perf',
+						log_stdout		= False,
+						add_time 		= False,
+						multiproc 		= True,
+						ncores 			= 2,
+						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)

@@ -47,13 +47,15 @@ def set_run_names(explore_dict, name):
 			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
 	return runName_list
 
-def check_dir(save_path):
-	if os.path.isdir(save_path):
+def check_dir(save_path, overwrite=False):
+	if os.path.isdir(save_path) and overwrite==True:
 		shutil.rmtree(save_path)
-	elif os.path.exists(save_path):
-		os.remove(save_path)
-	os.mkdir(save_path)
-	os.mkdir(os.path.join(save_path, 'networks'))
+	elif os.path.isdir(save_path) and overwrite==False:
+		raise RuntimeError("trajectory already exists and will not be overwritten")
+	if not os.path.isdir(save_path):
+		os.mkdir(save_path)
+	if not os.path.isdir(os.path.join(save_path, 'networks')):
+		os.mkdir(os.path.join(save_path, 'networks'))
 
 def plot_results(folder_path=''):
 	if folder_path=='':
