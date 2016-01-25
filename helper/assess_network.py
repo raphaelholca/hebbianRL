@@ -128,13 +128,9 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	
 	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, binned=True, plot=True)
 
-	RFproba = np.zeros((np.size(hid_W_trained,0), np.size(hid_W_trained,2), 2), dtype=int)
-	
-	n_runs = np.size(pref_ori,0)
-	for r in range(n_runs):
-		RFproba[r,:,:][pref_ori[r,:]<=target_ori] = [1,0]
-		RFproba[r,:,:][pref_ori[r,:]>target_ori] = [0,1]
+	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
 
+	n_runs = np.size(pref_ori,0)
 	h_all = np.zeros((n_runs, n_bins))
 	for r in range(n_runs):
 		h_all[r, :] = np.histogram(pref_ori[r,:], n_bins, range=(0.,180.))[0]
@@ -154,6 +150,17 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RFproba, RF_info
+
+def gabor_RFproba(W, pref_ori, target_ori):
+	""" computes to which orientation class each stimulus corresponds to """
+	RFproba = np.zeros((np.size(W,0), np.size(W,2), 2), dtype=int)
+	
+	n_runs = np.size(pref_ori,0)
+	for r in range(n_runs):
+		RFproba[r,:,:][pref_ori[r,:]<=target_ori] = [1,0]
+		RFproba[r,:,:][pref_ori[r,:]>target_ori] = [0,1]
+
+	return RFproba
 
 def selectivity(W, RFproba, images, labels, classes):
 	"""
