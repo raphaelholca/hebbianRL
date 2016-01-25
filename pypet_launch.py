@@ -22,14 +22,14 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'dMid' 			: 0.02,
 					'dNeut' 		: -0.1,
 					'dLow' 			: -2.0,
-					'protocol'		: 'gabor',
-					'name' 			: 'pypet_noExplr_gabor_1',
-					'n_runs' 		: 5,		
-					'n_epi_crit'	: 15,				
-					'n_epi_dopa'	: 15,				
+					'protocol'		: 'digit',
+					'name' 			: 'pypet_noExplr_4_large',
+					'n_runs' 		: 20,		
+					'n_epi_crit'	: 10,				
+					'n_epi_dopa'	: 10,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
-					'lr'			: 0.005,	#0.01
+					'lr'			: 0.01,	#0.005
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 49,
 					'init_file'		: '',	
@@ -40,11 +40,11 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'classifier'	: 'neural',
 					'test_each_epi'	: False,
 					'verbose'		: False,
-					'seed' 			: 995 #np.random.randint(1000)
+					'seed' 			: 996 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
+explore_dict = {	'dMid'			: [0.10, 0.15, 0.20, 0.25, 0.30],
 					'dLow'			: [-7.0, -6.0, -5.0, -4.0, -3.0]
 				}
 
@@ -52,7 +52,7 @@ explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'classes' 		: np.array([ 4 ], dtype=int),
+															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
 																				'dataset_train'	: 'test',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
@@ -96,7 +96,8 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 print "\n\nplotting results"
-pp.plot_results(folder_path=save_path)
+name_best = pp.plot_results(folder_path=save_path)
+pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
 
 print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))

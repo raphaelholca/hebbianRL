@@ -1,12 +1,14 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import helper.assess_network as an
 import hebbian_net
 import pypet
 import pickle
 import shutil
 import time
 
+an = reload(an)
 hebbian_net = reload(hebbian_net)
 
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
@@ -41,7 +43,7 @@ def set_run_names(explore_dict, name):
 	nXplr = len(explore_dict[explore_dict.keys()[0]])
 	runName_list = [name for _ in range(nXplr)]
 	for n in range(nXplr):
-		for k in explore_dict.keys():
+		for k in sorted(explore_dict.keys()):
 			runName_list[n] += '_'
 			runName_list[n] += k
 			runName_list[n] += str(explore_dict[k][n]).replace('.', ',')
@@ -137,3 +139,31 @@ def plot_results(folder_path=''):
 			plt.savefig(os.path.join(folder_path, keys[ik] + '_' + k + '.pdf'))
 
 			plt.close(fig)
+
+
+	name_best = ''
+	for k in sorted(param.keys()):
+		name_best += '_'
+		name_best += k
+		name_best += str(best_param[k]).replace('.', ',')
+
+	return name_best
+
+def launch_assess(save_path, file_name, images, labels):
+	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
+	best_net = pickle.load(net_file)
+	an.assess(best_net, images, labels, save_path=os.path.join(save_path, 'best_net'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -20,19 +20,19 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 4.5,
-							dMid 			= 0.2,
+							dMid 			= 0.20,
 							dNeut 			= -0.1,
-							dLow 			= -5.0,
-							protocol		= 'digit',
-							name 			= 'digit_noExplr_long',
-							n_runs 			= 10,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 30,				
+							dLow 			= -4.0,
+							protocol		= 'gabor',
+							name 			= 'gabor_test_11',
+							n_runs 			= 5,		
+							n_epi_crit		= 50,				
+							n_epi_dopa		= 100,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.01,				#0.005
+							lr				= 0.01,				#0.01
 							batch_size 		= 20,
-							n_hid_neurons	= 49,
+							n_hid_neurons	= 16,
 							init_file		= None,	
 							lim_weights		= False,
 							noise_std		= 0.2,
@@ -41,15 +41,15 @@ net = hebbian_net.Network(	dHigh 			= 4.5,
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 995 #np.random.randint(1000)
+							seed 			= 997 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 															A 				= net.A,
 															verbose 		= net.verbose,
-															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				'dataset_train'	: 'test',
+															digit_params 	= {	'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				'dataset_train'	: 'train',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
@@ -58,7 +58,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'excentricity' 	: 3.,
 																				'noise_crit'	: 0.,
 																				'noise_train'	: 0.,
-																				'noise_test'	: 0.2,
+																				'noise_test'	: 0.,
 																				'im_size'		: 28,
 																				}
 															)

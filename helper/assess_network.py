@@ -1,5 +1,6 @@
 """ Support functions to assess network; functions to plot receptive fields, histogram of the distribution of the classes of the weights (RFs) of the representation, etc.  """
 
+import os
 import numpy as np
 import external as ex
 import grating as gr 
@@ -11,27 +12,32 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, target=None):
+def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
 	Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
-		Args:
-			net (Network object): network object to assess
-			save_data (bool, optional): whether to save data to disk. Default: True
-			show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
-			sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
-			target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
-			save_data (bool, optional): whether to save test result to disk
+	Args:
+		net (Network object): network object to assess
+		images (numpy array): MNIST images
+		labels (numpy array): labels of the images.
+		save_data (bool, optional): whether to save data to disk. Default: True
+		show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
+		sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
+		target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
+		save_path (str, optional): path where to save data
 	"""
+	if save_path=='': save_path=os.path.join('.', 'output', net.name)
+	if not os.path.exists(save_path):
+		os.makedirs(save_path) 
 
 	""" plot and save confusion matrices """
-	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data)
+	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data, save_path)
 
 	""" compute histogram of RF classes and properties of tuning curves """
 	if net.protocol=='digit':
-		RFproba, net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose)
+		RFproba, net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose, save_path=save_path)
 	elif net.protocol=='gabor':
-		RFproba, net.RF_info = hist_gabor(10, net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose)
+		RFproba, net.RF_info = hist_gabor(10, net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose, save_path=save_path)
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -52,10 +58,10 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 	if save_data:
 		if show_W_act: W_act_pass=net.out_W_trained
 		else: W_act_pass=None
-		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose)	
-		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0)
+		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
-def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True):
+def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -68,6 +74,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 		n_bins (int, optional): number of bins in the histogram
 		save_data (bool, optional): whether save data
 		verbose (bool, optional): whether to display text ouput
+		save_path (str, optional): path where to save data
 
 	return:
 		RFproba (numpy array): probability that a each RF belongs to a certain class. The probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= n_runs x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
@@ -99,14 +106,14 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	if save_data:
 		bin_names = classes
 		fig = plot_hist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
-		plt.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
+		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
 		plt.close(fig)
 
 	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	return RFproba, RF_info
 
-def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose):
+def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
@@ -141,7 +148,7 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 			bin_names[i] = str(int(bin_size*i + bin_size/2.))
 
 		fig = plot_hist(h_mean, bin_names, h_err=h_ste)
-		plt.savefig('./output/'+name+'/' +name+ '_RFhist.pdf')
+		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
 		plt.close(fig)
 	
 	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
@@ -177,7 +184,7 @@ my_blues = [plt.get_cmap('YlGnBu')(1.*i/n_colors) for i in range(n_colors)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/n_colors) for i in range(n_colors)]
 cm_pastel = [plt.get_cmap('Paired')(1.*i/n_colors) for i in range(n_colors)]
 
-def print_save_CM(perf_dict, name, classes, verbose, save_data):
+def print_save_CM(perf_dict, name, classes, verbose, save_data, save_path):
 	""" print and save performance measures """
 
 	CM_avg = perf_dict['CM_avg']
@@ -204,16 +211,16 @@ def print_save_CM(perf_dict, name, classes, verbose, save_data):
 		print perf_print
 
 	if save_data:
-		perf_file = open('./output/' + name + '/' +name+ '_perf.txt', 'w')
+		perf_file = open(os.path.join(save_path, name+ '_perf.txt'), 'w')
 		perf_file.write(perf_print)
 		perf_file.close()
 
 		fig = plot_CM(CM_avg, classes)
-		plt.savefig('./output/' + name + '/' +name+ '_avgCM.pdf')
+		plt.savefig(os.path.join(save_path, name+ '_avgCM.pdf'))
 		plt.close(fig)
 
 
-def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True):
+def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True, save_path=''):
 	""" Plot the RFs of neurons """
 	if verbose: print "\nploting RFs..."
 
@@ -247,7 +254,9 @@ def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=N
 			notsame_pass = np.array([])
 
 		fig = plot_single_RF(W_sort, target=target_pass, W_act=W_act_pass, not_same=notsame_pass)
-		plt.savefig('output/' + name + '/RFs/' + name+ '_' + str(r).zfill(3)+'.png')
+		if not os.path.exists(os.path.join(save_path, 'RFs')):
+			os.makedirs(os.path.join(save_path, 'RFs'))
+		plt.savefig(os.path.join(save_path, 'RFs', name+ '_' + str(r).zfill(3)+'.png'))
 		plt.close(fig)
 
 def clockwise(r):
@@ -396,7 +405,7 @@ def plot_hist(h, bins, h_err=None):
 
 	return fig
 
-def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0):
+def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, save_path=''):
 	"""
 	plots the progression of the error rate over training episodes
 
@@ -430,7 +439,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0):
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
 
-	plt.savefig('output/' + name + '/' + name+ '_progress.pdf')
+	plt.savefig(os.path.join(save_path, name+'_progress.pdf'))
 	plt.close(fig)	
 
 

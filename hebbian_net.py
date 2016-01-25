@@ -403,7 +403,7 @@ class Network:
 	def _assess_perf_progress(self, perf_train, r, e, images_dict, labels_dict):
 		""" assesses progression of performance of network as it is being trained """
 		if self.verbose:
-			print_perf = ''
+			print_perf = 'epi ' + str(e) + ': '
 			if self._train_class_layer:
 				correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 				print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
