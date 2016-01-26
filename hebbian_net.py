@@ -46,7 +46,7 @@ class Network:
 				batch_size (int, optional): mini-batch size. Default: 20
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
-				init_file (str, optional): initialize weights with pre-trained weights saved to file; use '' or 'None' for random initialization. Default: None
+				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or 'None' for random initialization. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
@@ -119,6 +119,11 @@ class Network:
 
 			""" train network """
 			for e in range(self.n_epi_tot):
+				# if e%5==0: #used to plot weights during training
+				# 	pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
+				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
+				# 	an.plot_all_RF(self.name+'_'+str(e), self.hid_W[np.newaxis,:,:], RFproba, verbose=True, save_path=os.path.join('output', self.name, 'RF_save'))
+
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
 
 				#shuffle input images
@@ -243,16 +248,20 @@ class Network:
 
 	def _init_weights_file(self):
 		""" initialize weights of the network by loading saved weights from file """
-		if not os.path.exists(self.init_file):
+		if not os.path.exists(os.path.join('output', self.init_file)):
 			raise IOError, "weight file \'%s\' not found" % self.init_file
 
-		f_W_in = open('output/' + self.init_file + '/hid_W', 'r')
-		self.hid_W = pickle.load(f_W_in)['000']
-		f_W_in.close()
+		f_net = open(os.path.join('output', self.init_file, 'Network'), 'r')
+		saved_net = pickle.load(f_net)
 
-		f_W_act = open('output/' + self.init_file + '/out_W', 'r')
-		self.out_W = pickle.load(f_W_act)['000']
-		f_W_act.close()
+		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_net.hid_W):
+			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
+		if (self.n_hid_neurons, self.n_out_neurons) != np.shape(saved_net.out_W):
+			raise ValueError, "Output weights loaded from file are not of the same shape as those of the current network"
+
+		self.hid_W = np.copy(saved_net.hid_W)
+		self.out_W = np.copy(saved_net.out_W)
+		f_net.close()
 
 	def _init_weights_random(self):
 		""" initialize weights of the network randomly or by loading saved weights from file """

@@ -32,7 +32,7 @@ parameter_dict = {	'dHigh' 		: 4.5,
 					'lr'			: 0.01,	#0.005
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 49,
-					'init_file'		: '',	
+					'init_file'		: 'digit_pretrained_large',	
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: False,
