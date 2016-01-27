@@ -239,7 +239,7 @@ def print_params(param_dict, save_file):
 	tab_length = 25
 
 	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_dopa', 't', 'A', 'lr', 'batch_size', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_std',
-		'exploration', 'pdf_method', 'classifier', 'test_each_epi', 'verbose', 'seed']
+		'exploration', 'pdf_method', 'classifier', 'test_each_epi', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')

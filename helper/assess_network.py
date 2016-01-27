@@ -26,6 +26,7 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 		target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
 		save_path (str, optional): path where to save data
 	"""
+	""" create saving directory """
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
 	if not os.path.exists(save_path):
 		os.makedirs(save_path) 
