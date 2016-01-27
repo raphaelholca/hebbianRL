@@ -18,41 +18,41 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 		: 4.5,
-					'dMid' 			: 0.02,
-					'dNeut' 		: -0.1,
-					'dLow' 			: -2.0,
+parameter_dict = {	'dHigh' 		: 0.0,
+					'dMid' 			: 0.2,
+					'dNeut' 		: 0.0,
+					'dLow' 			: -4.0,
 					'protocol'		: 'digit',
-					'name' 			: 'pypet_noExplr_4_large',
-					'n_runs' 		: 20,		
-					'n_epi_crit'	: 10,				
-					'n_epi_dopa'	: 10,				
+					'name' 			: 'compare_pypet',
+					'n_runs' 		: 1,		
+					'n_epi_crit'	: 0,				
+					'n_epi_dopa'	: 15,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.01,	#0.005
 					'batch_size' 	: 20,
-					'n_hid_neurons'	: 49,
+					'n_hid_neurons'	: 300,
 					'init_file'		: 'digit_pretrained_large',	
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: False,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
-					'test_each_epi'	: False,
-					'verbose'		: False,
+					'test_each_epi'	: True,
+					'verbose'		: True,
 					'seed' 			: 996 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.10, 0.15, 0.20, 0.25, 0.30],
-					'dLow'			: [-7.0, -6.0, -5.0, -4.0, -3.0]
+explore_dict = {	'dMid'			: [0.20], #[0.20, 0.30, 0.40, 0.50],
+					'dLow'			: [-4.0], #[-10.0, -8.0, -6.0, -4.0]
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+															digit_params 	= {	'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																				'dataset_train'	: 'test',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
@@ -80,7 +80,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 1,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 traj = env.v_trajectory

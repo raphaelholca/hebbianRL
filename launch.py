@@ -19,15 +19,15 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 4.5,
+net = hebbian_net.Network(	dHigh 			= 0.0,
 							dMid 			= 0.20,
-							dNeut 			= -0.1,
+							dNeut 			= 0.0,
 							dLow 			= -4.0,
 							protocol		= 'digit',
-							name 			= 'digit_pretrain',
+							name 			= 'compare_launch',
 							n_runs 			= 1,		
 							n_epi_crit		= 0,				
-							n_epi_dopa		= 0,				
+							n_epi_dopa		= 15,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							lr				= 0.01,				#0.01
