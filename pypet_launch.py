@@ -72,7 +72,7 @@ save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
-save_file = os.path.join(save_path, 'params.txt')
+save_file = os.path.join(save_path, net.name + '_params.txt')
 ex.print_params(print_dict, save_file)
 
 """ create pypet environment """

@@ -227,11 +227,11 @@ def save_net(net):
 	net.name = checkdir(net.name, net.protocol, overwrite=True)
 	
 	""" save network to file """
-	n_file = open('output/' + net.name + '/Network', 'w')
+	n_file = open(os.path.join('output', net.name, 'Network'), 'w')
 	pickle.dump(net, n_file)
 	n_file.close()
 
-	save_file = os.path.join('output', net.name, 'params.txt')
+	save_file = os.path.join('output', net.name, net.name + '_params.txt')
 	print_params(vars(net), save_file)
 
 def print_params(param_dict, save_file):
