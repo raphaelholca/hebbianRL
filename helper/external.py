@@ -253,7 +253,7 @@ def print_params(param_dict, save_file):
 				line = ('%s \t: %s\n' %( p, str(param_dict[p]) )).expandtabs(tab_length)
 				param_file.write(line)
 			else:
-				for ik, k in enumerate(param_dict[p].keys()):
+				for ik, k in enumerate(sorted(param_dict[p].keys())):
 					if ik==0:
 						line = ('%s \t: %s: %s\n' % (p, k, str(param_dict[p][k]))).expandtabs(tab_length)
 					else:

@@ -23,16 +23,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: -4.0,
 					'protocol'		: 'digit',
-					'name' 			: 'pypet_noExplr_6_train',
-					'n_runs' 		: 5,		
-					'n_epi_crit'	: 10,				
-					'n_epi_dopa'	: 10,				
+					'name' 			: 'pypet_noExplr_9_large',
+					'n_runs' 		: 3,		
+					'n_epi_crit'	: 0,				
+					'n_epi_dopa'	: 15,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.01,	#0.005
 					'batch_size' 	: 20,
-					'n_hid_neurons'	: 49,
-					'init_file'		: '',	
+					'n_hid_neurons'	: 300,
+					'init_file'		: 'digit_pretrained_large',	
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: False,
@@ -44,15 +44,15 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.10, 0.15, 0.20, 0.25, 0.30],
-					'dLow'			: [-6.0, -5.0, -4.0, -3.0, -2.0]
+explore_dict = {	'dMid'			: [0.01, 0.02, 0.05, 0.10, 0.15],
+					'dLow'			: [-2.0, -1.5, -1.0, -0.5, -0.2]
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+															digit_params 	= {	'classes' 		: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 ], dtype=int),
 																				'dataset_train'	: 'train',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
@@ -62,7 +62,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				'excentricity' 	: 3.,
 																				'noise_crit'	: 0.,
 																				'noise_train'	: 0.,
-																				'noise_test'	: 0.2,
+																				'noise_test'	: 0.,
 																				'im_size'		: 28,
 																				}
 															)

@@ -20,19 +20,19 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 0.0,
-							dMid 			= 0.20,
+							dMid 			= 0.05,
 							dNeut 			= 0.0,
-							dLow 			= -4.0,
-							protocol		= 'gabor',
-							name 			= 'gabor_test_12',
-							n_runs 			= 5,		
-							n_epi_crit		= 200,				
-							n_epi_dopa		= 100,				
+							dLow 			= -1.0,
+							protocol		= 'digit',
+							name 			= 'digit_long_large',
+							n_runs 			= 10,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 20,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.001,				#0.01
+							lr				= 0.01,				#0.01
 							batch_size 		= 20,
-							n_hid_neurons	= 16,
+							n_hid_neurons	= 300,
 							init_file		= '',	
 							lim_weights		= False,
 							noise_std		= 0.2,
@@ -41,7 +41,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 997 #np.random.randint(1000)
+							seed 			= 982 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -53,12 +53,12 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
-																				'n_test' 		: 1000,
+																				'n_test' 		: 10000,
 																				'target_ori' 	: 85.,
-																				'excentricity' 	: 3.,
-																				'noise_crit'	: 0.,
-																				'noise_train'	: 0.,
-																				'noise_test'	: 0.,
+																				'excentricity' 	: 10.,
+																				'noise_crit'	: 0.0,
+																				'noise_train'	: 0.0,
+																				'noise_test'	: 0.0,
 																				'im_size'		: 28,
 																				}
 															)
