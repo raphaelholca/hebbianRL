@@ -125,9 +125,9 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	#compute RFs info for the trained network
 	curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=True)
 	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name)
-	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name)
+	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False)
 	
-	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, binned=True, plot=True)
+	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
 
@@ -423,18 +423,33 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 		perf_test (numpy array): testing performance at each episode of each run
 		epi_start (int, optional): episode at which to start the plot (used epi_start=n_epi_crit to plot only after statistical pre-training). Default: 0 
 	"""
+	plot_train = True
+	plot_mean = True
 
 	fig, ax = plt.subplots()
 	plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.9,10))
+	alpha_all = 0.35 if plot_mean else 1.0
 
 	n_runs = np.size(perf_train, 0)
 	for r in range(n_runs):
+		#vline for start of dopa
 		if epi_start < dopa_start:
 			plt.axvline(x=dopa_start, ymin=0, ymax=100, lw=2.5, ls='--', c='k', alpha=0.25)
+		
 		X = np.arange( len(perf_train[r, epi_start:]) )+1
-		# ax.plot(X, perf_train[r, epi_start:]*100, lw=3, ls='-')
+		
+		#progression curves for all runs
+		if plot_train: 
+			ax.plot(X, perf_train[r, epi_start:]*100, lw=3, ls=':', alpha=alpha_all)
 		if perf_test is not None:
-			ax.plot(X, perf_test[r, epi_start:]*100, lw=3, ls=':')
+			ax.plot(X, perf_test[r, epi_start:]*100, lw=3, ls='-', alpha=alpha_all)
+
+	#mean progression curves
+	if plot_mean:
+		if plot_train: 
+			ax.plot(X, np.mean(perf_train[:, epi_start:], 0)*100, lw=3, ls=':', alpha=1.0, c='k')
+		if perf_test is not None:
+				ax.plot(X, np.mean(perf_test[:, epi_start:], 0)*100, lw=3, ls='-', alpha=1.0, c='k')
 
 	fig.patch.set_facecolor('white')
 	ax.spines['right'].set_visible(False)
@@ -443,7 +458,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	# ax.set_ylim([95.,100.])
+	ax.set_ylim([90.,100.])
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()

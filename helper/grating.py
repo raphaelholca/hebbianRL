@@ -1,5 +1,6 @@
 """ Support functions for the gabor experimental protocol.  """
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -122,7 +123,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 				plt.tight_layout()
 		
 		if plot:
-			plt.savefig('output/' + name + '/TCs/' + 'TCs_'  +name+ '_' + str(r).zfill(3) + '.pdf')
+			plt.savefig(os.path.join('output', name, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
 	return curves
@@ -155,7 +156,7 @@ def preferred_orientations(W, t, target_ori, name):
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, t, target_ori, name, plot=True):
+def slopes(W, curves, pref_ori, t, target_ori, name, plot=False):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -228,7 +229,7 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 		
-			plt.savefig('output/' + name + '/TCs/' + 'slopes_' + name+ '_' + str(r).zfill(3) + '.pdf')
+			plt.savefig(os.path.join('output', name, 'TCs', 'slopes_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
 			""" plot of slope at target orientation """
@@ -244,14 +245,16 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=True):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 
-			plt.savefig('output/' + name + '/TCs/' + 'slopes_at_target' + '.pdf')
+			plt.savefig(os.path.join('output', name, 'TCs', 'slopes_at_target.pdf'))
 			plt.close(fig)
 
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
-def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, binned=True, plot=True):
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True):
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
+
+	binned=True
 
 	if binned:
 		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
@@ -277,8 +280,8 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, binned=
 		fig.patch.set_facecolor('white')
 		if binned:
 			ax.plot(bin_centers, pre_slopes_binned, ls='--', lw=3, c='b')
-			ax.errorbar(bin_centers, pre_slopes_binned, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', mew=2)
-			ax.errorbar(bin_centers, post_slopes_binned, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', mew=2)
+			ax.errorbar(bin_centers, pre_slopes_binned, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
+			ax.errorbar(bin_centers, post_slopes_binned, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
 		else:
 			ax.scatter(pre_dist, pre_slopes, c='b')
 			ax.scatter(post_dist, post_slopes, c='r')
@@ -294,10 +297,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, binned=
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 		plt.tight_layout()
 
-		if binned:
-			plt.savefig('output/' + name + '/TCs/' + 'slopes_pre_post_binned' + '.pdf')
-		else:
-			plt.savefig('output/' + name + '/TCs/' + 'slopes_pre_post' + '.pdf')
+		plt.savefig(os.path.join('output', name, name + '_slope_diffs.pdf'))
 		plt.close(fig)
 
 

@@ -72,7 +72,7 @@ save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
-save_file = os.path.join(save_path, net.name + '_params.txt')
+save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')
 ex.print_params(print_dict, save_file)
 
 """ create pypet environment """
@@ -99,7 +99,8 @@ print "\n\nplotting results"
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
 
-print '\nstart time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
+print '\nrun name:\t' + parameter_dict['name']
+print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
 print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
 
