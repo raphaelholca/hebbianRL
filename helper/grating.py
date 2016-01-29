@@ -133,7 +133,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 
 	return curves
 
-def preferred_orientations(W, t, target_ori, name):
+def preferred_orientations(W, t, target_ori, name, curves=None):
 	"""
 	compute the preferred orientation of neurons
 
@@ -142,12 +142,14 @@ def preferred_orientations(W, t, target_ori, name):
 		t (float): temperature of the softmax function used during training
 		target_ori (float): target orientation on side of which to discrimate the gabor patches
 		name (str): name of the network, used for saving figures
+		curves (numpy array, optional): pre-computed tuning curves
 
 	returns:
 		the preferred orientation of all neurons in all runs
 	"""
 
-	curves = tuning_curves(W, t, target_ori, name, method='no_softmax', plot=False)
+	if curves is None:
+		curves = tuning_curves(W, t, target_ori, name, method='no_softmax', plot=False)
 
 
 	n_runs = np.size(curves,0)
@@ -261,9 +263,10 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
-def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True):
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, save_path=''):
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
 
+	if save_path=='': save_path=os.path.join('output', name)
 	binned=True
 
 	if binned:
@@ -307,7 +310,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 		plt.tight_layout()
 
-		plt.savefig(os.path.join('output', name, name + '_slope_diffs.pdf'))
+		plt.savefig(os.path.join(save_path, name + '_slope_diffs.pdf'))
 		plt.close(fig)
 
 

@@ -119,15 +119,15 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	
 	#compute RFs info for the naive network
 	curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=save_path)
-	pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name)
+	pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name, curves_naive)
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
 	curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=True, save_path=save_path)
-	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name)
+	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
-	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True)
+	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
 

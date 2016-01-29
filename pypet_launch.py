@@ -23,7 +23,7 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: -4.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_1-5',
+					'name' 			: 'pypet_gabor_noise_0_1',
 					'n_runs' 		: 5,		
 					'n_epi_crit'	: 40,				
 					'n_epi_dopa'	: 40,				
@@ -44,8 +44,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.05, 0.10, 0.15, 0.20, 0.25],
-					'dLow'			: [-3.0, -4.0, -5.0, -6.0, -7.0]
+explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
+					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
 				}
 
 """ load and pre-process images """
@@ -60,10 +60,10 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
 																				'excentricity' 	: 90.,
-																				'noise_crit'	: 0.15,
-																				'noise_train'	: 0.15,
-																				'noise_test'	: 0.15,
-																				'im_size'		: 28,
+																				'noise_crit'	: 0.,
+																				'noise_train'	: 0.,
+																				'noise_test'	: 0.,
+																				'im_size'		: 28
 																				}
 															)
 
