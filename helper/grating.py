@@ -60,7 +60,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	return gratings
 
-def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
+def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path=''):
 	"""
 	compute the tuning curve of the neurons
 
@@ -71,10 +71,15 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 		name (str): name of the network, used for saving figures
 		method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
 		plot (bool, optional): whether or not to create plots
+		save_path (str, optional): path to save plots
 
 	returns:
 		(dict): the tuning curves for each neuron of each run
 	"""
+
+	if save_path=='': save_path=os.path.join('output', name)
+	if not os.path.exists(os.path.join(save_path, 'TCs')):
+		os.makedirs(os.path.join(save_path, 'TCs'))
 
 	if method not in ['basic', 'no_softmax', 'with_noise']:
 		print '!!! invalid method - using \'basic\' method !!!'
@@ -123,7 +128,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True):
 				plt.tight_layout()
 		
 		if plot:
-			plt.savefig(os.path.join('output', name, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
+			plt.savefig(os.path.join(save_path, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
 	return curves
@@ -156,7 +161,7 @@ def preferred_orientations(W, t, target_ori, name):
 	return pref_ori
 
 
-def slopes(W, curves, pref_ori, t, target_ori, name, plot=False):
+def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	"""
 	compute slope of tuning curves at target orientation
 
@@ -168,12 +173,17 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False):
 		target_ori (float): target orientation on side of which to discrimate the gabor patches
 		name (str): name of the network, used for saving figures
 		plot (bool, optional): whether or not to create plots
+		save_path (str, optional): path to save plots
 
 	returns:
 		slopes (dict): slopes of the tuning curves for each individual neuron *!!* should be plotted so that slope value is alligned between two measurement points
 		all_slopes (dict): all slopes collapsed in a single list, with their order matching degrees away from preferred orientation stores in all_deg
 		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
+
+	if save_path=='': save_path=os.path.join('output', name)
+	if not os.path.exists(os.path.join(save_path, 'TCs')):
+		os.makedirs(os.path.join(save_path, 'TCs'))
 
 	n_runs = np.size(curves,0)
 	n_input = np.size(curves,1)
@@ -229,7 +239,7 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 		
-			plt.savefig(os.path.join('output', name, 'TCs', 'slopes_' + name + '_' + str(r).zfill(3) + '.pdf'))
+			plt.savefig(os.path.join(save_path, 'TCs', 'slopes_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
 			""" plot of slope at target orientation """
@@ -245,7 +255,7 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False):
 			ax.tick_params(axis='both', which='major', direction='out')
 			plt.tight_layout()
 
-			plt.savefig(os.path.join('output', name, 'TCs', 'slopes_at_target.pdf'))
+			plt.savefig(os.path.join(save_path, 'TCs', 'slopes_at_target.pdf'))
 			plt.close(fig)
 
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
