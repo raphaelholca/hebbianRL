@@ -23,8 +23,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: -10.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'gabor_long_pypet',
-					'n_runs' 		: 10,		
+					'name' 			: 'gabor_long_pypet_4',
+					'n_runs' 		: 5,		
 					'n_epi_crit'	: 40,				
 					'n_epi_dopa'	: 40,				
 					't'				: 0.1, 							
@@ -38,9 +38,9 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'exploration'	: False,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
-					'test_each_epi'	: False,
+					'test_each_epi'	: True,
 					'verbose'		: False,
-					'seed' 			: 976 #np.random.randint(1000)
+					'seed' 			: 983 #np.random.randint(1000)
 					}
 
 """ explored parameters """

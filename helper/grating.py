@@ -77,9 +77,10 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		(dict): the tuning curves for each neuron of each run
 	"""
 
-	if save_path=='': save_path=os.path.join('output', name)
-	if not os.path.exists(os.path.join(save_path, 'TCs')):
-		os.makedirs(os.path.join(save_path, 'TCs'))
+	if plot:
+		if save_path=='': save_path=os.path.join('output', name)
+		if not os.path.exists(os.path.join(save_path, 'TCs')):
+			os.makedirs(os.path.join(save_path, 'TCs'))
 
 	if method not in ['basic', 'no_softmax', 'with_noise']:
 		print '!!! invalid method - using \'basic\' method !!!'
@@ -183,9 +184,10 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 		all_deg (dict): degrees away from preferred orientation matching the the slopes stored in all_slopes 
 	"""
 
-	if save_path=='': save_path=os.path.join('output', name)
-	if not os.path.exists(os.path.join(save_path, 'TCs')):
-		os.makedirs(os.path.join(save_path, 'TCs'))
+	if plot:
+		if save_path=='': save_path=os.path.join('output', name)
+		if not os.path.exists(os.path.join(save_path, 'TCs')):
+			os.makedirs(os.path.join(save_path, 'TCs'))
 
 	n_runs = np.size(curves,0)
 	n_input = np.size(curves,1)
