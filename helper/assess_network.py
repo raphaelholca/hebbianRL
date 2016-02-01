@@ -458,7 +458,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([90.,100.])
+	ax.set_ylim([85.,100.])
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()
