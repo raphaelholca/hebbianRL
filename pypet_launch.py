@@ -19,17 +19,17 @@ pp = reload(pp)
 
 """ static parameters """
 parameter_dict = {	'dHigh' 		: 0.0,
-					'dMid' 			: 0.2,
+					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
-					'dLow' 			: -4.0,
+					'dLow' 			: -10.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_0_1',
-					'n_runs' 		: 5,		
+					'name' 			: 'gabor_long_pypet',
+					'n_runs' 		: 10,		
 					'n_epi_crit'	: 40,				
 					'n_epi_dopa'	: 40,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
-					'lr'			: 0.001,	#0.005
+					'lr'			: 0.001,	#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
 					'init_file'		: '',	
@@ -44,8 +44,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
-					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
+explore_dict = {	'dMid'			: [0.000],#[0.00, 0.0125, 0.025, 0.05, 0.300],
+					'dLow'			: [-10.0]#[-2.0, -4.000, -6.00, -8.0, -10.0]
 				}
 
 """ load and pre-process images """
@@ -72,7 +72,7 @@ save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
-print_dict.update(images_params)
+print_dict.update({'images_params':images_params})
 save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')
 ex.print_params(print_dict, save_file)
 
