@@ -20,11 +20,11 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 0.0,
-							dMid 			= 0.20,
+							dMid 			= 0.0,
 							dNeut 			= 0.0,
-							dLow 			= -4.0,
+							dLow 			= -10.0,
 							protocol		= 'gabor',
-							name 			= 'gabor_excen_4',
+							name 			= 'gabor_long_1',
 							n_runs 			= 10,		
 							n_epi_crit		= 40,				
 							n_epi_dopa		= 40,				
@@ -55,7 +55,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
-																				'excentricity' 	: 5.,
+																				'excentricity' 	: 90.,
 																				'noise_crit'	: 0.,
 																				'noise_train'	: 0.,
 																				'noise_test'	: 0.,
