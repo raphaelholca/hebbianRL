@@ -79,8 +79,7 @@ def plot_results(folder_path=''):
 	for k in param_traj:
 		if k[11:] != 'name':
 			xplr_values = np.array(param_traj[k].f_get_range())
-			if len(np.unique(xplr_values)) >1:
-				param[k[11:]] = xplr_values
+			param[k[11:]] = xplr_values
 
 	arg_best = np.argmax(perf)
 
@@ -139,7 +138,6 @@ def plot_results(folder_path=''):
 			plt.savefig(os.path.join(folder_path, keys[ik] + '_' + k + '.pdf'))
 
 			plt.close(fig)
-
 
 	name_best = ''
 	for k in sorted(param.keys()):

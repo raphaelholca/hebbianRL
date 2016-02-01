@@ -23,10 +23,10 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: -4.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_0_1',
-					'n_runs' 		: 5,		
-					'n_epi_crit'	: 40,				
-					'n_epi_dopa'	: 40,				
+					'name' 			: 'pypet_test',
+					'n_runs' 		: 1,		
+					'n_epi_crit'	: 0,				
+					'n_epi_dopa'	: 0,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
 					'lr'			: 0.001,	#0.005
@@ -44,8 +44,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
-					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
+explore_dict = {	'dMid'			: [0.1],#[0.00, 0.0125, 0.025, 0.05, 0.300],
+					'dLow'			: [0.2]#[-2.0, -4.000, -6.00, -8.0, -10.0]
 				}
 
 """ load and pre-process images """
@@ -69,7 +69,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
-pp.check_dir(save_path, overwrite=False)
+pp.check_dir(save_path, overwrite=True)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 print_dict.update(images_params)
@@ -81,7 +81,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 1,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 traj = env.v_trajectory
