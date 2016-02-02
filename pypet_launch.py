@@ -21,15 +21,15 @@ pp = reload(pp)
 parameter_dict = {	'dHigh' 		: 0.0,
 					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
-					'dLow' 			: -10.0,
-					'protocol'		: 'gabor',
-					'name' 			: 'gabor_pypet_test',
+					'dLow' 			: 0.0,
+					'protocol'		: 'digit',
+					'name' 			: 'pypet_digit_noExplr_large_long',
 					'n_runs' 		: 1,		
 					'n_epi_crit'	: 40,				
-					'n_epi_dopa'	: 40,				
+					'n_epi_dopa'	: 60,				
 					't'				: 0.1, 							
 					'A' 			: 1.2,
-					'lr'			: 0.001,	#0.01
+					'lr'			: 0.01,	#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
 					'init_file'		: '',	
@@ -44,8 +44,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.000],#[0.00, 0.0125, 0.025, 0.05, 0.300],
-					'dLow'			: [-10.0]#[-2.0, -4.000, -6.00, -8.0, -10.0]
+explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
+					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
 				}
 
 """ load and pre-process images """
