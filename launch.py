@@ -20,19 +20,19 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 0.0,
-							dMid 			= 0.0,
+							dMid 			= 0.15,
 							dNeut 			= 0.0,
-							dLow 			= -10.0,
-							protocol		= 'gabor',
-							name 			= 'gabor_long_1',
-							n_runs 			= 10,		
-							n_epi_crit		= 40,				
-							n_epi_dopa		= 40,				
+							dLow 			= -1.5,
+							protocol		= 'digit',
+							name 			= 'digit_testerr_DA_mixed',
+							n_runs 			= 5,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 20,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.001,				#0.01
+							lr				= 0.01,				#0.01
 							batch_size 		= 20,
-							n_hid_neurons	= 16,
+							n_hid_neurons	= 49,
 							init_file		= '',	
 							lim_weights		= False,
 							noise_std		= 0.2,
@@ -41,16 +41,17 @@ net = hebbian_net.Network(	dHigh 			= 0.0,
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 983 #np.random.randint(1000)
+							seed 			= 989 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 															A 				= net.A,
 															verbose 		= net.verbose,
-															digit_params 	= {	'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
 																				'dataset_train'	: 'train',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'		: False
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,

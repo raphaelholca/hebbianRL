@@ -434,7 +434,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	n_runs = np.size(perf_train, 0)
 	for r in range(n_runs):
 		#vline for start of dopa
-		if epi_start < dopa_start:
+		if epi_start < dopa_start and n_epi_plot > dopa_start:
 			plt.axvline(x=dopa_start, ymin=0, ymax=100, lw=2.5, ls='--', c='k', alpha=0.25)
 		
 		X = np.arange( len(perf_train[r, epi_start:]) )+1
@@ -459,7 +459,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	# ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([90.,100.])
+	ax.set_ylim([70.,100.])
 	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, n_epi_plot/10))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)

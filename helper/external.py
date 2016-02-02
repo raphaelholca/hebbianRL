@@ -30,6 +30,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 				classes (numpy array): classes of the MNIST dataset to load
 				dataset_train (str): name of the dataset to load for training the network; maybe 'test' or 'train'
 				dataset_path (str): path of the MNIST dataset
+				shuffle (bool): whether to mix train and test dataset and split them up again
 			gabor_params (dict): parameters for creating the gabor patches. These are:
 				n_train (int): number of training images
 				n_test (int): number of testing images
@@ -53,16 +54,28 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 	if protocol == 'digit':
 		if verbose: print 'loading train images...'
 		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-		images, labels = even_labels(images, labels, digit_params['classes'])
-		images = normalize(images, A*np.size(images,1))
 
 		if verbose: print 'loading test images...'
 		dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
 		images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
-		images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
-		images_test, labels_test = shuffle([images_test, labels_test])
-		images_test = normalize(images_test, A*np.size(images_test,1))
+
+		if digit_params['shuffle']:
+			n_images_train = len(labels)
+			images_all = np.append(images, images_test, axis=0)
+			labels_all = np.append(labels, labels_test)
+			images_rdn, labels_rdn = shuffle([images_all, labels_all])
+
+			images = images_rdn[:n_images_train, :]
+			labels = labels_rdn[:n_images_train]
+			images_test = images_rdn[n_images_train:, :]
+			labels_test = labels_rdn[n_images_train:]
 		
+		images, labels = even_labels(images, labels, digit_params['classes'])
+		images = normalize(images, A*np.size(images,1))
+
+		images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
+		images_test = normalize(images_test, A*np.size(images_test,1))
+
 		images_task = None
 		labels_task = None
 		images_params = digit_params
