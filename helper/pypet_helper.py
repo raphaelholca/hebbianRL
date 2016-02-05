@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import helper.assess_network as an
+import grating as gr
 import hebbian_net
 import pypet
 import pickle
@@ -9,6 +10,7 @@ import shutil
 import time
 
 an = reload(an)
+gr = reload(gr)
 hebbian_net = reload(hebbian_net)
 
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
@@ -146,6 +148,34 @@ def plot_results(folder_path=''):
 		name_best += str(best_param[k]).replace('.', ',')
 
 	return name_best
+
+def plot_all_slope_diffs(save_path):
+	""" plot slope difference for all networks """
+	net_path = os.path.join(save_path, 'networks')
+	plot_path = os.path.join(save_path, 'slope_diffs')
+	if not os.path.exists(plot_path):
+		os.makedirs(plot_path)
+	for n in os.listdir(net_path):
+		n_file = open(os.path.join(net_path, n), 'r')
+		net = pickle.load(n_file)
+
+		name = net.name
+		hid_W_naive = net.hid_W_naive
+		hid_W_trained = net.hid_W_trained
+		t = net.t
+		target_ori = net.images_params['target_ori']
+
+		#compute RFs info for the naive network
+		curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name, curves_naive)
+		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
+
+		#compute RFs info for the trained network
+		curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
+		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
+		
+		gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=plot_path)
 
 def launch_assess(save_path, file_name, images, labels):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')

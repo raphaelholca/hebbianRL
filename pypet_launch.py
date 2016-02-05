@@ -22,14 +22,14 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
-					'protocol'		: 'digit',
-					'name' 			: 'pypet_gabor_noise',
-					'n_runs' 		: 1,		
-					'n_epi_crit'	: 40,				
-					'n_epi_dopa'	: 60,				
-					't'				: 0.1, 							
+					'protocol'		: 'gabor',
+					'name' 			: 'pypet_gabor_noise_1-0_npExplr_6',#'pypet_gabor_noise_1-0_explr',
+					'n_runs' 		: 10,		
+					'n_epi_crit'	: 30,				
+					'n_epi_dopa'	: 20,				
+					't'				: 0.001, 	#0.1						
 					'A' 			: 1.2,
-					'lr'			: 0.001,	#0.01
+					'lr'			: 0.001,
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
 					'init_file'		: '',	
@@ -38,14 +38,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'exploration'	: False,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
-					'test_each_epi'	: True,
+					'test_each_epi'	: False,
 					'verbose'		: False,
-					'seed' 			: 983 #np.random.randint(1000)
+					'seed' 			: 976 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
-					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
+explore_dict = {	#'dHigh'			: [0.00, 1.50, 3.00, 4.50, 6.000],
+					#'dNeut'			: [-0.4, -0.3, -0.2, -0.1, 0.000],
+					'dMid'			: [0.00, 0.50, 1.000, 1.500, 2.000, 2.500],
+					'dLow'			: [-1.0, -2.0, -4.00, -6.00, -8.00, -10.0]
 				}
 
 """ load and pre-process images """
@@ -55,12 +57,13 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															digit_params 	= {	'classes' 		: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 ], dtype=int),
 																				'dataset_train'	: 'train',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'		: False
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
 																				'excentricity' 	: 90.,
-																				'noise'			: 0.,
+																				'noise'			: 1.0,
 																				'im_size'		: 28
 																				}
 															)
@@ -97,6 +100,8 @@ toc = time.time()
 print "\n\nplotting results"
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
+if parameter_dict['protocol']=='gabor': 
+	pp.plot_all_slope_diffs(save_path=save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
