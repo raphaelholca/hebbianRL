@@ -269,7 +269,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
 
 	if save_path=='': save_path=os.path.join('output', name)
-	binned=True
+	binned=False
 
 	if binned:
 		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8

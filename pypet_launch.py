@@ -13,6 +13,7 @@ import time
 import pypet
 import helper.external as ex
 import helper.pypet_helper as pp
+np.random.seed(0)
 
 ex = reload(ex)
 pp = reload(pp)
@@ -23,19 +24,19 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_1-0_npExplr_6',#'pypet_gabor_noise_1-0_explr',
+					'name' 			: 'pypet_gabor_noise_1-0_noExplr_3_1',
 					'n_runs' 		: 10,		
-					'n_epi_crit'	: 30,				
+					'n_epi_crit'	: 0,				
 					'n_epi_dopa'	: 20,				
 					't'				: 0.001, 	#0.1						
 					'A' 			: 1.2,
 					'lr'			: 0.001,
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
-					'init_file'		: '',	
+					'init_file'		: 'gabor_pretrained',	
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
-					'exploration'	: False,
+					'exploration'	: True,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
 					'test_each_epi'	: False,
@@ -46,8 +47,9 @@ parameter_dict = {	'dHigh' 		: 0.0,
 """ explored parameters """
 explore_dict = {	#'dHigh'			: [0.00, 1.50, 3.00, 4.50, 6.000],
 					#'dNeut'			: [-0.4, -0.3, -0.2, -0.1, 0.000],
-					'dMid'			: [0.00, 0.50, 1.000, 1.500, 2.000, 2.500],
-					'dLow'			: [-1.0, -2.0, -4.00, -6.00, -8.00, -10.0]
+					
+					'dMid'			: [0.00, 1.00, 2.00, 3.00, 4.00],
+					'dLow'			: [0.00, -1.0, -2.0, -3.0, -4.0]
 				}
 
 """ load and pre-process images """
