@@ -24,10 +24,10 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_1-0_noExplr_3_1',
-					'n_runs' 		: 10,		
+					'name' 			: 'pypet_gabor_noise_1-0_explr_0',
+					'n_runs' 		: 5,		
 					'n_epi_crit'	: 0,				
-					'n_epi_dopa'	: 20,				
+					'n_epi_dopa'	: 15,				
 					't'				: 0.001, 	#0.1						
 					'A' 			: 1.2,
 					'lr'			: 0.001,
@@ -45,11 +45,11 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	#'dHigh'			: [0.00, 1.50, 3.00, 4.50, 6.000],
-					#'dNeut'			: [-0.4, -0.3, -0.2, -0.1, 0.000],
+explore_dict = {	'dHigh'			: [0.00, 1.500, 3.00, 4.500, 6.000],
+					'dNeut'			: [-1.0, -0.75, -0.5, -0.25, 0.000],
 					
-					'dMid'			: [0.00, 1.00, 2.00, 3.00, 4.00],
-					'dLow'			: [0.00, -1.0, -2.0, -3.0, -4.0]
+					'dMid'			: [0.00, 1.000, 2.00, 3.000, 4.00],
+					'dLow'			: [0.00, -1.00, -2.0, -3.00, -4.0]
 				}
 
 """ load and pre-process images """
@@ -100,6 +100,7 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 print "\n\nplotting results"
+pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
 if parameter_dict['protocol']=='gabor': 

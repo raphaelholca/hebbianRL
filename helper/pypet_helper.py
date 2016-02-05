@@ -8,6 +8,7 @@ import pypet
 import pickle
 import shutil
 import time
+from scipy import stats
 
 an = reload(an)
 gr = reload(gr)
@@ -181,6 +182,163 @@ def launch_assess(save_path, file_name, images, labels):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
 	best_net = pickle.load(net_file)
 	an.assess(best_net, images, labels, save_path=os.path.join(save_path, 'best_net'))
+
+def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
+	print "importing data..."
+	traj = pypet.load_trajectory(traj_name, filename=os.path.join(folder_path, file_name+'.hdf5'), force=True)
+	traj.v_auto_load = True
+
+	perc_correct = np.array([])
+	perc_correct_all = []
+	skipped_count = 0
+	ok_runs = []
+	for run in traj.f_iter_runs():
+		# import pdb; pdb.set_trace()
+		perc_correct = np.append(perc_correct, np.mean(traj.results[run].test_perf['perf']))
+		perc_correct_all.append(traj.results[run].test_perf['perf'])
+		ok_runs.append(int(run[4:]))
+
+	param_traj = traj.f_get_explored_parameters()
+	param = {}
+	for k in param_traj:
+		if k[11:] != 'name':
+			xplr_values = np.array(param_traj[k].f_get_range())[ok_runs]
+			if len(np.unique(xplr_values)) >1:
+				param[k[11:]] = xplr_values
+
+	# #removes explored trajectories other than the dopamine ones
+	# for k in param.keys():
+	# 	if k not in order_face:
+	# 		print str(k) + ": " + str(np.unique(param[k]))
+	# 		select = np.unique(param[k])[0]	##<-------------change index to change which value of removed parameter to use-------------
+	# 		for n_k in param.keys():
+	# 			if n_k!=k:
+	# 				param[n_k] = param[n_k][param[k]==select]
+	# 		perc_correct = perc_correct[param[k]==select]
+	# 		del param[k]
+
+	return perc_correct, np.array(perc_correct_all), param
+
+def faceting(folder_path):
+	file_name = 'explore_perf'
+
+	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
+	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
+
+	threshold = 0.002
+	t_threshold = 0.1
+	vmin=0.92#1
+	vmax=0.96#0.97
+	font_large = 20
+	font_small = 18
+
+	order_face = ['dNeut', 'dHigh', 'dMid', 'dLow'] #order is x1, y1, x2, y2
+
+	perc_correct, perc_correct_all, param = import_traj(folder_path, file_name, order_face)
+
+	n_mesure = len(np.unique(param['dHigh']))
+
+	#find best parameters combination
+	arg_best = np.argmax(perc_correct)
+	best_param = {}
+	print 'best parameters:'
+	print '================'
+	for k in param.keys():
+		best_param[k] = param[k][arg_best]
+		print k + ' : ' + str(param[k][arg_best]) + '\t\t' + str(np.round(np.unique(param[k]),2))
+	best_perf_str = str(int(np.max(perc_correct)*1000)/10.) + '%'
+	print '\nbest performance: ' + best_perf_str
+
+	invert=True if np.argwhere(param[order_face[0]]!= param[order_face[0]][0])[0] > np.argwhere(param[order_face[1]]!= param[order_face[1]][0])[0] else False
+
+	#find similarly good parameters...
+	if np.size(perc_correct_all,1)>1 :#...using statistical significance testing
+		arg_best_all = np.array([], dtype=int)
+		best_perf = perc_correct_all[arg_best, :]
+		for arg in range(np.size(perc_correct_all,0)):
+			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :]) #two-sided t-test with independent samples
+			if prob > t_threshold: #not statistically significantly different
+				arg_best_all = np.append(arg_best_all, arg)
+		best_param_all = {}
+		for k in param.keys():
+			best_param_all[k] = param[k][arg_best_all]
+		best_perf_all = perc_correct[arg_best_all]
+
+	else: #...within [threshold]% of best performance
+		arg_best_all = np.argwhere(perc_correct >= np.max(perc_correct)-threshold*np.max(perc_correct))
+		best_param_all = {}
+		for k in param.keys():
+			best_param_all[k] = param[k][arg_best_all]
+		best_perf_all = perc_correct[arg_best_all]
+
+	""" faceting plot """
+	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
+	fig.patch.set_facecolor('white')
+
+	for x2_i, x2 in enumerate(np.sort(np.unique(param[order_face[2]]))):
+		for y2_i, y2 in enumerate(np.sort(np.unique(param[order_face[3]]))[::-1]):
+			x1 = np.unique(param[order_face[0]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
+			y1 = np.unique(param[order_face[1]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
+			z = perc_correct[np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])]
+			z_square = np.reshape(z, (n_mesure, n_mesure))
+			if invert: z_square=z_square.T
+
+			ax[y2_i, x2_i].imshow(z_square, origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
+
+			# indicate all params that give performance within [threshold]% of best performance
+			if x2 in best_param_all[order_face[2]][y2==best_param_all[order_face[3]]]:
+				mask_best = np.logical_and(x2==best_param_all[order_face[2]], y2==best_param_all[order_face[3]])
+				x1_dots = []
+				y1_dots = []
+				for x in best_param_all[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
+				for y in best_param_all[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
+				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k')
+
+			# indicate params that give best performance
+			if x2==best_param[order_face[2]] and y2==best_param[order_face[3]]:
+				x1_dot = np.argwhere(best_param[order_face[0]] == x1)
+				y1_dot = np.argwhere(best_param[order_face[1]] == y1)
+				ax[y2_i, x2_i].scatter(x1_dot, y1_dot, s=100, c='r', marker='*')
+
+			if y2_i==0: #ticks for top row
+				ax[y2_i,x2_i].set_yticks([])
+				ax[y2_i,x2_i].set_xticks([n_mesure/2])
+				ax[y2_i,x2_i].xaxis.set_ticks_position('top')
+				ax[y2_i,x2_i].set_xticklabels([str(x2)], fontsize=font_small)
+				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
+			if x2_i==n_mesure-1: #ticks for right row
+				if y2_i!=0:
+					ax[y2_i,x2_i].set_xticks([])
+				ax[y2_i,x2_i].set_yticks([n_mesure/2])
+				ax[y2_i,x2_i].yaxis.set_ticks_position('right')
+				ax[y2_i,x2_i].set_yticklabels([str(y2)], fontsize=font_small)
+				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
+			elif y2_i!=0:
+				ax[y2_i,x2_i].set_xticks([])
+				ax[y2_i,x2_i].set_yticks([])
+
+			ax[y2_i,x2_i].set_xlim(-.5, n_mesure-.5)
+			ax[y2_i,x2_i].set_ylim(-.5, n_mesure-.5)
+
+	ax[n_mesure-1,0].set_xticks(range(n_mesure)[::2])
+	ax[n_mesure-1,0].xaxis.set_ticks_position('bottom')
+	# ax[n_mesure-1,0].set_xticklabels(x1[::2], fontsize=font_small)
+	# ax[n_mesure-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)], fontsize=font_small)
+	ax[n_mesure-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)[::2]], fontsize=font_small)
+
+	ax[n_mesure-1,0].set_yticks(range(n_mesure)[::2])
+	ax[n_mesure-1,0].yaxis.set_ticks_position('left')
+	ax[n_mesure-1,0].set_yticklabels(y1[::2], fontsize=font_small)
+	ax[n_mesure-1,0].tick_params(axis='both', which='major', direction='out')
+
+	ax[n_mesure-1,0].set_xlabel(trans[order_face[0]], fontsize=font_large)
+	ax[n_mesure-1,0].set_ylabel(trans[order_face[1]], fontsize=font_large)
+		
+	fig.text(0.5, 0.96, trans[order_face[2]], ha='center', fontsize=font_large)
+	fig.text(0.965, 0.5, trans[order_face[3]], va='center', rotation=90, fontsize=font_large)
+	fig.text(0.025, 0.975, 'best perf: '+best_perf_str, va='center', fontsize=font_small, weight='semibold')
+
+	fig.savefig(os.path.join(folder_path, 'faceting.pdf'), format='pdf')
 
 
 
