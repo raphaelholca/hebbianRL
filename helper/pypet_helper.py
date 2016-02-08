@@ -262,8 +262,8 @@ def faceting(folder_path):
 
 	threshold = 0.002
 	t_threshold = 0.05
-	vmin=0.97#1
-	vmax=0.985#0.97
+	vmin=0.91#1
+	vmax=1.0#0.97
 	font_large = 20
 	font_small = 18
 
@@ -299,7 +299,7 @@ def faceting(folder_path):
 		arg_best_all = np.array([], dtype=int)
 		best_perf = perc_correct_all[arg_best, :]
 		for arg in range(np.size(perc_correct_all,0)):
-			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :], equal_var=False) #two-sided t-test with independent samples
+			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :], equal_var=True) #two-sided t-test with independent samples
 			if prob > t_threshold: #not statistically significantly different
 				arg_best_all = np.append(arg_best_all, arg)
 		best_param_all = {}
@@ -313,11 +313,11 @@ def faceting(folder_path):
 		for k in param.keys():
 			best_param_all[k] = param[k][arg_best_all]
 		best_perf_all = perc_correct[arg_best_all]
+	
 
 	""" faceting plot """
 	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
 	fig.patch.set_facecolor('white')
-	
 	for x2_i, x2 in enumerate(np.sort(np.unique(param[order_face[2]]))):
 		for y2_i, y2 in enumerate(np.sort(np.unique(param[order_face[3]]))[::-1]):
 			x1 = np.unique(param[order_face[0]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
@@ -337,8 +337,6 @@ def faceting(folder_path):
 				for x in param_greater_slope[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
 				for y in param_greater_slope[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
 				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
-			
-
 
 			# indicate all params that give performance within [threshold]% of best performance
 			if x2 in best_param_all[order_face[2]][y2==best_param_all[order_face[3]]]:
@@ -347,7 +345,7 @@ def faceting(folder_path):
 				y1_dots = []
 				for x in best_param_all[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
 				for y in best_param_all[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
-				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k')
+				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k', edgecolor='r')
 
 			# indicate params that give best performance
 			if x2==best_param[order_face[2]] and y2==best_param[order_face[3]]:
