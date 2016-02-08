@@ -433,6 +433,11 @@ class Network:
 		self.perf_train_prog[r, e] = perf_train
 		if self.test_each_epi: self.perf_test_prog[r, e] = perf_test
 
+		#save weights just after the end of statistical pre-training
+		if e==self.n_epi_crit-1:
+			self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
+			self.out_W_naive[r,:,:] = np.copy(self.out_W)
+
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """
 		if RFproba is None:
