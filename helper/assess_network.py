@@ -127,7 +127,7 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
-	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
+	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
 
@@ -460,7 +460,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	# ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
 	ax.set_ylim([70.,100.])
-	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, n_epi_plot/10))
+	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, np.clip(n_epi_plot/10, 1, 10000)))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
 	plt.tight_layout()

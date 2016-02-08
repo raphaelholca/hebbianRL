@@ -13,6 +13,7 @@ import time
 import pypet
 import helper.external as ex
 import helper.pypet_helper as pp
+np.random.seed(0)
 
 ex = reload(ex)
 pp = reload(pp)
@@ -22,30 +23,33 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
-					'protocol'		: 'digit',
-					'name' 			: 'pypet_gabor_noise',
-					'n_runs' 		: 1,		
-					'n_epi_crit'	: 40,				
-					'n_epi_dopa'	: 60,				
-					't'				: 0.1, 							
+					'protocol'		: 'gabor',
+					'name' 			: 'pypet_gabor_noise_0-05_explr_exc_3_0',
+					'n_runs' 		: 10,		
+					'n_epi_crit'	: 0,				
+					'n_epi_dopa'	: 20,				
+					't'				: 0.1, 			#0.001						
 					'A' 			: 1.2,
-					'lr'			: 0.001,	#0.01
+					'lr'			: 0.001,		#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
-					'init_file'		: '',	
+					'init_file'		: 'gabor_pretrained_noNoise',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
-					'exploration'	: False,
+					'exploration'	: True,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
-					'test_each_epi'	: True,
+					'test_each_epi'	: False,
 					'verbose'		: False,
-					'seed' 			: 983 #np.random.randint(1000)
+					'seed' 			: 976 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dMid'			: [0.00, 0.0125, 0.025, 0.05, 0.300],
-					'dLow'			: [-2.0, -4.000, -6.00, -8.0, -10.0]
+explore_dict = {	'dHigh'			: [-3.0, 0.000, 3.00, 6.000, 9.000],
+					'dNeut'			: [-3.0, -2.00, -1.0, 0.000, 1.000],
+					
+					'dMid'			: [-0.5, 0.000, 0.50, 1.000, 1.50],
+					'dLow'			: [2.00, 0.000, -2.0, -4.00, -6.0]
 				}
 
 """ load and pre-process images """
@@ -55,12 +59,13 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															digit_params 	= {	'classes' 		: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 ], dtype=int),
 																				'dataset_train'	: 'train',
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'		: False
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
-																				'excentricity' 	: 90.,
-																				'noise'			: 0.,
+																				'excentricity' 	: 3.0,
+																				'noise'			: 0.05,
 																				'im_size'		: 28
 																				}
 															)
@@ -95,6 +100,7 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 print "\n\nplotting results"
+pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
 

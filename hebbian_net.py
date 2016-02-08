@@ -124,6 +124,11 @@ class Network:
 				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
 				# 	an.plot_all_RF(self.name+'_'+str(e), self.hid_W[np.newaxis,:,:], RFproba, verbose=True, save_path=os.path.join('output', self.name, 'RF_save'))
 
+				#save weights just after the end of statistical pre-training
+				if e==self.n_epi_crit:
+					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
+					self.out_W_naive[r,:,:] = np.copy(self.out_W)
+
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
 
 				#shuffle input images
@@ -254,13 +259,18 @@ class Network:
 		f_net = open(os.path.join('output', self.init_file, 'Network'), 'r')
 		saved_net = pickle.load(f_net)
 
-		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_net.hid_W):
+		#randomly choose weights from one of the saved runs
+		rdn_run = np.random.randint(0, saved_net.n_runs)
+		saved_hid_W = saved_net.hid_W_trained[rdn_run, :, :]
+		saved_out_W = saved_net.out_W_trained[rdn_run, :, :]
+
+		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
-		if (self.n_hid_neurons, self.n_out_neurons) != np.shape(saved_net.out_W):
+		if (self.n_hid_neurons, self.n_out_neurons) != np.shape(saved_out_W):
 			raise ValueError, "Output weights loaded from file are not of the same shape as those of the current network"
 
-		self.hid_W = np.copy(saved_net.hid_W)
-		self.out_W = np.copy(saved_net.out_W)
+		self.hid_W = np.copy(saved_hid_W)
+		self.out_W = np.copy(saved_out_W)
 		f_net.close()
 
 	def _init_weights_random(self):
