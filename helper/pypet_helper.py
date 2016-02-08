@@ -18,11 +18,12 @@ def launch_exploration(traj, images_dict, labels_dict, images_params, save_path)
 	""" launch all the exploration of the parameters """
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
 	try:
-		test_perf = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
+		test_perf, stat_diff = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
 	except ValueError:
 		test_perf = [-1.]	
 
-	traj.f_add_result('test_perf', perf=test_perf)
+	traj.f_add_result('test_perf', test_perf=test_perf)
+	traj.f_add_result('stat_diff', stat_diff=stat_diff)
 
 def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path):
 	""" launch one instance of the network """
@@ -36,7 +37,9 @@ def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_para
 	pickle.dump(net, p_file)
 	p_file.close()
 
-	return perf_dict['perf_all']
+	stat_diff = plot_one_slope_diff(net, save_path)
+
+	return perf_dict['perf_all'], stat_diff
 
 def add_parameters(traj, parameter_dict):
 	for k in parameter_dict.keys():
@@ -73,7 +76,7 @@ def plot_results(folder_path=''):
 
 	perf_all = []
 	for run in traj.f_iter_runs():
-		perf_all.append(traj.results[run].test_perf['perf'])
+		perf_all.append(traj.results[run].test_perf)
 	perf_all = np.array(perf_all)
 	perf = np.mean(perf_all,1)
 
@@ -150,13 +153,43 @@ def plot_results(folder_path=''):
 
 	return name_best
 
+def plot_one_slope_diff(net, save_path):
+	""" plot slope difference for one network """
+	if net.protocol=='gabor':
+		plot_path = os.path.join(save_path, 'slope_diffs')
+		if not os.path.exists(plot_path):
+			os.makedirs(plot_path)
+
+		name = net.name
+		hid_W_naive = net.hid_W_naive
+		hid_W_trained = net.hid_W_trained
+		t = net.t
+		target_ori = net.images_params['target_ori']
+
+		#compute RFs info for the naive network
+		curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name, curves_naive)
+		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
+
+		#compute RFs info for the trained network
+		curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
+		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
+		
+		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, binned=True, save_path=plot_path)
+
+	else:
+		stat_diff = np.ones(4)
+
+	return stat_diff
+
 def plot_all_slope_diffs(save_path):
 	""" plot slope difference for all networks """
 	net_path = os.path.join(save_path, 'networks')
 	plot_path = os.path.join(save_path, 'slope_diffs')
 	if not os.path.exists(plot_path):
 		os.makedirs(plot_path)
-	for n in os.listdir(net_path):
+	for n in sorted(os.listdir(net_path)):
 		n_file = open(os.path.join(net_path, n), 'r')
 		net = pickle.load(n_file)
 
@@ -176,7 +209,8 @@ def plot_all_slope_diffs(save_path):
 		pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
-		gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=plot_path)
+		print n
+		_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=plot_path)
 
 def launch_assess(save_path, file_name, images, labels):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
@@ -190,12 +224,13 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 
 	perc_correct = np.array([])
 	perc_correct_all = []
-	skipped_count = 0
+	stat_diff = []
 	ok_runs = []
 	for run in traj.f_iter_runs():
 		# import pdb; pdb.set_trace()
-		perc_correct = np.append(perc_correct, np.mean(traj.results[run].test_perf['perf']))
-		perc_correct_all.append(traj.results[run].test_perf['perf'])
+		perc_correct = np.append(perc_correct, np.mean(traj.results[run].test_perf))
+		perc_correct_all.append(traj.results[run].test_perf)
+		stat_diff.append(traj.results[run].stat_diff)
 		ok_runs.append(int(run[4:]))
 
 	param_traj = traj.f_get_explored_parameters()
@@ -217,7 +252,7 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	# 		perc_correct = perc_correct[param[k]==select]
 	# 		del param[k]
 
-	return perc_correct, np.array(perc_correct_all), param
+	return perc_correct, np.array(perc_correct_all), np.array(stat_diff), param
 
 def faceting(folder_path):
 	file_name = 'explore_perf'
@@ -226,7 +261,7 @@ def faceting(folder_path):
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
 	threshold = 0.002
-	t_threshold = 0.1
+	t_threshold = 0.05
 	vmin=0.97#1
 	vmax=0.985#0.97
 	font_large = 20
@@ -234,7 +269,15 @@ def faceting(folder_path):
 
 	order_face = ['dNeut', 'dHigh', 'dMid', 'dLow'] #order is x1, y1, x2, y2
 
-	perc_correct, perc_correct_all, param = import_traj(folder_path, file_name, order_face)
+	perc_correct, perc_correct_all, stat_diff, param = import_traj(folder_path, file_name, order_face)
+
+	#find slopes that are significanly different after as compared to before
+	stat_diff_bool = np.zeros(np.size(stat_diff,0), dtype=bool)
+	for r in range(np.size(stat_diff,0)):
+		stat_diff_bool[r] = (np.logical_and(stat_diff[r,:] < t_threshold, stat_diff[r,:] > 0.)).any() #stat_diff is > 0 if post slope is greater than pre slope
+	param_greater_slope = {}
+	for k in param.keys():
+		param_greater_slope[k] = param[k][stat_diff_bool]
 
 	n_mesure = len(np.unique(param['dHigh']))
 
@@ -256,7 +299,7 @@ def faceting(folder_path):
 		arg_best_all = np.array([], dtype=int)
 		best_perf = perc_correct_all[arg_best, :]
 		for arg in range(np.size(perc_correct_all,0)):
-			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :]) #two-sided t-test with independent samples
+			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :], equal_var=False) #two-sided t-test with independent samples
 			if prob > t_threshold: #not statistically significantly different
 				arg_best_all = np.append(arg_best_all, arg)
 		best_param_all = {}
@@ -274,7 +317,7 @@ def faceting(folder_path):
 	""" faceting plot """
 	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
 	fig.patch.set_facecolor('white')
-
+	
 	for x2_i, x2 in enumerate(np.sort(np.unique(param[order_face[2]]))):
 		for y2_i, y2 in enumerate(np.sort(np.unique(param[order_face[3]]))[::-1]):
 			x1 = np.unique(param[order_face[0]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
@@ -284,6 +327,18 @@ def faceting(folder_path):
 			if invert: z_square=z_square.T
 
 			ax[y2_i, x2_i].imshow(z_square, origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
+
+			#indicate all params that give statistically greater slopes after than before training
+			# import pdb; pdb.set_trace()
+			if x2 in param_greater_slope[order_face[2]][y2==param_greater_slope[order_face[3]]]:
+				mask_best = np.logical_and(x2==param_greater_slope[order_face[2]], y2==param_greater_slope[order_face[3]])
+				x1_dots = []
+				y1_dots = []
+				for x in param_greater_slope[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
+				for y in param_greater_slope[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
+				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
+			
+
 
 			# indicate all params that give performance within [threshold]% of best performance
 			if x2 in best_param_all[order_face[2]][y2==best_param_all[order_face[3]]]:

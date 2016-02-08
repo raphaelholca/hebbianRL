@@ -127,7 +127,7 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
-	gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
+	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
 

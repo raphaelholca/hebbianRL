@@ -24,16 +24,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_test',#'pypet_gabor_noise_0-0_explr_exc_3_0', #
-					'n_runs' 		: 3,#5,#		
+					'name' 			: 'pypet_test',#'pypet_gabor_noise_0-0_explr_exc_3_0',#
+					'n_runs' 		: 10,#5,#		
 					'n_epi_crit'	: 0,				
 					'n_epi_dopa'	: 2,#15,#				
-					't'				: 0.1, 	#0.001						
+					't'				: 0.1, 			#0.001						
 					'A' 			: 1.2,
-					'lr'			: 0.001,	#0.01
+					'lr'			: 0.001,		#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
-					'init_file'		: 'gabor_pretrained_noNoise',	
+					'init_file'		: 'gabor_pretrained_noNoise',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: True,
@@ -64,7 +64,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
-																				'excentricity' 	: 3.,
+																				'excentricity' 	: 90.,#0.3,#
 																				'noise'			: 0.0,
 																				'im_size'		: 28
 																				}
@@ -103,8 +103,8 @@ print "\n\nplotting results"
 pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
-if parameter_dict['protocol']=='gabor': 
-	pp.plot_all_slope_diffs(save_path=save_path)
+# if parameter_dict['protocol']=='gabor': 
+# 	pp.plot_all_slope_diffs(save_path=save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))

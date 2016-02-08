@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import external as ex
+from scipy import stats
 
 ex = reload(ex)
 
@@ -265,28 +266,31 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
-def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, save_path=''):
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, binned=True, save_path=''):
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
 
 	if save_path=='': save_path=os.path.join('output', name)
-	binned=False
 
 	if binned:
 		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
 		bin_edges = np.arange(-90 - bin_width/2 + (180%bin_width)/2, 90+bin_width, bin_width)
 		bin_centers = np.arange(-90 + (180%bin_width)/2, bin_edges[-1], bin_width)
-		pre_slopes_binned = np.zeros(len(bin_edges)-1)
+		pre_slopes_binned = []
+		pre_slopes_mean = np.zeros(len(bin_edges)-1)
 		pre_slopes_ste = np.zeros(len(bin_edges)-1)
-		post_slopes_binned = np.zeros(len(bin_edges)-1)
+		post_slopes_binned = []
+		post_slopes_mean = np.zeros(len(bin_edges)-1)
 		post_slopes_ste = np.zeros(len(bin_edges)-1)
 
 		for ib in range(len(bin_edges)-1):
 			values = pre_slopes[np.logical_and(pre_dist>=bin_edges[ib], pre_dist<bin_edges[ib+1])]
-			pre_slopes_binned[ib] = np.mean(values) ##returns NaN for empty bin_edges
+			pre_slopes_binned.append(values)
+			pre_slopes_mean[ib] = np.mean(values) ##returns NaN for empty bin_edges
 			pre_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
 
 			values = post_slopes[np.logical_and(post_dist>=bin_edges[ib], post_dist<bin_edges[ib+1])]
-			post_slopes_binned[ib] = np.mean(values) ##returns NaN for empty bin_edges
+			post_slopes_binned.append(values)
+			post_slopes_mean[ib] = np.mean(values) ##returns NaN for empty bin_edges
 			post_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
 
 	""" plot of slope at target orientation """
@@ -294,9 +298,9 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		fig, ax = plt.subplots(figsize=(8,4.5))
 		fig.patch.set_facecolor('white')
 		if binned:
-			ax.plot(bin_centers, pre_slopes_binned, ls='--', lw=3, c='b')
-			ax.errorbar(bin_centers, pre_slopes_binned, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
-			ax.errorbar(bin_centers, post_slopes_binned, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
+			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b')
+			ax.errorbar(bin_centers, pre_slopes_mean, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
+			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
 		else:
 			ax.scatter(pre_dist, pre_slopes, c='b')
 			ax.scatter(post_dist, post_slopes, c='r')
@@ -315,7 +319,20 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		plt.savefig(os.path.join(save_path, name + '_slope_diffs.pdf'))
 		plt.close(fig)
 
+	""" check whether slopes of trained neurons are significantly greater than slopes of untrained neurons """
+	if binned==True:
+		#checks the two bins on each side of the middle bin (ignores middle bin)
+		n_bins = len(post_slopes_mean)
+		mid_bin = ((n_bins+1)/2)-1
+		stat_diff = np.zeros(4)
+		t = np.zeros(4)
 
+		for ib, b in enumerate([mid_bin-2, mid_bin-1, mid_bin+1, mid_bin+2]):
+			t[ib], stat_diff[ib] = stats.ttest_ind(post_slopes_binned[b], pre_slopes_binned[b], equal_var=False) #two-sided t-test with independent samples
+		stat_diff*=np.sign(t) #stat_diff is negative if post slope is smaller than pre slope
+		return stat_diff
+	else:
+		return np.ones(4)
 
 
 
