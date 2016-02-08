@@ -124,6 +124,11 @@ class Network:
 				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
 				# 	an.plot_all_RF(self.name+'_'+str(e), self.hid_W[np.newaxis,:,:], RFproba, verbose=True, save_path=os.path.join('output', self.name, 'RF_save'))
 
+				#save weights just after the end of statistical pre-training
+				if e==self.n_epi_crit:
+					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
+					self.out_W_naive[r,:,:] = np.copy(self.out_W)
+
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
 
 				#shuffle input images
@@ -427,11 +432,6 @@ class Network:
 
 		self.perf_train_prog[r, e] = perf_train
 		if self.test_each_epi: self.perf_test_prog[r, e] = perf_test
-
-		#save weights just after the end of statistical pre-training
-		if e==self.n_epi_crit-1:
-			self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
-			self.out_W_naive[r,:,:] = np.copy(self.out_W)
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """

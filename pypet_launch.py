@@ -24,16 +24,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_1-0_explr_0',
-					'n_runs' 		: 5,		
+					'name' 			: 'pypet_test',#'pypet_gabor_noise_0-0_explr_exc_3_0', #
+					'n_runs' 		: 3,#5,#		
 					'n_epi_crit'	: 0,				
-					'n_epi_dopa'	: 15,				
-					't'				: 0.001, 	#0.1						
+					'n_epi_dopa'	: 2,#15,#				
+					't'				: 0.1, 	#0.001						
 					'A' 			: 1.2,
-					'lr'			: 0.001,
+					'lr'			: 0.001,	#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
-					'init_file'		: 'gabor_pretrained',	
+					'init_file'		: 'gabor_pretrained_noNoise',	
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: True,
@@ -45,11 +45,11 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.00, 1.500, 3.00, 4.500, 6.000],
-					'dNeut'			: [-1.0, -0.75, -0.5, -0.25, 0.000],
+explore_dict = {	'dHigh'			: [0.0, 3.0],#[-3.0, 0.000, 3.00, 6.000, 9.000],#
+					'dNeut'			: [-1.0, 0.0],#[-3.0, -2.00, -1.0, 0.000, 2.000],#
 					
-					'dMid'			: [0.00, 1.000, 2.00, 3.000, 4.00],
-					'dLow'			: [0.00, -1.00, -2.0, -3.00, -4.0]
+					'dMid'			: [0.0, 1.0],#[0.00, 2.000, 4.00, 6.000, 8.00],#
+					'dLow'			: [-10.0, -1.0]#[0.00, -2.00, -4.0, -6.00, -8.0]#
 				}
 
 """ load and pre-process images """
@@ -64,8 +64,8 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
-																				'excentricity' 	: 90.,
-																				'noise'			: 1.0,
+																				'excentricity' 	: 3.,
+																				'noise'			: 0.0,
 																				'im_size'		: 28
 																				}
 															)
@@ -84,7 +84,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 8,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 traj = env.v_trajectory
