@@ -19,9 +19,9 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 3.0,
+net = hebbian_net.Network(	dHigh 			= 6.0,
 							dMid 			= 0.0,
-							dNeut 			= 0.0,
+							dNeut 			= -0.0,
 							dLow 			= -4.0,
 							protocol		= 'gabor',
 							name 			= 'gabor_pretrained_noise_0-05',
@@ -41,7 +41,7 @@ net = hebbian_net.Network(	dHigh 			= 3.0,
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 976 #np.random.randint(1000)
+							seed 			= 978 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -57,7 +57,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
 																				'excentricity' 	: 3.0,
-																				'noise'			: 0.05,
+																				'noise'			: 0.0,
 																				'im_size'		: 28,
 																				}
 															)

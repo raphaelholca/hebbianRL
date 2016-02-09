@@ -111,6 +111,7 @@ class Network:
 		
 		""" execute multiple training runs """
 		for r in range(self.n_runs):
+			self._r = r
 			if self.verbose: print '\nrun: ' + str(r+1)
 
 			np.random.seed(self.seed+r)
@@ -119,6 +120,7 @@ class Network:
 
 			""" train network """
 			for e in range(self.n_epi_tot):
+				self._e = e
 				# if e%5==0: #used to plot weights during training
 				# 	pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
 				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
@@ -141,16 +143,16 @@ class Network:
 
 				#train network with mini-batches
 				for b in range(n_batches):
-					
+					self._b = b
 					#update pdf for bayesian inference
-					self._update_pdf(e, b, rnd_images, rnd_labels)
+					self._update_pdf(rnd_images, rnd_labels)
 				
 					#select training images for the current batch
 					b_images = rnd_images[b*self.batch_size:(b+1)*self.batch_size,:]
 					b_labels = rnd_labels[b*self.batch_size:(b+1)*self.batch_size]
 					
 					#propagate images through the network
-					out_greedy, out_explore, posterior = self._propagate(b_images, e)
+					out_greedy, out_explore, posterior = self._propagate(b_images)
 
 					#compute reward prediction
 					predicted_reward = ex.reward_prediction(out_greedy, out_explore, posterior=posterior)
@@ -159,7 +161,7 @@ class Network:
 					reward = ex.reward_delivery(b_labels, out_explore)
 
 					#compute dopa signal
-					dopa_hid, dopa_out = self._dopa_release(e, predicted_reward, reward)
+					dopa_hid, dopa_out = self._dopa_release(predicted_reward, reward)
 						
 					#update weights
 					hid_W = self._learning_step(b_images, self.hid_neurons, self.hid_W, lr=self.lr, dopa=dopa_hid)
@@ -169,7 +171,7 @@ class Network:
 					correct += np.sum(out_greedy == b_labels)
 
 				#assess performance
-				self._assess_perf_progress(correct/n_images, r, e, images_dict, labels_dict)
+				self._assess_perf_progress(correct/n_images, images_dict, labels_dict)
 
 			#save data
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
@@ -260,9 +262,9 @@ class Network:
 		saved_net = pickle.load(f_net)
 
 		#randomly choose weights from one of the saved runs
-		rdn_run = np.random.randint(0, saved_net.n_runs)
-		saved_hid_W = saved_net.hid_W_trained[rdn_run, :, :]
-		saved_out_W = saved_net.out_W_trained[rdn_run, :, :]
+		run_to_load = self._r % saved_net.n_runs 
+		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
+		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -287,24 +289,24 @@ class Network:
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
 
-	def _update_pdf(self, e, b, rnd_images, rnd_labels, threshold=0.01):
+	def _update_pdf(self, rnd_images, rnd_labels, threshold=0.01):
 		""" re-compute the pdf for bayesian inference if any weights have changed more than a threshold """
-		if self.classifier=='bayesian' and (e >= self.n_epi_crit or self.test_each_epi):
+		if self.classifier=='bayesian' and (self._e >= self.n_epi_crit or self.test_each_epi):
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
-			if (W_mschange/940 > threshold).any() or (e==0 and b==0):
+			if (W_mschange/940 > threshold).any() or (self._e==0 and self._b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
 				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
 
-	def _propagate(self, b_images, e):
+	def _propagate(self, b_images):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
-			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images, e)
+			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images)
 		else:
-			out_greedy, out_explore, posterior = self._propagate_neural(b_images, e)
+			out_greedy, out_explore, posterior = self._propagate_neural(b_images)
 
 		return out_greedy, out_explore, posterior
 
-	def _propagate_neural(self, b_images, e):
+	def _propagate_neural(self, b_images):
 		""" propagate input images through the network with a layer of neurons on top """
 		#compute activation of hidden neurons
 		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
@@ -314,7 +316,7 @@ class Network:
 		out_greedy = self.classes[np.argmax(self.out_neurons,1)]
 
 		#add noise to activation of hidden neurons (exploration)
-		if self.exploration and e >= self.n_epi_crit:
+		if self.exploration and self._e >= self.n_epi_crit:
 			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 			self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
@@ -322,7 +324,7 @@ class Network:
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 
 		#adds noise in out_W neurons
-		if e < self.n_epi_crit:
+		if self._e < self.n_epi_crit:
 			self.out_neurons += np.random.normal(0, 4.0, np.shape(self.out_neurons))
 		
 		#compute activation of class neurons in explorative case
@@ -331,13 +333,13 @@ class Network:
 
 		return out_greedy, out_explore, None
 
-	def _propagate_bayesian(self, b_images, e):
+	def _propagate_bayesian(self, b_images):
 		""" propagate input images through the network with a bayesian decoder on top """
 		#compute activation of hidden neurons
 		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
 		#compute posterior of the bayesian decoder in greedy case
-		if e >= self.n_epi_crit:
+		if self._e >= self.n_epi_crit:
 			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
 			out_greedy = self.classes[np.argmax(posterior,1)]
 		else:
@@ -345,14 +347,14 @@ class Network:
 			out_greedy = None
 
 		#add noise to activation of hidden neurons (exploration)
-		if self.exploration and e >= self.n_epi_crit:
+		if self.exploration and self._e >= self.n_epi_crit:
 			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 		else:
 			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 
 		#compute posterior of the bayesian decoder in explorative case
-		if e >= self.n_epi_crit:
+		if self._e >= self.n_epi_crit:
 			posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
 			out_explore = self.classes[np.argmax(posterior_noise,1)]
 		else: 
@@ -360,9 +362,9 @@ class Network:
 
 		return out_greedy, out_explore, posterior
 
-	def _dopa_release(self, e, predicted_reward, reward):
+	def _dopa_release(self, predicted_reward, reward):
 		""" compute dopa release based on predicted and delivered reward """
-		if e < self.n_epi_crit and self._train_class_layer:
+		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
 			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
 			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
@@ -371,7 +373,7 @@ class Network:
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = dopa_release
 
-		elif e >= self.n_epi_crit: 
+		elif self._e >= self.n_epi_crit: 
 			""" Dopa - perceptual learning """
 			dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
 
@@ -419,14 +421,17 @@ class Network:
 		
 		return W
 
-	def _assess_perf_progress(self, perf_train, r, e, images_dict, labels_dict):
+	def _assess_early_stop(self):
+		""" assesses whether to stop training if performance saturates after a given number of episodes """
+
+	def _assess_perf_progress(self, perf_train, images_dict, labels_dict):
 		""" assesses progression of performance of network as it is being trained """
 		
-		print_perf = 'epi ' + str(e) + ': '
+		print_perf = 'epi ' + str(self._e) + ': '
 		if self._train_class_layer:
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
-		if self.classifier=='neural' or e>=self.n_epi_crit:
+		if self.classifier=='neural' or self._e>=self.n_epi_crit:
 			print_perf += 'train performance: ' + str(np.round(perf_train*100,1)) + '%'
 		else:
 			print_perf += 'train performance: ' + '-N/A-'
@@ -435,13 +440,13 @@ class Network:
 			print_perf += ' ; test performance: ' + str(np.round(perf_test*100,1)) + '%'
 		if self.verbose: print print_perf
 
-		self.perf_train_prog[r, e] = perf_train
-		if self.test_each_epi: self.perf_test_prog[r, e] = perf_test
+		self.perf_train_prog[self._r, self._e] = perf_train
+		if self.test_each_epi: self.perf_test_prog[self._r, self._e] = perf_test
 
 		#save weights just after the end of statistical pre-training
-		if e==self.n_epi_crit-1:
-			self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
-			self.out_W_naive[r,:,:] = np.copy(self.out_W)
+		if self._e==self.n_epi_crit-1:
+			self.hid_W_naive[self._r,:,:] = np.copy(self.hid_W)
+			self.out_W_naive[self._r,:,:] = np.copy(self.out_W)
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """
