@@ -262,10 +262,10 @@ class Network:
 		saved_net = pickle.load(f_net)
 
 		#randomly choose weights from one of the saved runs
-		rdn_run = np.random.randint(0, saved_net.n_runs)
-		print rdn_run
-		saved_hid_W = saved_net.hid_W_trained[rdn_run, :, :]
-		saved_out_W = saved_net.out_W_trained[rdn_run, :, :]
+		run_to_load = self._r % saved_net.n_runs 
+		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
+		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
+		print run_to_load
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
