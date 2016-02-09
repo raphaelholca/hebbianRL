@@ -24,16 +24,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_0-05_explr_exc_3_0',
-					'n_runs' 		: 10,		
+					'name' 			: 'pypet_gabor_noise_0-0_exc_3_lr_0-1',
+					'n_runs' 		: 5,		
 					'n_epi_crit'	: 0,				
 					'n_epi_dopa'	: 20,				
-					't'				: 0.1, 			#0.001						
+					't'				: 0.1,						
 					'A' 			: 1.2,
 					'lr'			: 0.001,		#0.01
 					'batch_size' 	: 20,
 					'n_hid_neurons'	: 16,
-					'init_file'		: 'gabor_pretrained_noNoise',
+					'init_file'		: 'gabor_pretrained_noise_0-05',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
 					'exploration'	: True,
@@ -41,15 +41,15 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'classifier'	: 'neural',
 					'test_each_epi'	: False,
 					'verbose'		: False,
-					'seed' 			: 976 #np.random.randint(1000)
+					'seed' 			: 977 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [-3.0, 0.000, 3.00, 6.000, 9.000],
-					'dNeut'			: [-3.0, -2.00, -1.0, 0.000, 1.000],
+explore_dict = {	'dHigh'			: [0.000, 0.400, 0.800, 1.200, 1.600],
+					'dNeut'			: [-0.15, -0.10, -0.05, -0.01, 0.000],
 					
-					'dMid'			: [-0.5, 0.000, 0.50, 1.000, 1.50],
-					'dLow'			: [2.00, 0.000, -2.0, -4.00, -6.0]
+					'dMid'			: [0.000, 0.005, 0.010, 0.050, 0.100],
+					'dLow'			: [0.000, -0.40, -0.80, -1.20, -1.60]
 				}
 
 """ load and pre-process images """
