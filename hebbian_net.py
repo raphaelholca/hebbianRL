@@ -265,7 +265,6 @@ class Network:
 		run_to_load = self._r % saved_net.n_runs 
 		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
 		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
-		print run_to_load
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -421,6 +420,9 @@ class Network:
 		W = np.clip(W, 1e-10, np.inf)
 		
 		return W
+
+	def _assess_early_stop(self):
+		""" assesses whether to stop training if performance saturates after a given number of episodes """
 
 	def _assess_perf_progress(self, perf_train, images_dict, labels_dict):
 		""" assesses progression of performance of network as it is being trained """
