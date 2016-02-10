@@ -302,6 +302,9 @@ def softmax(activ, implementation='numba', t=1.):
 		numpy array: the activation fed through the softmax function
 	"""
 
+	if len(np.shape(activ))==1:
+		activ = np.reshape(activ, (1,-1))
+
 	#vectorial
 	if implementation=='vectorial':
 		activ_norm = np.copy(activ - np.max(activ,1)[:,np.newaxis])

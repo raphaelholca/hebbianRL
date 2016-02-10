@@ -167,13 +167,11 @@ def plot_one_slope_diff(net, save_path):
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
-		pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name, curves_naive)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
-		pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, binned=True, save_path=plot_path)
@@ -200,13 +198,11 @@ def plot_all_slope_diffs(save_path):
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
-		pref_ori_naive = gr.preferred_orientations(hid_W_naive, t, target_ori, name, curves_naive)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
-		pref_ori = gr.preferred_orientations(hid_W_trained, t, target_ori, name, curves)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		print n
@@ -260,7 +256,7 @@ def faceting(folder_path):
 	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
-	threshold = 0.002
+	threshold = 0.0005
 	t_threshold = 0.05
 	vmin=0.91#1
 	vmax=1.0#0.97
@@ -295,7 +291,7 @@ def faceting(folder_path):
 	invert=True if np.argwhere(param[order_face[0]]!= param[order_face[0]][0])[0] > np.argwhere(param[order_face[1]]!= param[order_face[1]][0])[0] else False
 
 	#find similarly good parameters...
-	if np.size(perc_correct_all,1)>1 :#...using statistical significance testing
+	if np.size(perc_correct_all,1)>1 and False:#...using statistical significance testing
 		arg_best_all = np.array([], dtype=int)
 		best_perf = perc_correct_all[arg_best, :]
 		for arg in range(np.size(perc_correct_all,0)):

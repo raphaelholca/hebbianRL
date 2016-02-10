@@ -122,7 +122,7 @@ class Network:
 			for e in range(self.n_epi_tot):
 				self._e = e
 				# if e%5==0: #used to plot weights during training
-				# 	pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
+				#	_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
 				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
 				# 	an.plot_all_RF(self.name+'_'+str(e), self.hid_W[np.newaxis,:,:], RFproba, verbose=True, save_path=os.path.join('output', self.name, 'RF_save'))
 
@@ -454,7 +454,7 @@ class Network:
 			if self.protocol=='digit':
 				RFproba, _ = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)
 			elif self.protocol=='gabor':
-				pref_ori = gr.preferred_orientations(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name)
+				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= self.images_params['target_ori']] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > self.images_params['target_ori']] = [0,1]
