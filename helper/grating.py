@@ -114,7 +114,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input)
 		if plot:
-			pref_ori_sorter = np.argmax(curves[r,:,:], 0).argsort()
+			pref_ori_sorter = pref_ori[r, :].argsort()
 			
 			ax.plot(orientations, curves[r,:,:][:,pref_ori_sorter], lw=2)
 			ax.vlines(target_ori, 0, np.max(curves[r,:,:])*1.2, colors=u'k', linewidth=3, linestyle=':')
