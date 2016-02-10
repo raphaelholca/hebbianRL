@@ -87,7 +87,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		print '!!! invalid method - using \'basic\' method !!!'
 		method='basic'
 
-	noise = 1.0
+	noise = 2.0
 	noise_trial = 100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
@@ -105,12 +105,14 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise))
 
 	curves = np.zeros((n_runs, n_input, n_neurons))
+	pref_ori = np.zeros((n_runs, n_neurons))
 	for r in range(n_runs):
 		if plot: 
 			fig, ax = plt.subplots()
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		for i in range(len(test_input)):
 			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+			pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input)
 		if plot:
 			pref_ori_sorter = np.argmax(curves[r,:,:], 0).argsort()
 			
@@ -133,37 +135,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			plt.savefig(os.path.join(save_path, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
-	return curves
-
-def preferred_orientations(W, t, target_ori, name, curves=None):
-	"""
-	compute the preferred orientation of neurons
-
-	Args:
-		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
-		t (float): temperature of the softmax function used during training
-		target_ori (float): target orientation on side of which to discrimate the gabor patches
-		name (str): name of the network, used for saving figures
-		curves (numpy array, optional): pre-computed tuning curves
-
-	returns:
-		the preferred orientation of all neurons in all runs
-	"""
-
-	if curves is None:
-		curves = tuning_curves(W, t, target_ori, name, method='no_softmax', plot=False)
-
-
-	n_runs = np.size(curves,0)
-	n_input = np.size(curves,1)
-	n_neurons = np.size(curves,2)
-
-	pref_ori = np.zeros((n_runs, n_neurons))
-	for r in range(n_runs):
-		pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input) ##180??
-
-	return pref_ori
-
+	return curves, pref_ori
 
 def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	"""
