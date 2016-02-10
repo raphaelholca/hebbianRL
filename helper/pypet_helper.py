@@ -260,7 +260,7 @@ def faceting(folder_path):
 	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
-	threshold = 0.001
+	threshold = 0.0005
 	t_threshold = 0.05
 	vmin=0.91#1
 	vmax=1.0#0.97
