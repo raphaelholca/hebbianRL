@@ -118,11 +118,11 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, 0.3, target_ori, name, method='basic', plot=False, save_path=save_path)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='basic', plot=False, save_path=save_path)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, 0.3, target_ori, name, method='basic', plot=True, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='basic', plot=True, save_path=save_path)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
 	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)

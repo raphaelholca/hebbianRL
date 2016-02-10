@@ -19,7 +19,6 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 0.6,
 net = hebbian_net.Network(	dHigh 			= 0.8,
 							dMid 			= 0.0,
 							dNeut 			= -0.0,

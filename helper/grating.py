@@ -78,6 +78,8 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		(dict): the tuning curves for each neuron of each run
 	"""
 
+	t=1.0 ##<----------uses different t as the one used during training-------------------
+
 	if plot:
 		if save_path=='': save_path=os.path.join('output', name)
 		if not os.path.exists(os.path.join(save_path, 'TCs')):
@@ -244,7 +246,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 	if save_path=='': save_path=os.path.join('output', name)
 
 	if binned:
-		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
+		bin_width = 2 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
 		bin_edges = np.arange(-90 - bin_width/2 + (180%bin_width)/2, 90+bin_width, bin_width)
 		bin_centers = np.arange(-90 + (180%bin_width)/2, bin_edges[-1], bin_width)
 		pre_slopes_binned = []
@@ -282,7 +284,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.xaxis.set_ticks_position('bottom')
 		ax.yaxis.set_ticks_position('left')
 		if binned: ax.set_xticks(bin_centers)
-		ax.set_xlim([-50,50])
+		ax.set_xlim([-20,20])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
