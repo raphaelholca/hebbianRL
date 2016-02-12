@@ -78,7 +78,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		(dict): the tuning curves for each neuron of each run
 	"""
 
-	t=1.0 ##<----------uses different t as the one used during training-------------------
+	# t=1.0 ##<----------uses different t as the one used during training-------------------
 
 	if plot:
 		if save_path=='': save_path=os.path.join('output', name)
@@ -97,7 +97,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 	im_size = int(np.sqrt(np.size(W,1)))
 	n_neurons = np.size(W,2)
 
-	orientations = np.arange(target_ori-90., target_ori+90., ori_step)
+	orientations = np.arange(-90.+target_ori, 90.+target_ori, ori_step)
 	SM = False if method=='no_softmax' else True
 	if method != 'with_noise':
 		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
@@ -114,11 +114,13 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		for i in range(len(test_input)):
 			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
-			pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input) - target_ori #preferred orientation relative to target orientation
+			pref_ori[r, :] = orientations[np.argmax(curves[r,:,:],0)]
+			pref_ori[r, :] = ex.relative_orientations(pref_ori[r, :], target_ori)
+
 		if plot:
 			pref_ori_sorter = pref_ori[r, :].argsort()
 			
-			ax.plot(orientations-target_ori, curves[r,:,:][:,pref_ori_sorter], lw=2)
+			ax.plot(np.arange(-90., 90., ori_step), curves[r,:,:][:,pref_ori_sorter], lw=2)
 			ax.vlines(0, 0, np.max(curves[r,:,:])*1.2, colors=u'k', linewidth=1.5, linestyle=':')
 
 			fig.patch.set_facecolor('white')
@@ -126,7 +128,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			ax.spines['top'].set_visible(False)
 			ax.xaxis.set_ticks_position('bottom')
 			ax.yaxis.set_ticks_position('left')
-			ax.set_xlabel('angle (deg)', fontsize=18)
+			ax.set_xlabel('angle from target (deg)', fontsize=18)
 			ax.set_ylabel('response', fontsize=18)
 			ax.set_xlim([-90,90])
 			if method=='no_softmax' and False: ax.set_ylim([119,138])
@@ -137,6 +139,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		if plot:
 			plt.savefig(os.path.join(save_path, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
+	# import pdb; pdb.set_trace()
 
 	return curves, pref_ori
 

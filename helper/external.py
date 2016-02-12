@@ -82,6 +82,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 
 	elif protocol == 'gabor':
 		if verbose: print 'creating gabor training images...'
+		gabor_params['target_ori'] %= 180.
 
 		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise'], A)
@@ -226,13 +227,25 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 		numpy array: labels (clock-wise / counter clock-wise) of each gabor filter
 	"""
 
-	labels = np.zeros(len(orientations), dtype=int)
-	labels[orientations<=target_ori] = 0
-	labels[orientations>target_ori] = 1
 	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise=noise)
 	images = normalize(images, A*np.size(images,1))
 
+	orientations = relative_orientations(orientations, target_ori)
+
+	labels = np.zeros(len(orientations), dtype=int)
+	labels[orientations<=0] = 0
+	labels[orientations>0] = 1
+
 	return images, labels
+
+def relative_orientations(orientations, target_ori):
+	""" converts absolute orienations to orientations relative to the target orientation """
+
+	orientations -= target_ori
+	orientations[orientations>90.] -= 180.
+	orientations[orientations<-90.] += 180.
+
+	return orientations
 
 def save_net(net):
 	""" Print parameters of Network object to human-readable file and save Network to disk """

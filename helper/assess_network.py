@@ -163,7 +163,6 @@ def gabor_RFproba(W, pref_ori):
 	for r in range(n_runs):
 		RFproba[r,:,:][pref_ori[r,:]<=0] = [1,0]
 		RFproba[r,:,:][pref_ori[r,:]>0] = [0,1]
-	import pdb; pdb.set_trace()
 
 	return RFproba
 

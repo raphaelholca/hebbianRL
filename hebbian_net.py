@@ -456,9 +456,10 @@ class Network:
 			elif self.protocol=='gabor':
 				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
-				RFproba[0,:,:][pref_ori[0,:] <= self.images_params['target_ori']] = [1,0]
-				RFproba[0,:,:][pref_ori[0,:] > self.images_params['target_ori']] = [0,1]
-		
+				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
+				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]
+				# if self._e > 10:
+				# 	import pdb; pdb.set_trace()
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.
 		correct_out_W += np.sum(same)
