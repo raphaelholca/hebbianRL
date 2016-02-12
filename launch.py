@@ -19,21 +19,21 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 0.8,
-							dMid 			= 0.0,
-							dNeut 			= -0.0,
-							dLow 			= -0.4,
+net = hebbian_net.Network(	dHigh 			= 0.8,#0.9,
+							dMid 			= 0.005,#0.00,
+							dNeut 			= -0.01,#-0.02,
+							dLow 			= -1.2,#-0.4,
 							protocol		= 'gabor',
-							name 			= 'gabor_long',
-							n_runs 			= 50,		
-							n_epi_crit		= 15,				
-							n_epi_dopa		= 15,				
+							name 			= 'gabor_1',
+							n_runs 			= 1,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 80,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.001,		#0.01
-							batch_size 		= 20,
-							n_hid_neurons	= 16,
-							init_file		= '',#'gabor_pretrained_noise_0-05',	
+							lr				= 0.001,#0.02,
+							batch_size 		= 50,
+							n_hid_neurons	= 16,#49,
+							init_file		= '',
 							lim_weights		= False,
 							noise_std		= 0.2,
 							exploration		= True,
@@ -41,15 +41,16 @@ net = hebbian_net.Network(	dHigh 			= 0.8,
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 976 #np.random.randint(1000)
+							seed 			= 977 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 															A 				= net.A,
 															verbose 		= net.verbose,
-															digit_params 	= {	'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				'dataset_train'	: 'train',
+															digit_params 	= {	'dataset_train'	: 'train',
+																				'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				# 'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				'shuffle'		: False
 																				},
@@ -57,7 +58,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
 																				'excentricity' 	: 3.0,
-																				'noise'			: 0.0,#5,
+																				'noise'			: 0.05,
 																				'im_size'		: 28,
 																				}
 															)

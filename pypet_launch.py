@@ -23,16 +23,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
-					'protocol'		: 'gabor',
-					'name' 			: 'pypet_gabor_noise_0-02_exc_3_lr_0-1',
-					'n_runs' 		: 10,		
+					'protocol'		: 'digit',#'gabor',#
+					'name' 			: 'pypet_digit_1',
+					'n_runs' 		: 2,		
 					'n_epi_crit'	: 20,				
-					'n_epi_dopa'	: 40,				
+					'n_epi_dopa'	: 80,#50,				
 					't'				: 0.1,						
 					'A' 			: 1.2,
-					'lr'			: 0.001,		#0.01
-					'batch_size' 	: 20,
-					'n_hid_neurons'	: 16,
+					'lr'			: 0.02,#0.001,
+					'batch_size' 	: 50,
+					'n_hid_neurons'	: 49,#16,
 					'init_file'		: '',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
@@ -45,19 +45,20 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.000, 0.400, 0.800, 1.200, 1.600],
-					'dNeut'			: [-0.15, -0.10, -0.05, -0.01, 0.000],
+explore_dict = {	'dHigh'			: [0.000, 0.800, 1.600, 2.400, 3.200], #[0.000, 0.400, 0.800, 1.200, 1.600],
+					'dNeut'			: [-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.15, -0.10, -0.05, -0.01, 0.000],
 					
-					'dMid'			: [0.000, 0.005, 0.010, 0.050, 0.100],
-					'dLow'			: [0.000, -0.40, -0.80, -1.20, -1.60]
+					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050], #[0.000, 0.005, 0.010, 0.050, 0.100],
+					'dLow'			: [0.000, -0.20, -0.40, -0.60, -0.80]  #[0.000, -0.40, -0.80, -1.20, -1.60]
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'classes' 		: np.array([0, 1, 2, 3, 4, 5, 6, 7, 8 , 9 ], dtype=int),
-																				'dataset_train'	: 'train',
+															digit_params 	= {	'dataset_train'	: 'train',
+																				'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				# 'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				'shuffle'		: False
 																				},
@@ -65,7 +66,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 87.,
 																				'excentricity' 	: 3.0,
-																				'noise'			: 0.02,
+																				'noise'			: 0.1,
 																				'im_size'		: 28
 																				}
 															)
