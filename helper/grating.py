@@ -97,7 +97,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 	im_size = int(np.sqrt(np.size(W,1)))
 	n_neurons = np.size(W,2)
 
-	orientations = np.arange(0,180,ori_step)
+	orientations = np.arange(target_ori-90., target_ori+90., ori_step)
 	SM = False if method=='no_softmax' else True
 	if method != 'with_noise':
 		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
@@ -114,12 +114,12 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		for i in range(len(test_input)):
 			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
-			pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input)
+			pref_ori[r, :] = np.argmax(curves[r,:,:],0) * (180./n_input) - target_ori #preferred orientation relative to target orientation
 		if plot:
 			pref_ori_sorter = pref_ori[r, :].argsort()
 			
-			ax.plot(orientations, curves[r,:,:][:,pref_ori_sorter], lw=2)
-			ax.vlines(target_ori, 0, np.max(curves[r,:,:])*1.2, colors=u'k', linewidth=3, linestyle=':')
+			ax.plot(orientations-target_ori, curves[r,:,:][:,pref_ori_sorter], lw=2)
+			ax.vlines(0, 0, np.max(curves[r,:,:])*1.2, colors=u'k', linewidth=1.5, linestyle=':')
 
 			fig.patch.set_facecolor('white')
 			ax.spines['right'].set_visible(False)
@@ -128,6 +128,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			ax.yaxis.set_ticks_position('left')
 			ax.set_xlabel('angle (deg)', fontsize=18)
 			ax.set_ylabel('response', fontsize=18)
+			ax.set_xlim([-90,90])
 			if method=='no_softmax' and False: ax.set_ylim([119,138])
 			else: ax.set_ylim([np.min(curves[r,:,:])-(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1, np.max(curves[r,:,:])+(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1])
 			ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
@@ -179,7 +180,7 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 		all_slopes.append([])
 		all_deg.append([])
 
-		dist_target = pref_ori[r] - target_ori
+		dist_target = pref_ori[r] #- target_ori
 		dist_target[dist_target>90]-=180
 		dist_target[dist_target<-90]+=180
 		target_idx = int(target_ori * (n_input/180))

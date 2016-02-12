@@ -38,7 +38,7 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 	if net.protocol=='digit':
 		RFproba, net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose, save_path=save_path)
 	elif net.protocol=='gabor':
-		RFproba, net.RF_info = hist_gabor(10, net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose, save_path=save_path)
+		RFproba, net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose, save_path=save_path)
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -114,7 +114,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RFproba, RF_info
 
-def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
@@ -122,42 +122,48 @@ def hist_gabor(n_bins, name, hid_W_naive, hid_W_trained, t, target_ori, save_dat
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='basic', plot=True, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='basic', plot=save_data, save_path=save_path)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
-	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=save_path)
+	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=save_data, save_path=save_path)
 
-	RFproba = gabor_RFproba(hid_W_trained, pref_ori, target_ori)
+	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
+
+	bin_edge = np.arange(-90,91,2.5)[::2]
+	bin_mid = np.arange(-90,91,2.5)[1::2]
+	bin_num = len(bin_mid)
 
 	n_runs = np.size(pref_ori,0)
-	h_all = np.zeros((n_runs, n_bins))
+	h_all = np.zeros((n_runs, bin_num))
 	for r in range(n_runs):
-		h_all[r, :] = np.histogram(pref_ori[r,:], n_bins, range=(0.,180.))[0]
+		h_all[r, :] = np.histogram(pref_ori[r,:], bin_edge)[0] #, range=(0.,180.)
 	h_mean = np.mean(h_all,0)
 	h_ste = np.std(h_all,0)/np.sqrt(n_runs)
 
 	if save_data:
-		bin_size = 180./n_bins
-		bin_names = np.zeros(n_bins, dtype='|S3')
-		for i in range(n_bins):
-			bin_names[i] = str(int(bin_size*i + bin_size/2.))
+		# bin_size = 180./n_bins
+		# bin_names = np.zeros(n_bins, dtype='|S3')
+		# for i in range(n_bins):
+		# 	bin_names[i] = str(int(bin_size*i + bin_size/2.))
 
-		fig = plot_hist(h_mean, bin_names, h_err=h_ste)
+		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
 		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
 		plt.close(fig)
+	# import pdb; pdb.set_trace()
 	
 	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RFproba, RF_info
 
-def gabor_RFproba(W, pref_ori, target_ori):
+def gabor_RFproba(W, pref_ori):
 	""" computes to which orientation class each stimulus corresponds to """
 	RFproba = np.zeros((np.size(W,0), np.size(W,2), 2), dtype=int)
 	
 	n_runs = np.size(pref_ori,0)
 	for r in range(n_runs):
-		RFproba[r,:,:][pref_ori[r,:]<=target_ori] = [1,0]
-		RFproba[r,:,:][pref_ori[r,:]>target_ori] = [0,1]
+		RFproba[r,:,:][pref_ori[r,:]<=0] = [1,0]
+		RFproba[r,:,:][pref_ori[r,:]>0] = [0,1]
+	import pdb; pdb.set_trace()
 
 	return RFproba
 
