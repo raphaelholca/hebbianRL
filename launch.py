@@ -19,20 +19,20 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#0.9,
-							dMid 			= 0.01,#0.00,
-							dNeut 			= -0.05,#-0.02,
-							dLow 			= -1.2,#-0.4,
+net = hebbian_net.Network(	dHigh 			= 0.5,#2.4,#
+							dMid 			= 0.005,#0.001,#
+							dNeut 			= -0.025,#-0.08,#
+							dLow 			= -0.6,#-0.4,#
 							protocol		= 'gabor',
-							name 			= 'gabor_',
-							n_runs 			= 1,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 5,				
+							name 			= 'gabor_all_0',
+							n_runs 			= 10,		
+							n_epi_crit		= 100,				
+							n_epi_dopa		= 20,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.001,#0.02,
+							lr				= 0.002,#0.005,#
 							batch_size 		= 50,
-							n_hid_neurons	= 16,#49,
+							n_hid_neurons	= 16,#49,#
 							init_file		= '',
 							lim_weights		= False,
 							noise_std		= 0.2,
@@ -49,8 +49,8 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 															A 				= net.A,
 															verbose 		= net.verbose,
 															digit_params 	= {	'dataset_train'	: 'train',
-																				'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				# 'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				# 'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				'shuffle'		: False
 																				},

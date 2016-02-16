@@ -223,7 +223,6 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	stat_diff = []
 	ok_runs = []
 	for run in traj.f_iter_runs():
-		# import pdb; pdb.set_trace()
 		perc_correct = np.append(perc_correct, np.mean(traj.results[run].test_perf))
 		perc_correct_all.append(traj.results[run].test_perf)
 		stat_diff.append(traj.results[run].stat_diff)

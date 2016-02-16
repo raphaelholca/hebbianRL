@@ -242,6 +242,12 @@ class Network:
 			perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
 			self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste}
 
+			""" assess receptive fields """
+			if self.protocol=='digit':
+				RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images, labels, save_data=False, verbose=self.verbose)
+			elif self.protocol=='gabor':
+				RFproba, self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
+
 			return self.perf_dict
 		else:
 			return correct_classif

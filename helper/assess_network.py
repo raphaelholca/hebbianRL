@@ -114,7 +114,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RFproba, RF_info
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path=''):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
