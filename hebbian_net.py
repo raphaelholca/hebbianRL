@@ -88,6 +88,7 @@ class Network:
 
 		images, images_task = images_dict['train'], images_dict['task']
 		labels, labels_task = labels_dict['train'], labels_dict['task']
+		images_params['noise'] = np.clip(images_params['noise'], 1e-30, np.inf)
 
 		self.images_params = images_params
 		self.classes = np.sort(np.unique(labels))
@@ -117,14 +118,11 @@ class Network:
 			np.random.seed(self.seed+r)
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
+			gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
 				self._e = e
-				# if e%5==0: #used to plot weights during training
-				#	_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
-				# 	RFproba = an.gabor_RFproba(self.hid_W[np.newaxis,:,:], pref_ori, self.images_params['target_ori'])
-				# 	an.plot_all_RF(self.name+'_'+str(e), self.hid_W[np.newaxis,:,:], RFproba, verbose=True, save_path=os.path.join('output', self.name, 'RF_save'))
 
 				#save weights just after the end of statistical pre-training
 				if e==self.n_epi_crit:
@@ -138,6 +136,12 @@ class Network:
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit:
 					rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+
+				#add noise to gabor filter images
+				if self.protocol=='gabor':
+					# gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
+					np.random.shuffle(gaussian_noise)
+					rnd_images += gaussian_noise
 
 				correct = 0.
 
@@ -193,6 +197,10 @@ class Network:
 		images_train, images_test = images_dict['train'], images_dict['test']
 		labels_train, labels_test = labels_dict['train'], labels_dict['test']
 
+		#add noise to gabor filter images
+		if self.protocol=='gabor':
+			images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+
 		if self.verbose and not during_training: print "\ntesting network..."
 
 		""" variable initialization """
@@ -244,7 +252,7 @@ class Network:
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
-				RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images, labels, save_data=False, verbose=self.verbose)
+				RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose)
 			elif self.protocol=='gabor':
 				RFproba, self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
 

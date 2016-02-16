@@ -149,7 +149,6 @@ def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbo
 		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
 		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
 		plt.close(fig)
-	# import pdb; pdb.set_trace()
 	
 	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	

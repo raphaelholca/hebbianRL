@@ -54,7 +54,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
-	gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
+	# gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
