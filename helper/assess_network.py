@@ -36,9 +36,9 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 
 	""" compute histogram of RF classes and properties of tuning curves """
 	if net.protocol=='digit':
-		RFproba, net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose, save_path=save_path)
+		RFproba, RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose, save_path=save_path)
 	elif net.protocol=='gabor':
-		RFproba, net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data=save_data, verbose=net.verbose, save_path=save_path)
+		RFproba, RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data, net.verbose, save_path=save_path, method='basic')
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -114,15 +114,15 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RFproba, RF_info
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path=''):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', method='basic'):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='basic', plot=False, save_path=save_path)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method=method, plot=False, save_path=save_path)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='basic', plot=save_data, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method=method, plot=save_data, save_path=save_path)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 	
 	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=save_data, save_path=save_path)
