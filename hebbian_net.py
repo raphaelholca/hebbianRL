@@ -139,7 +139,6 @@ class Network:
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
-					# gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
 
