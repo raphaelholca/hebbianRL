@@ -23,16 +23,16 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dMid' 			: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
-					'protocol'		: 'digit',#'gabor',#
-					'name' 			: 'pypet_digit_1',
-					'n_runs' 		: 2,		
+					'protocol'		: 'gabor',#'digit',#
+					'name' 			: 'pypet_gabor_rdnNoise_0-00_1',
+					'n_runs' 		: 10,		
 					'n_epi_crit'	: 20,				
-					'n_epi_dopa'	: 80,#50,				
+					'n_epi_dopa'	: 20,#80,#
 					't'				: 0.1,						
 					'A' 			: 1.2,
-					'lr'			: 0.02,#0.001,
+					'lr'			: 0.002,#0.005,
 					'batch_size' 	: 50,
-					'n_hid_neurons'	: 49,#16,
+					'n_hid_neurons'	: 16,#49,#
 					'init_file'		: '',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
@@ -45,11 +45,11 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.000, 0.800, 1.600, 2.400, 3.200], #[0.000, 0.400, 0.800, 1.200, 1.600],
-					'dNeut'			: [-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.15, -0.10, -0.05, -0.01, 0.000],
+explore_dict = {	'dHigh'			: [0.000, 0.400, 0.800, 1.200, 1.600], #[0.000, 0.800, 1.600, 2.400, 3.200], #
+					'dNeut'			: [-0.15, -0.10, -0.05, -0.01, 0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
 					
-					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050], #[0.000, 0.005, 0.010, 0.050, 0.100],
-					'dLow'			: [0.000, -0.20, -0.40, -0.60, -0.80]  #[0.000, -0.40, -0.80, -1.20, -1.60]
+					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050],
+					'dLow'			: [0.000, -0.20, -0.40, -0.60, -0.80]
 				}
 
 """ load and pre-process images """
@@ -64,9 +64,9 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
-																				'target_ori' 	: 87.,
+																				'target_ori' 	: 28.,
 																				'excentricity' 	: 3.0,
-																				'noise'			: 0.1,
+																				'noise'			: 0.00,
 																				'im_size'		: 28
 																				}
 															)
