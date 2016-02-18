@@ -182,9 +182,6 @@ def checkdir(name, protocol, overwrite=True):
 			checkdir(name)
 			return name
 	os.makedirs('output/' + name)
-	os.makedirs('output/' + name + '/RFs')
-	if protocol=='gabor':
-		os.makedirs('output/' + name + '/TCs')
 
 	return name
 

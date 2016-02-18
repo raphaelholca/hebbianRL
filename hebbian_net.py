@@ -260,7 +260,6 @@ class Network:
 			elif self.protocol=='gabor':
 				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
 
-			print perf_avg
 			return self.perf_dict
 		else:
 			return correct_classif
@@ -473,7 +472,7 @@ class Network:
 			if self.protocol=='digit':
 				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)['RFproba']
 			elif self.protocol=='gabor':
-				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
+				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, curve_method='no_softmax', plot=False)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]

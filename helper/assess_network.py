@@ -12,26 +12,36 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='no_softmax', slope_binned=True, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
-	Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
+	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
 	Args:
 		net (Network object): network object to assess
+		curve_method (str, optional): method to use to compute the tuning curves
+		slope_binned (bool, optional): whether to bin slopes when plotting the difference before and after training
 		save_data (bool, optional): whether to save data to disk. Default: True
 		show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
 		sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
 		target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
 		save_path (str, optional): path where to save data
 	"""
+
 	""" create saving directory """
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
 	if not os.path.exists(save_path):
-		os.makedirs(save_path) 
+		os.makedirs(save_path)
+	if not os.path.exists(os.path.join(save_path, 'RFs')):
+		os.makedirs(os.path.join(save_path, 'RFs'))
+	if net.protocol=='gabor' and not os.path.exists(os.path.join(save_path, 'TCs')):
+		os.makedirs(os.path.join(save_path, 'TCs'))
 	RFproba = net.RF_info['RFproba']
 
 	""" plot and save confusion matrices """
-	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data, save_path)
+	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
+
+	""" plot RF properties """
+	plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -48,12 +58,13 @@ def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_pa
 		not_same = None
 		correct_out_W = 0.
 
-	""" plot weights and performance progression """
-	if save_data:
-		if show_W_act: W_act_pass=net.out_W_trained
-		else: W_act_pass=None
-		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
-		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
+	""" plot weights """
+	if show_W_act: W_act_pass=net.out_W_trained
+	else: W_act_pass=None
+	# plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+	
+	""" plot performance progression """
+	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
 	"""
@@ -94,54 +105,54 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-
-	if save_data:
-		bin_names = classes
-		fig = plot_hist(RFclass_mean[classes], bin_names, h_err=RFclass_ste[classes])
-		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
-		plt.close(fig)
-
 	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	return RF_info
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', method='basic'):
+def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
+	""" plot RF properties """
+	
+	if net.protocol=='digit':
+		fig = plot_hist(net.RF_info['RFclass_mean'][net.classes], net.classes, h_err=net.RF_info['RFclass_ste'][net.classes])
+		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
+		plt.close(fig)
+
+	elif net.protocol=='gabor':
+		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], True, True, save_path=save_path, curve_method=curve_method)
+		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
+		# bin_edge = np.arange(-90,91,2.5)[::2]
+		# bin_mid = np.arange(-90,91,2.5)[1::2]
+		# bin_edge = np.arange(-90,91,10)[::2]
+		# bin_mid = np.arange(-90,91,10)[1::2]
+		bin_edge = np.arange(-90,91,5)[1::2]
+		bin_mid = np.arange(-90,91,5)[::2]
+		bin_num = len(bin_edge)-1
+
+		n_runs = np.size(RF_info['pref_ori'],0)
+		h_all = np.zeros((n_runs, bin_num))
+		for r in range(n_runs):
+			h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
+		h_mean = np.mean(h_all,0)
+		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
+
+		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
+		plt.close(fig)
+
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', curve_method='basic'):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method=method, plot=False, save_path=save_path)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, curve_method=curve_method, plot=False, save_path=save_path)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method=method, plot=save_data, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, curve_method=curve_method, plot=save_data, save_path=save_path)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
-	
-	_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=save_data, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
-
-	bin_edge = np.arange(-90,91,2.5)[::2]
-	bin_mid = np.arange(-90,91,2.5)[1::2]
-	bin_num = len(bin_mid)
-
-	n_runs = np.size(pref_ori,0)
-	h_all = np.zeros((n_runs, bin_num))
-	for r in range(n_runs):
-		h_all[r, :] = np.histogram(pref_ori[r,:], bin_edge)[0] #, range=(0.,180.)
-	h_mean = np.mean(h_all,0)
-	h_ste = np.std(h_all,0)/np.sqrt(n_runs)
-
-	if save_data:
-		# bin_size = 180./n_bins
-		# bin_names = np.zeros(n_bins, dtype='|S3')
-		# for i in range(n_bins):
-		# 	bin_names[i] = str(int(bin_size*i + bin_size/2.))
-
-		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
-		plt.savefig(os.path.join(save_path, name+'_RFhist.pdf'))
-		plt.close(fig)
 	
-	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
+	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'pref_ori_naive':pref_ori_naive, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RF_info
 
@@ -387,7 +398,7 @@ def plot_hist(h, bins, h_err=None):
 
 	fig, ax = plt.subplots(figsize=(1+0.5*len(h),3))
 	Xs = np.arange(len(h))
-	y_max = np.ceil(np.sum(h))
+	y_max = np.max(h)
 	ax.bar(Xs, h, yerr=h_err, color=my_blues[6], ecolor=my_blues[7])
 
 	fig.patch.set_facecolor('white')
@@ -401,7 +412,7 @@ def plot_hist(h, bins, h_err=None):
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
 	ax.set_xlabel('class', fontsize=18)
-	ax.set_ylabel('neuron count', fontsize=18)
+	ax.set_ylabel('avg. neuron count', fontsize=18)
 	plt.tight_layout()
 
 	return fig
@@ -452,7 +463,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	# ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([70.,100.])
+	# ax.set_ylim([70.,100.])
 	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, np.clip(n_epi_plot/10, 1, 10000)))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
