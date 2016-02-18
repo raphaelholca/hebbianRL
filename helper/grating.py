@@ -239,13 +239,16 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
-def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, slope_binned=False, save_path=''):
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, slope_binned=False, save_path='', bin_width=8):
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
 
 	if save_path=='': save_path=os.path.join('output', name)
 
+	# bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
+	bin_num = int(np.ceil(180./bin_width))
+	stat_threshold = 0.05
+
 	if slope_binned:
-		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
 		bin_edges = np.arange(-90 - bin_width/2 + (180%bin_width)/2, 90+bin_width, bin_width)
 		bin_centers = np.arange(-90 + (180%bin_width)/2, bin_edges[-1], bin_width)
 		pre_slopes_binned = []
@@ -266,8 +269,20 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 			post_slopes_mean[ib] = np.mean(values) ##returns NaN for empty bin_edges
 			post_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
 
-		#compute statistical significance of difference in slope
+		""" check whether slopes of trained neurons are significantly greater than slopes of untrained neurons """
+		mid_bin = ((bin_num+1)/2)-1
+		stat_diff = np.zeros(bin_num)
+		t = np.zeros(bin_num)
 
+		for b in range(bin_num):
+			if post_slopes_binned[b].any() and pre_slopes_binned[b].any():
+				t[b], stat_diff[b] = stats.ttest_ind(post_slopes_binned[b], pre_slopes_binned[b], equal_var=False) #two-sided t-test with independent samples
+			else:
+				t[b], stat_diff[b] = np.nan, np.nan
+		stat_diff*=np.sign(t) #stat_diff is negative if post slope is smaller than pre slope
+		stat_signif = np.logical_and(stat_diff>0, stat_diff/2.<stat_threshold) #makes the two-sided t-test a one-sided one
+	else:
+		stat_diff=np.ones(bin_num)
 
 	""" plot of slope at target orientation """
 	if plot:
@@ -277,6 +292,10 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b')
 			ax.errorbar(bin_centers, pre_slopes_mean, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
 			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
+			
+			#marker of statistical significance
+			Y = np.ones(np.sum(stat_signif))*np.nanmax(post_slopes_mean)*1.20
+			ax.scatter(bin_centers[stat_signif], Y, marker='*', c='k')
 		else:
 			ax.scatter(pre_dist, pre_slopes, c='b')
 			ax.scatter(post_dist, post_slopes, c='r')
@@ -286,7 +305,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.xaxis.set_ticks_position('bottom')
 		ax.yaxis.set_ticks_position('left')
 		if slope_binned: ax.set_xticks(bin_centers)
-		ax.set_xlim([-50,50])
+		# ax.set_xlim([-50,50])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
@@ -295,20 +314,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		plt.savefig(os.path.join(save_path, name + '_slope_diffs.pdf'))
 		plt.close(fig)
 
-	""" check whether slopes of trained neurons are significantly greater than slopes of untrained neurons """
-	if slope_binned==True:
-		#checks the two bins on each side of the middle bin (ignores middle bin)
-		n_bins = len(post_slopes_mean)
-		mid_bin = ((n_bins+1)/2)-1
-		stat_diff = np.zeros(4)
-		t = np.zeros(4)
-
-		for ib, b in enumerate([mid_bin-2, mid_bin-1, mid_bin+1, mid_bin+2]):
-			t[ib], stat_diff[ib] = stats.ttest_ind(post_slopes_binned[b], pre_slopes_binned[b], equal_var=False) #two-sided t-test with independent samples
-		stat_diff*=np.sign(t) #stat_diff is negative if post slope is smaller than pre slope
-		return stat_diff
-	else:
-		return np.ones(4)
+	return stat_diff
 
 
 

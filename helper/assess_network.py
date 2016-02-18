@@ -120,9 +120,13 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 	elif net.protocol=='gabor':
 		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], True, True, save_path=save_path, curve_method=curve_method)
 		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
-		bin_edge = np.arange(-90,91,2.5)[::2]
-		bin_mid = np.arange(-90,91,2.5)[1::2]
-		bin_num = len(bin_mid)
+		# bin_edge = np.arange(-90,91,2.5)[::2]
+		# bin_mid = np.arange(-90,91,2.5)[1::2]
+		# bin_edge = np.arange(-90,91,10)[::2]
+		# bin_mid = np.arange(-90,91,10)[1::2]
+		bin_edge = np.arange(-90,91,5)[1::2]
+		bin_mid = np.arange(-90,91,5)[::2]
+		bin_num = len(bin_edge)-1
 
 		n_runs = np.size(RF_info['pref_ori'],0)
 		h_all = np.zeros((n_runs, bin_num))
@@ -148,7 +152,7 @@ def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbo
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
 	
-	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
+	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'pref_ori_naive':pref_ori_naive, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RF_info
 
@@ -394,7 +398,7 @@ def plot_hist(h, bins, h_err=None):
 
 	fig, ax = plt.subplots(figsize=(1+0.5*len(h),3))
 	Xs = np.arange(len(h))
-	y_max = np.ceil(np.sum(h))
+	y_max = np.max(h)
 	ax.bar(Xs, h, yerr=h_err, color=my_blues[6], ecolor=my_blues[7])
 
 	fig.patch.set_facecolor('white')
@@ -408,7 +412,7 @@ def plot_hist(h, bins, h_err=None):
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
 	ax.set_xlabel('class', fontsize=18)
-	ax.set_ylabel('neuron count', fontsize=18)
+	ax.set_ylabel('avg. neuron count', fontsize=18)
 	plt.tight_layout()
 
 	return fig
