@@ -193,12 +193,14 @@ class Network:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
 
-		images_train, images_test = images_dict['train'], images_dict['test']
+		images_train, images_test = np.copy(images_dict['train']), np.copy(images_dict['test'])
 		labels_train, labels_test = labels_dict['train'], labels_dict['test']
 
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
 			images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+			if self.classifier=='bayesian':
+				images_train += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_train)) #add Gaussian noise
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
@@ -255,6 +257,7 @@ class Network:
 			elif self.protocol=='gabor':
 				RFproba, self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
 
+			print perf_avg
 			return self.perf_dict
 		else:
 			return correct_classif
@@ -471,8 +474,6 @@ class Network:
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]
-				# if self._e > 10:
-				# 	import pdb; pdb.set_trace()
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.
 		correct_out_W += np.sum(same)
