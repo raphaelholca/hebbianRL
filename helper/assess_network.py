@@ -12,18 +12,21 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='no_softmax', slope_binned=True, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
-	Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
+	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
 	Args:
 		net (Network object): network object to assess
+		curve_method (str, optional): method to use to compute the tuning curves
+		slope_binned (bool, optional): whether to bin slopes when plotting the difference before and after training
 		save_data (bool, optional): whether to save data to disk. Default: True
 		show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
 		sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
 		target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
 		save_path (str, optional): path where to save data
 	"""
+
 	""" create saving directory """
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
 	if not os.path.exists(save_path):
@@ -35,10 +38,10 @@ def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_pa
 	RFproba = net.RF_info['RFproba']
 
 	""" plot and save confusion matrices """
-	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data, save_path)
+	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
 
 	""" plot RF properties """
-	plot_RF_info(net, save_path)		
+	plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -55,12 +58,13 @@ def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_pa
 		not_same = None
 		correct_out_W = 0.
 
-	""" plot weights and performance progression """
-	if save_data:
-		if show_W_act: W_act_pass=net.out_W_trained
-		else: W_act_pass=None
-		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
-		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
+	""" plot weights """
+	if show_W_act: W_act_pass=net.out_W_trained
+	else: W_act_pass=None
+	# plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+	
+	""" plot performance progression """
+	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
 	"""
@@ -105,7 +109,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RF_info
 
-def plot_RF_info(net, save_path):
+def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 	""" plot RF properties """
 	
 	if net.protocol=='digit':
@@ -114,16 +118,16 @@ def plot_RF_info(net, save_path):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		curves, pref_ori = gr.tuning_curves(net.hid_W_trained, net.t, net.images_params['target_ori'], net.name, method='basic', plot=True, save_path=save_path)
-		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path)
+		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], True, True, save_path=save_path, curve_method=curve_method)
+		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
 		bin_edge = np.arange(-90,91,2.5)[::2]
 		bin_mid = np.arange(-90,91,2.5)[1::2]
 		bin_num = len(bin_mid)
 
-		n_runs = np.size(pref_ori,0)
+		n_runs = np.size(RF_info['pref_ori'],0)
 		h_all = np.zeros((n_runs, bin_num))
 		for r in range(n_runs):
-			h_all[r, :] = np.histogram(pref_ori[r,:], bin_edge)[0] #, range=(0.,180.)
+			h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
 		h_mean = np.mean(h_all,0)
 		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
 
@@ -131,15 +135,15 @@ def plot_RF_info(net, save_path):
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', method='basic'):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', curve_method='basic'):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method=method, plot=False, save_path=save_path)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, curve_method=curve_method, plot=False, save_path=save_path)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method=method, plot=save_data, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, curve_method=curve_method, plot=save_data, save_path=save_path)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)

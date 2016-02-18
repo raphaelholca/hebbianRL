@@ -60,7 +60,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	return gratings
 
-def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path=''):
+def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_path=''):
 	"""
 	compute the tuning curve of the neurons
 
@@ -69,7 +69,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		t (float): temperature of the softmax function used during training
 		target_ori (float): target orientation on side of which to discrimate the gabor patches
 		name (str): name of the network, used for saving figures
-		method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
+		curve_method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
 		plot (bool, optional): whether or not to create plots
 		save_path (str, optional): path to save plots
 
@@ -84,9 +84,9 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		if not os.path.exists(os.path.join(save_path, 'TCs')):
 			os.makedirs(os.path.join(save_path, 'TCs'))
 
-	if method not in ['basic', 'no_softmax', 'with_noise']:
+	if curve_method not in ['basic', 'no_softmax', 'with_noise']:
 		print '!!! invalid method - using \'basic\' method !!!'
-		method='basic'
+		curve_method='basic'
 
 	noise = 2.0
 	noise_trial = 100
@@ -97,8 +97,8 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 	n_neurons = np.size(W,2)
 
 	orientations = np.arange(-90.+target_ori, 90.+target_ori, ori_step)
-	SM = False if method=='no_softmax' else True
-	if method != 'with_noise':
+	SM = False if curve_method=='no_softmax' else True
+	if curve_method != 'with_noise':
 		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
 	else:
 		test_input = []
@@ -130,7 +130,7 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 			ax.set_xlabel('angle from target (deg)', fontsize=18)
 			ax.set_ylabel('response', fontsize=18)
 			ax.set_xlim([-90,90])
-			if method=='no_softmax' and False: ax.set_ylim([119,138])
+			if curve_method=='no_softmax' and False: ax.set_ylim([119,138])
 			else: ax.set_ylim([np.min(curves[r,:,:])-(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1, np.max(curves[r,:,:])+(np.max(curves[r,:,:])-np.min(curves[r,:,:]))*.1])
 			ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 			plt.tight_layout()
@@ -138,7 +138,6 @@ def tuning_curves(W, t, target_ori, name, method='basic', plot=True, save_path='
 		if plot:
 			plt.savefig(os.path.join(save_path, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
-	# import pdb; pdb.set_trace()
 
 	return curves, pref_ori
 
@@ -182,11 +181,8 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 		all_slopes.append([])
 		all_deg.append([])
 
-		dist_target = pref_ori[r] #- target_ori
-		dist_target[dist_target>90]-=180
-		dist_target[dist_target<-90]+=180
-		target_idx = int(target_ori * (n_input/180))
-		slope_at_target = slopes[r,:,:][target_idx, np.arange(n_neurons)]
+		dist_target = pref_ori[r]
+		slope_at_target = slopes[r,:,:][n_input/2, np.arange(n_neurons)]
 
 		all_dist_from_target[r, :] = dist_target
 		all_slope_at_target[r, :] = slope_at_target
@@ -243,13 +239,13 @@ def slopes(W, curves, pref_ori, t, target_ori, name, plot=False, save_path=''):
 	return {'slopes':slopes, 'all_slopes':np.array(all_slopes), 'all_deg':np.array(all_deg), 'all_dist_from_target':all_dist_from_target, 'all_slope_at_target':all_slope_at_target}
 
 
-def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, binned=False, save_path=''):
+def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=True, slope_binned=False, save_path=''):
 	""" compute and plot the slope at training orientation as a function of the difference between preferred and trained orienation both before and after training """
 
 	if save_path=='': save_path=os.path.join('output', name)
 
-	if binned:
-		bin_width = 2 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
+	if slope_binned:
+		bin_width = 8 #degrees, to follow plotting in fig 2b of Schoups01, make bin_width=8
 		bin_edges = np.arange(-90 - bin_width/2 + (180%bin_width)/2, 90+bin_width, bin_width)
 		bin_centers = np.arange(-90 + (180%bin_width)/2, bin_edges[-1], bin_width)
 		pre_slopes_binned = []
@@ -270,11 +266,14 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 			post_slopes_mean[ib] = np.mean(values) ##returns NaN for empty bin_edges
 			post_slopes_ste[ib] = np.std(values)/np.sqrt(len(values)) ##returns NaN for empty bin_edges
 
+		#compute statistical significance of difference in slope
+
+
 	""" plot of slope at target orientation """
 	if plot:
 		fig, ax = plt.subplots(figsize=(8,4.5))
 		fig.patch.set_facecolor('white')
-		if binned:
+		if slope_binned:
 			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b')
 			ax.errorbar(bin_centers, pre_slopes_mean, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
 			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
@@ -286,8 +285,8 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		# ax.spines['top'].set_visible(False)
 		ax.xaxis.set_ticks_position('bottom')
 		ax.yaxis.set_ticks_position('left')
-		if binned: ax.set_xticks(bin_centers)
-		ax.set_xlim([-20,20])
+		if slope_binned: ax.set_xticks(bin_centers)
+		ax.set_xlim([-50,50])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
@@ -297,7 +296,7 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		plt.close(fig)
 
 	""" check whether slopes of trained neurons are significantly greater than slopes of untrained neurons """
-	if binned==True:
+	if slope_binned==True:
 		#checks the two bins on each side of the middle bin (ignores middle bin)
 		n_bins = len(post_slopes_mean)
 		mid_bin = ((n_bins+1)/2)-1

@@ -24,13 +24,13 @@ net = hebbian_net.Network(	dHigh 			= 0.8,#2.4,#
 							dNeut 			= -0.1,#-0.08,#
 							dLow 			= -0.4,#-0.4,#
 							protocol		= 'gabor',
-							name 			= 'gabor_all',
-							n_runs 			= 10,		
+							name 			= 'gabor_all_long',
+							n_runs 			= 100,		
 							n_epi_crit		= 20,				
 							n_epi_dopa		= 20,				
 							t				= 0.1, 							
 							A 				= 1.2,
-							lr				= 0.002,#0.005,#
+							lr				= 0.001,#0.005,#
 							batch_size 		= 50,
 							n_hid_neurons	= 16,#49,#
 							init_file		= '',
@@ -74,7 +74,6 @@ perf_dict = net.test(images_dict, labels_dict)
 ex.save_net(net)
 
 an.assess(	net,
-			save_data	= True, 
 			show_W_act	= True, 
 			sort		= None, 
 			target 		= None
