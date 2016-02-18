@@ -260,7 +260,6 @@ class Network:
 			elif self.protocol=='gabor':
 				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
 
-			print perf_avg
 			return self.perf_dict
 		else:
 			return correct_classif

@@ -24,8 +24,8 @@ net = hebbian_net.Network(	dHigh 			= 0.8,#2.4,#
 							dNeut 			= -0.1,#-0.08,#
 							dLow 			= -0.4,#-0.4,#
 							protocol		= 'gabor',
-							name 			= 'gabor_t_noise_0-2',
-							n_runs 			= 1,		
+							name 			= 'gabor_all',
+							n_runs 			= 10,		
 							n_epi_crit		= 20,				
 							n_epi_dopa		= 20,				
 							t				= 0.1, 							
