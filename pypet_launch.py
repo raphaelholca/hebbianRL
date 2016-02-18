@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_rdnNoise_0-00_1',
+					'name' 			: 'pypet_gabor_rdnNoise_0-05_1',
 					'n_runs' 		: 10,		
 					'n_epi_crit'	: 20,				
 					'n_epi_dopa'	: 20,#80,#
@@ -66,7 +66,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 28.,
 																				'excentricity' 	: 3.0,
-																				'noise'			: 0.00,
+																				'noise'			: 0.05,
 																				'im_size'		: 28
 																				}
 															)
