@@ -228,7 +228,6 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 	"""
 
 	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise=noise)
-	images = normalize(images, A*np.size(images,1))
 
 	orientations = relative_orientations(orientations, target_ori)
 

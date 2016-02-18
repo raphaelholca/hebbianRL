@@ -143,6 +143,7 @@ class Network:
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
+					rnd_images = ex.normalize(rnd_images, self.A*np.size(rnd_images,1))
 
 				#train network with mini-batches
 				correct = 0.
@@ -200,6 +201,7 @@ class Network:
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
 			images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+			images_test = ex.normalize(images_test, self.A*np.size(images_test,1))
 			if self.classifier=='bayesian':
 				images_train += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_train)) #add Gaussian noise
 
