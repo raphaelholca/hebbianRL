@@ -24,8 +24,8 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_rdnNoise_0-05_1',
-					'n_runs' 		: 10,		
+					'name' 			: 'pypet_test',#'pypet_gabor_rdnNoise_0-05_1',
+					'n_runs' 		: 1,#10,		
 					'n_epi_crit'	: 20,				
 					'n_epi_dopa'	: 20,#80,#
 					't'				: 0.1,						
@@ -39,17 +39,17 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'exploration'	: True,
 					'pdf_method' 	: 'fit',
 					'classifier'	: 'neural',
-					'test_each_epi'	: False,
-					'verbose'		: False,
+					'test_each_epi'	: True,
+					'verbose'		: True,
 					'seed' 			: 977 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.000, 0.400, 0.800, 1.200, 1.600], #[0.000, 0.800, 1.600, 2.400, 3.200], #
-					'dNeut'			: [-0.15, -0.10, -0.05, -0.01, 0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
+explore_dict = {	'dHigh'			: [0.8],#[0.000, 0.400, 0.800, 1.200, 1.600], #[0.000, 0.800, 1.600, 2.400, 3.200], #
+					'dNeut'			: [-0.1],#[-0.15, -0.10, -0.05, -0.01, 0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
 					
-					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050],
-					'dLow'			: [0.000, -0.20, -0.40, -0.60, -0.80]
+					'dMid'			: [0.01],#[0.000, 0.001, 0.005, 0.010, 0.050],
+					'dLow'			: [-0.4]#[0.000, -0.20, -0.40, -0.60, -0.80]
 				}
 
 """ load and pre-process images """
@@ -73,7 +73,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
-pp.check_dir(save_path, overwrite=False)
+pp.check_dir(save_path, overwrite=True)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 print_dict.update({'images_params':images_params})
@@ -101,7 +101,7 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 print "\n\nplotting results"
-pp.faceting(save_path)
+# pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
 
