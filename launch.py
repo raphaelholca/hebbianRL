@@ -25,9 +25,9 @@ net = hebbian_net.Network(	dHigh 			= 0.8,#2.4,#
 							dLow 			= -0.4,#-0.4,#
 							protocol		= 'gabor',
 							name 			= 'gabor_t_noise_0-05_167',
-							n_runs 			= 3,		
-							n_epi_crit		= 20,				
-							n_epi_dopa		= 20,				
+							n_runs 			= 1,		
+							n_epi_crit		= 10,				
+							n_epi_dopa		= 5,				
 							t				= 0.1, 							
 							A 				= 1.2,
 							lr				= 0.002,#0.005,#
@@ -73,7 +73,7 @@ perf_dict = net.test(images_dict, labels_dict)
 
 ex.save_net(net)
 
-an.assess(net, images_dict['train'], labels_dict['train'],
+an.assess(	net,
 			save_data	= True, 
 			show_W_act	= True, 
 			sort		= None, 

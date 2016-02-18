@@ -12,14 +12,12 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, save_data=True, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
 	Method to assess network: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
 	Args:
 		net (Network object): network object to assess
-		images (numpy array): MNIST images
-		labels (numpy array): labels of the images.
 		save_data (bool, optional): whether to save data to disk. Default: True
 		show_W_act (bool, optional): whether to display out_W weights on the weight plots. Default:True
 		sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
@@ -30,15 +28,10 @@ def assess(net, images, labels, save_data=True, show_W_act=True, sort=None, targ
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
 	if not os.path.exists(save_path):
 		os.makedirs(save_path) 
+	RFproba = net.RF_info['RFproba']
 
 	""" plot and save confusion matrices """
 	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, save_data, save_path)
-
-	""" compute histogram of RF classes and properties of tuning curves """
-	if net.protocol=='digit':
-		RFproba, RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, save_data=save_data, verbose=net.verbose, save_path=save_path)
-	elif net.protocol=='gabor':
-		RFproba, RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], save_data, net.verbose, save_path=save_path, method='basic')
 
 	""" compute correct weight assignment in the ouput layer """
 	if net._train_class_layer:
@@ -78,9 +71,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 		save_path (str, optional): path where to save data
 
 	return:
-		RFproba (numpy array): probability that a each RF belongs to a certain class. The probability is computed as the # of stimuli from a digit class that activate the neuron / total # of stimuli that activate the neuron (shape= n_runs x n_hid_neurons x 10). This can be used to compute the selectivity index of a neuron by taking np.max(RFproba,2)
-		RFclass (numpy array): count of neurons responsive of each digit class (shape= n_runs x 10)
-		RFselec (numpy array): mean selectivity index for all RFs of a digit class. Computed as the mean of RFproba for each class
+		RF_info (dict): dictionary of data array relative to receptive field properties of the neurons
 	"""
 
 	if verbose: print "computing RF classes..."
@@ -112,7 +103,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
-	return RFproba, RF_info
+	return RF_info
 
 def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', method='basic'):
 	""" Computes the distribution of orientation preference of neurons in the network. """
@@ -152,7 +143,7 @@ def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbo
 	
 	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
-	return RFproba, RF_info
+	return RF_info
 
 def gabor_RFproba(W, pref_ori):
 	""" computes to which orientation class each stimulus corresponds to """

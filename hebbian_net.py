@@ -88,7 +88,8 @@ class Network:
 
 		images, images_task = images_dict['train'], images_dict['task']
 		labels, labels_task = labels_dict['train'], labels_dict['task']
-		images_params['noise'] = np.clip(images_params['noise'], 1e-30, np.inf)
+		if self.protocol=='gabor':
+			images_params['noise'] = np.clip(images_params['noise'], 1e-30, np.inf)
 
 		self.images_params = images_params
 		self.classes = np.sort(np.unique(labels))
@@ -118,7 +119,8 @@ class Network:
 			np.random.seed(self.seed+r)
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
-			gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
+			if self.protocol=='gabor':
+				gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -142,9 +144,8 @@ class Network:
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
 
-				correct = 0.
-
 				#train network with mini-batches
+				correct = 0.
 				for b in range(n_batches):
 					self._b = b
 					#update pdf for bayesian inference
@@ -253,9 +254,9 @@ class Network:
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
-				RFproba, self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose)
+				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose)
 			elif self.protocol=='gabor':
-				RFproba, self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
+				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params['target_ori'], save_data=False, verbose=self.verbose)
 
 			print perf_avg
 			return self.perf_dict
@@ -468,7 +469,7 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba, _ = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)
+				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)['RFproba']
 			elif self.protocol=='gabor':
 				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params['target_ori'], self.name, method='no_softmax', plot=False)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
