@@ -211,7 +211,7 @@ def plot_all_slope_diffs(save_path):
 def launch_assess(save_path, file_name, images, labels):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
 	best_net = pickle.load(net_file)
-	an.assess(best_net, images, labels, save_path=os.path.join(save_path, 'best_net'))
+	an.assess(best_net, save_path=os.path.join(save_path, 'best_net'))
 
 def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	print "importing data..."
