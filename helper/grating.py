@@ -54,6 +54,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
+	gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
@@ -88,7 +89,7 @@ def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_
 		print '!!! invalid method - using \'basic\' method !!!'
 		curve_method='basic'
 
-	noise = 2.0
+	noise = 0.20
 	noise_trial = 100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
@@ -289,9 +290,9 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		fig, ax = plt.subplots(figsize=(8,4.5))
 		fig.patch.set_facecolor('white')
 		if slope_binned:
-			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b')
+			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b', label='statistical')
 			ax.errorbar(bin_centers, pre_slopes_mean, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
-			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
+			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2, label='reward-based')
 			
 			#marker of statistical significance
 			Y = np.ones(np.sum(stat_signif))*np.nanmax(post_slopes_mean)*1.20
@@ -305,10 +306,11 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.xaxis.set_ticks_position('bottom')
 		ax.yaxis.set_ticks_position('left')
 		if slope_binned: ax.set_xticks(bin_centers)
-		# ax.set_xlim([-50,50])
+		ax.set_xlim([-50,50])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
+		# plt.legend(loc='lower center')
 		plt.tight_layout()
 
 		plt.savefig(os.path.join(save_path, name + '_slope_diffs.pdf'))
