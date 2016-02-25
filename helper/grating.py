@@ -54,20 +54,21 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
+	gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
 
 	return gratings
 
-def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_path=''):
+def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, save_path=''):
 	"""
 	compute the tuning curve of the neurons
 
 	Args:
 		W (dict): dictionary of weight matrices (each element of the dictionary is a weight matrix from an individual run)
 		t (float): temperature of the softmax function used during training
-		target_ori (float): target orientation on side of which to discrimate the gabor patches
+		images_params (dict): dictionary of image parameters
 		name (str): name of the network, used for saving figures
 		curve_method (str, optional): way of computing the tuning curves. Can be: 'basic' (w/o noise, w/ softmax), 'no_softmax' (w/o noise, w/o softmax), 'with_noise' (w/ noise, w/ softmax)
 		plot (bool, optional): whether or not to create plots
@@ -77,7 +78,7 @@ def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_
 		(dict): the tuning curves for each neuron of each run
 	"""
 
-	# t=1.0 ##<----------uses different t as the one used during training-------------------
+	# t=0.2 ##<----------uses different t as the one used during training-------------------
 
 	if plot:
 		if save_path=='': save_path=os.path.join('output', name)
@@ -88,15 +89,15 @@ def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_
 		print '!!! invalid method - using \'basic\' method !!!'
 		curve_method='basic'
 
-	noise = 2.0
-	noise_trial = 100
+	noise = images_params['noise']
+	noise_trial = 10#100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
 	n_runs = np.size(W,0)
 	im_size = int(np.sqrt(np.size(W,1)))
 	n_neurons = np.size(W,2)
 
-	orientations = np.arange(-90.+target_ori, 90.+target_ori, ori_step)
+	orientations = np.arange(-90.+images_params['target_ori'], 90.+images_params['target_ori'], ori_step)
 	SM = False if curve_method=='no_softmax' else True
 	if curve_method != 'with_noise':
 		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
@@ -114,7 +115,7 @@ def tuning_curves(W, t, target_ori, name, curve_method='basic', plot=True, save_
 		for i in range(len(test_input)):
 			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
 			pref_ori[r, :] = orientations[np.argmax(curves[r,:,:],0)]
-			pref_ori[r, :] = ex.relative_orientations(pref_ori[r, :], target_ori)
+			pref_ori[r, :] = ex.relative_orientations(pref_ori[r, :], images_params['target_ori'])
 
 		if plot:
 			pref_ori_sorter = pref_ori[r, :].argsort()
@@ -289,9 +290,9 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		fig, ax = plt.subplots(figsize=(8,4.5))
 		fig.patch.set_facecolor('white')
 		if slope_binned:
-			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b')
+			ax.plot(bin_centers, pre_slopes_mean, ls='--', lw=3, c='b', label='statistical')
 			ax.errorbar(bin_centers, pre_slopes_mean, yerr=pre_slopes_ste, marker='o', ms=10, ls=' ', lw=3, c='b', mfc='w', mec='b', ecolor='b', mew=2)
-			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2)
+			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2, label='reward-based')
 			
 			#marker of statistical significance
 			Y = np.ones(np.sum(stat_signif))*np.nanmax(post_slopes_mean)*1.20
@@ -305,10 +306,11 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.xaxis.set_ticks_position('bottom')
 		ax.yaxis.set_ticks_position('left')
 		if slope_binned: ax.set_xticks(bin_centers)
-		# ax.set_xlim([-50,50])
+		ax.set_xlim([-50,50])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
+		# plt.legend(loc='lower center')
 		plt.tight_layout()
 
 		plt.savefig(os.path.join(save_path, name + '_slope_diffs.pdf'))

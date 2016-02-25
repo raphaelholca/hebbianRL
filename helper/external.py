@@ -36,9 +36,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 				n_test (int): number of testing images
 				target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 				excentricity (float): degree range within wich to test the network (on each side of target orientation)
-				noise_crit (float): noise injected in the gabor filter for the pre-training (critical period)
-				noise_train (float): noise injected in the gabor filter for the training
-				noise_test (float): noise injected in the gabor filter for the testing
+				noise (float): noise injected in the gabor filter
 				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 
 		returns:
@@ -85,13 +83,13 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 		gabor_params['target_ori'] %= 180.
 
 		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
-		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise'], A)
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A)
 
 		orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
-		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise'], A)
+		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
 
 		orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
-		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], gabor_params['noise'], A)
+		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
 
 		images_params = gabor_params
 
@@ -207,7 +205,7 @@ def shuffle(arrays):
 
 	return shuffled_arrays
 
-def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
+def generate_gabors(orientations, target_ori, im_size, A, noise=0., phase=0.25):
 	"""
 	Calling function to generate gabor filters
 
@@ -215,8 +213,8 @@ def generate_gabors(orientations, target_ori, im_size, noise, A, phase=0.25):
 		orientations (numpy array): 1-D array of orientations of gratings (in degrees) (one grating is created for each orientation provided)
 		target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
-		noise (int): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 		A (float): input normalization constant
+		noise (int,optional): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1]
 
 	returns:

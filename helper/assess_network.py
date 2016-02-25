@@ -12,7 +12,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='no_softmax', slope_binned=True, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='with_noise', slope_binned=True, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -61,7 +61,7 @@ def assess(net, curve_method='no_softmax', slope_binned=True, show_W_act=True, s
 	""" plot weights """
 	if show_W_act: W_act_pass=net.out_W_trained
 	else: W_act_pass=None
-	# plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+	plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
 	
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
@@ -118,7 +118,7 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params['target_ori'], True, True, save_path=save_path, curve_method=curve_method)
+		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
 		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
 		# bin_edge = np.arange(-90,91,2.5)[::2]
 		# bin_mid = np.arange(-90,91,2.5)[1::2]
@@ -139,16 +139,16 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, target_ori, save_data, verbose, save_path='', curve_method='basic'):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, images_params, save_data, verbose, save_path='', curve_method='basic'):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, curve_method=curve_method, plot=False, save_path=save_path)#no_softmax
-	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=save_path)
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, images_params, name, curve_method=curve_method, plot=False, save_path=save_path)#no_softmax
+	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, curve_method=curve_method, plot=save_data, save_path=save_path)
-	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, images_params, name, curve_method=curve_method, plot=save_data, save_path=save_path)
+	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
 	
@@ -310,18 +310,16 @@ def tSNE_sort(W):
 
 	return W[:,sorted_idx]
 
-def plot_single_RF(W, target=None, W_act=None, cmap='Greys', not_same=np.array([])):
+def plot_single_RF(W, target=None, W_act=None, cmap='binary', not_same=np.array([]), vmin=None, vmax=None):
 	""" plots of the weights, with superimposed colouring for target digit and out layer weights """
 	
 	#plot parameters
 	n_hid_neurons = np.size(W,1)
 	v = int(np.sqrt(n_hid_neurons))
 	h = int(np.ceil(float(n_hid_neurons)/v))
-	Wmin = np.min(W)
-	Wmax = np.max(W)
 
 	#create a transparent colormap
-	cmap_trans = plt.get_cmap('binary') 
+	cmap_trans = plt.get_cmap(cmap) 
 	cmap_trans._init()
 	alphas = np.linspace(0., 1., cmap_trans.N+3)
 	cmap_trans._lut[:,-1] = alphas
@@ -332,10 +330,10 @@ def plot_single_RF(W, target=None, W_act=None, cmap='Greys', not_same=np.array([
 	fig, ax = plt.subplots(figsize=(h,v))
 	for i in range(np.size(W,1)):
 		plt.subplot(v,h,i+1)
-		if type(target)!=type(None) and target[i]!=0:
+		if target is not None and target[i]!=0:
 			plt.imshow(target[i], cmap=cmap, vmin=0., vmax=3, extent=(0,im_size,0,im_size))
-		plt.imshow(np.reshape(W[:,i], (im_size,im_size)), interpolation='nearest', cmap=cmap_trans, extent=(0,im_size,0,im_size), vmin=Wmin)
-		if type(W_act)!=type(None):
+		plt.imshow(np.reshape(W[:,i], (im_size,im_size)), interpolation='nearest', cmap=cmap_trans, extent=(0,im_size,0,im_size), vmin=vmin, vmax=vmax)
+		if W_act is not None:
 			if i in not_same:
 				plt.imshow([[0]], cmap='RdYlBu', vmin=0., vmax=3, extent=(im_size,im_size+2,0,im_size))
 			plt.imshow(W_act[i,:][:,np.newaxis], interpolation='nearest', cmap='binary', extent=(im_size,im_size+2,0,im_size))
