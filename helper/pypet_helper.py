@@ -167,11 +167,11 @@ def plot_one_slope_diff(net, save_path):
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, net.images_params, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, net.images_params, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, slope_binned=True, save_path=plot_path)
@@ -208,10 +208,10 @@ def plot_all_slope_diffs(save_path):
 		print n
 		_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, slope_binned=True, save_path=plot_path)
 
-def launch_assess(save_path, file_name, images, labels):
+def launch_assess(save_path, file_name, images, labels, curve_method='with_noise', slope_binned=False):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
 	best_net = pickle.load(net_file)
-	an.assess(best_net, save_path=os.path.join(save_path, 'best_net'))
+	an.assess(best_net, curve_method=curve_method, slope_binned=slope_binned, save_path=os.path.join(save_path, 'best_net'))
 
 def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	print "importing data..."
@@ -255,9 +255,9 @@ def faceting(folder_path):
 	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
-	threshold = 0.0005
+	threshold = 0.001
 	t_threshold = 0.05
-	vmin=0.91#1
+	vmin=0.80#1
 	vmax=1.0#0.97
 	font_large = 20
 	font_small = 18

@@ -24,13 +24,13 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_25n_t0-2',
-					'n_runs' 		: 10,		
+					'name' 			: 'pypet_gabor_25n_t0-2_lr0-0005_exc_1-5',
+					'n_runs' 		: 5,		
 					'n_epi_crit'	: 20,				
 					'n_epi_dopa'	: 20,#80,#
 					't'				: 0.2,#0.1,#						
 					'A' 			: 1.2,
-					'lr'			: 0.005,#0.005,
+					'lr'			: 0.0005,#0.005,
 					'batch_size' 	: 50,
 					'n_hid_neurons'	: 25,#16,#49,#
 					'init_file'		: '',
@@ -65,7 +65,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
 																				'target_ori' 	: 28.,
-																				'excentricity' 	: 3.0,
+																				'excentricity' 	: 1.5,
 																				'noise'			: 0.2,
 																				'im_size'		: 28
 																				}
@@ -103,7 +103,7 @@ toc = time.time()
 print "\n\nplotting results"
 pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
-pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'])
+pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
