@@ -126,6 +126,11 @@ class Network:
 			for e in range(self.n_epi_tot):
 				self._e = e
 
+				# if e==self.n_epi_crit:
+				# 	self.lr = 0.0005 ## <-------------------------------------------------------------------careful!-----------------------------------------------
+				# elif e==0:
+				# 	self.lr = 0.005 ## <-------------------------------------------------------------------careful!-----------------------------------------------
+
 				#save weights just after the end of statistical pre-training
 				if e==self.n_epi_crit:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
