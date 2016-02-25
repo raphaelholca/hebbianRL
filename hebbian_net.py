@@ -175,6 +175,12 @@ class Network:
 
 					correct += np.sum(out_greedy == b_labels)
 
+					# sorted_activ = np.mean(np.sort(self.hid_neurons),0)
+					# print sorted_activ[-1], sorted_activ[-2], sorted_activ[-3]
+					# print np.min(np.max(self.hid_neurons,1))
+					# if sorted_activ[-1]<0.68: import pdb; pdb.set_trace()
+					# print np.argmax(self.hid_neurons,1), np.mean(np.max(self.hid_neurons,1))
+					# import pdb; pdb.set_trace()
 				#assess performance
 				self._assess_perf_progress(correct/n_images, images_dict, labels_dict)
 

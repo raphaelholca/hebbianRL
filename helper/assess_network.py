@@ -61,7 +61,7 @@ def assess(net, curve_method='with_noise', slope_binned=True, show_W_act=True, s
 	""" plot weights """
 	if show_W_act: W_act_pass=net.out_W_trained
 	else: W_act_pass=None
-	# plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+	plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
 	
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
