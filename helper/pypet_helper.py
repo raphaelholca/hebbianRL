@@ -167,14 +167,14 @@ def plot_one_slope_diff(net, save_path):
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, curve_method='no_softmax', plot=False, save_path=plot_path)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, curve_method='no_softmax', plot=False, save_path=plot_path)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
-		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, binned=True, save_path=plot_path)
+		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, slope_binned=True, save_path=plot_path)
 
 	else:
 		stat_diff = np.ones(4)
@@ -206,7 +206,7 @@ def plot_all_slope_diffs(save_path):
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		print n
-		_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, save_path=plot_path)
+		_ = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, slope_binned=True, save_path=plot_path)
 
 def launch_assess(save_path, file_name, images, labels):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
@@ -233,7 +233,7 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	for k in param_traj:
 		if k[11:] != 'name':
 			xplr_values = np.array(param_traj[k].f_get_range())[ok_runs]
-			if len(np.unique(xplr_values)) >1:
+			if len(np.unique(xplr_values)) > 1:
 				param[k[11:]] = xplr_values
 
 	# #removes explored trajectories other than the dopamine ones
@@ -267,6 +267,7 @@ def faceting(folder_path):
 	perc_correct, perc_correct_all, stat_diff, param = import_traj(folder_path, file_name, order_face)
 
 	#find slopes that are significanly different after as compared to before
+	stat_diff[len(stat_diff)/2]=-1.0 #ignores middle bin
 	stat_diff_bool = np.zeros(np.size(stat_diff,0), dtype=bool)
 	for r in range(np.size(stat_diff,0)):
 		stat_diff_bool[r] = (np.logical_and(stat_diff[r,:] < t_threshold, stat_diff[r,:] > 0.)).any() #stat_diff is > 0 if post slope is greater than pre slope
@@ -324,14 +325,13 @@ def faceting(folder_path):
 			ax[y2_i, x2_i].imshow(z_square, origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
 
 			#indicate all params that give statistically greater slopes after than before training
-			# import pdb; pdb.set_trace()
-			if x2 in param_greater_slope[order_face[2]][y2==param_greater_slope[order_face[3]]]:
-				mask_best = np.logical_and(x2==param_greater_slope[order_face[2]], y2==param_greater_slope[order_face[3]])
-				x1_dots = []
-				y1_dots = []
-				for x in param_greater_slope[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
-				for y in param_greater_slope[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
-				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
+			# if x2 in param_greater_slope[order_face[2]][y2==param_greater_slope[order_face[3]]]:
+			# 	mask_best = np.logical_and(x2==param_greater_slope[order_face[2]], y2==param_greater_slope[order_face[3]])
+			# 	x1_dots = []
+			# 	y1_dots = []
+			# 	for x in param_greater_slope[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
+			# 	for y in param_greater_slope[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
+			# 	ax[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
 
 			# indicate all params that give performance within [threshold]% of best performance
 			if x2 in best_param_all[order_face[2]][y2==best_param_all[order_face[3]]]:

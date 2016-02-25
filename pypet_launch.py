@@ -24,15 +24,15 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_rdnNoise_0-2_2',
+					'name' 			: 'pypet_gabor_25n_t0-2',
 					'n_runs' 		: 10,		
 					'n_epi_crit'	: 20,				
 					'n_epi_dopa'	: 20,#80,#
-					't'				: 0.1,						
+					't'				: 0.2,#0.1,#						
 					'A' 			: 1.2,
-					'lr'			: 0.002,#0.005,
+					'lr'			: 0.005,#0.005,
 					'batch_size' 	: 50,
-					'n_hid_neurons'	: 16,#49,#
+					'n_hid_neurons'	: 25,#16,#49,#
 					'init_file'		: '',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
@@ -45,11 +45,11 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.000, 0.400, 0.800, 1.200, 1.600], #[0.000, 0.800, 1.600, 2.400, 3.200], #
-					'dNeut'			: [-0.20, -0.15, -0.10, -0.05, -0.01], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
+explore_dict = {	'dHigh'			: [-1.00, 0.000, 1.000, 2.000, 3.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #
+					'dNeut'			: [-0.40, -0.30, -0.20, -0.10, -0.00], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
 					
-					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050],
-					'dLow'			: [0.000, -0.40, -0.80, -1.20, -1.60] #[0.000, -0.20, -0.40, -0.60, -0.80]
+					'dMid'			: [0.000, 0.100, 0.200, 0.300, 0.400], #[0.000, 0.001, 0.005, 0.010, 0.050], #
+					'dLow'			: [0.000, -0.80, -1.60, -2.40, -3.20]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #
 				}
 
 """ load and pre-process images """
@@ -57,8 +57,8 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
 															digit_params 	= {	'dataset_train'	: 'train',
-																				'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				# 'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				# 'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
+																				'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				'shuffle'		: False
 																				},
