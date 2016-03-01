@@ -255,8 +255,9 @@ def faceting(folder_path):
 	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
+	stat_test = True #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
 	threshold = 0.001
-	t_threshold = 0.05
+	t_threshold = 0.10#0.05
 	vmin=0.80#1
 	vmax=1.0#0.97
 	font_large = 20
@@ -291,7 +292,7 @@ def faceting(folder_path):
 	invert=True if np.argwhere(param[order_face[0]]!= param[order_face[0]][0])[0] > np.argwhere(param[order_face[1]]!= param[order_face[1]][0])[0] else False
 
 	#find similarly good parameters...
-	if np.size(perc_correct_all,1)>1 and False:#...using statistical significance testing
+	if np.size(perc_correct_all,1)>1 and stat_test:#...using statistical significance testing
 		arg_best_all = np.array([], dtype=int)
 		best_perf = perc_correct_all[arg_best, :]
 		for arg in range(np.size(perc_correct_all,0)):

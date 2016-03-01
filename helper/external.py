@@ -451,12 +451,43 @@ def compute_dopa(predicted_reward, reward, dopa_values):
 	dopa = np.zeros(len(reward))
 
 	dopa[np.logical_and(predicted_reward==0, reward==1)] = dopa_values['dHigh']		#unpredicted reward
-	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']			#correct reward prediction
+	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']		#correct reward prediction
 	dopa[np.logical_and(predicted_reward==0, reward==0)] = dopa_values['dNeut']		#correct no reward prediction
-	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']			#incorrect reward prediction
+	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']		#incorrect reward prediction
 
 	return dopa
 
+def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
+	""" 
+	test that there are no statistical difference in the performance of models with different VTA values 
+
+	Args:
+		best (numpy array): performance measure for best model
+		alte (numpy array): performance measure for alternate model
+		diff_tol (float, optional): difference that we are willing to tolerante in the difference of models
+		confidence (str, optional): confidence level; allowed values: '0.99', '0.95', and '0.90'
+
+	returns:
+		(bool): whether or not there is a difference in the performance; True: no statistical difference (reject null hypothesis); False: statistical difference (cannot reject null hypothesis)
+	"""
+
+	conf_to_z = {'0.99':1.96, '0.95':1.645, '0.90':1.28}
+	z_value = conf_to_z[confidence]
+
+	best_num = float(len(best))
+	best_avg = np.mean(best)
+	best_std = np.std(best)
+	
+	alte_num = float(len(alte))
+	alte_avg = np.mean(alte)
+	alte_std = np.std(alte)
+
+	# diff_std = np.sqrt( ( (best_num-1)*(best_std**2) + (alte_num-1)*(alte_std**2) / (best_num+alte_num-2) ) * ( 1/best_num +  1/alte_num) )
+	diff_std = np.sqrt( best_avg*(1-best_avg)/best_num + alte_avg*(1-alte_avg)/alte_num )
+
+	t = np.abs( (best_avg-alte_avg-diff_tol) / diff_std )
+
+	return t > z_value 
 
 
 
