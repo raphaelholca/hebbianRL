@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=20, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr=0.01, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=50, block_feedback=False, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -44,6 +44,7 @@ class Network:
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
 				batch_size (int, optional): mini-batch size. Default: 20
+				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus)
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or 'None' for random initialization. Default: None
@@ -66,6 +67,7 @@ class Network:
 		self.exploration	= exploration
 		self.pdf_method 	= pdf_method
 		self.batch_size 	= batch_size
+		self.block_feedback = block_feedback
 		self.protocol		= protocol
 		self.classifier		= classifier
 		self.init_file		= init_file
@@ -126,11 +128,6 @@ class Network:
 			for e in range(self.n_epi_tot):
 				self._e = e
 
-				# if e==self.n_epi_crit:
-				# 	self.lr = 0.0005 ## <-------------------------------------------------------------------careful!-----------------------------------------------
-				# elif e==0:
-				# 	self.lr = 0.005 ## <-------------------------------------------------------------------careful!-----------------------------------------------
-
 				#save weights just after the end of statistical pre-training
 				if e==self.n_epi_crit:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
@@ -173,6 +170,9 @@ class Network:
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release(predicted_reward, reward)
 						
+					#block feedback
+					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
+
 					#update weights
 					hid_W = self._learning_step(b_images, self.hid_neurons, self.hid_W, lr=self.lr, dopa=dopa_hid)
 					if self._train_class_layer: 
@@ -180,12 +180,6 @@ class Network:
 
 					correct += np.sum(out_greedy == b_labels)
 
-					# sorted_activ = np.mean(np.sort(self.hid_neurons),0)
-					# print sorted_activ[-1], sorted_activ[-2], sorted_activ[-3]
-					# print np.min(np.max(self.hid_neurons,1))
-					# if sorted_activ[-1]<0.68: import pdb; pdb.set_trace()
-					# print np.argmax(self.hid_neurons,1), np.mean(np.max(self.hid_neurons,1))
-					# import pdb; pdb.set_trace()
 				#assess performance
 				self._assess_perf_progress(correct/n_images, images_dict, labels_dict)
 
