@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'dNeut' 		: 0.0,
 					'dLow' 			: 0.0,
 					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_25n_t0-2_lr0-0005_exc_1-5',
+					'name' 			: 'pypet_wideXPLR_gabor',
 					'n_runs' 		: 5,		
 					'n_epi_crit'	: 20,				
 					'n_epi_dopa'	: 20,#80,#
@@ -32,7 +32,7 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					'A' 			: 1.2,
 					'lr'			: 0.0005,#0.005,
 					'batch_size' 	: 50,
-					'n_hid_neurons'	: 25,#16,#49,#
+					'n_hid_neurons'	: 16,#49,#
 					'init_file'		: '',
 					'lim_weights'	: False,
 					'noise_std'		: 0.2,
@@ -45,11 +45,11 @@ parameter_dict = {	'dHigh' 		: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [-1.00, 0.000, 1.000, 2.000, 3.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #
-					'dNeut'			: [-0.40, -0.30, -0.20, -0.10, -0.00], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
+explore_dict = {	'dHigh'			: [-1.000, +0.000, +1.000, +2.000, +3.000], #[-1.00, 0.000, 1.000, 2.000, 3.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #
+					'dNeut'			: [-0.500, -0.200, -0.100, +0.000, +0.100], #[-0.40, -0.30, -0.20, -0.10, -0.00], #[-0.10, -0.08, -0.06, -0.04, -0.02], #
 					
-					'dMid'			: [0.000, 0.100, 0.200, 0.300, 0.400], #[0.000, 0.001, 0.005, 0.010, 0.050], #
-					'dLow'			: [0.000, -0.80, -1.60, -2.40, -3.20]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #
+					'dMid'			: [-0.010, -0.001, +0.000, +0.001, +0.010], #[0.000, 0.100, 0.200, 0.300, 0.400], #[0.000, 0.001, 0.005, 0.010, 0.050], #
+					'dLow'			: [-1.500, -1.000, -0.500, +0.000, +0.500]  #[0.000, -0.80, -1.60, -2.40, -3.20]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #
 				}
 
 """ load and pre-process images """
@@ -73,7 +73,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter
 
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
-pp.check_dir(save_path, overwrite=False)
+pp.check_dir(save_path, overwrite=True)
 print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 print_dict.update({'images_params':images_params})
@@ -95,20 +95,20 @@ explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys()))
 explore_dict['name'] = pp.set_run_names(explore_dict, parameter_dict['name'])
 traj.f_explore(explore_dict)
 
-""" launch simulation with pypet for parameter exploration """
-tic = time.time()
-env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
-toc = time.time()
+# """ launch simulation with pypet for parameter exploration """
+# tic = time.time()
+# env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
+# toc = time.time()
 
-print "\n\nplotting results"
-pp.faceting(save_path)
-name_best = pp.plot_results(folder_path=save_path)
-pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
+# print "\n\nplotting results"
+# pp.faceting(save_path)
+# name_best = pp.plot_results(folder_path=save_path)
+# pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
 
-print '\nrun name:\t' + parameter_dict['name']
-print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
-print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
-print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
+# print '\nrun name:\t' + parameter_dict['name']
+# print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
+# print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
+# print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
 
 
 

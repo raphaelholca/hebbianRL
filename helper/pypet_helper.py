@@ -213,20 +213,22 @@ def launch_assess(save_path, file_name, images, labels, curve_method='with_noise
 	best_net = pickle.load(net_file)
 	an.assess(best_net, curve_method=curve_method, slope_binned=slope_binned, save_path=os.path.join(save_path, 'best_net'))
 
-def bar_plot(best_param_all, best_perf_all):
+def bar_plot(best_param_all, best_perf_all=None):
 	""" best release properties bar plot """
 	order_bar 	= ['dMid',	'dNeut',	'dHigh',	'dLow']
-	normalize = False #normalize bar height so dHigh=1 ##TODO
-	ordered = True #order bar by best performance
+	n_measures = len(best_param_all['dHigh'])
+	normalize = False #normalize bar height so dHigh=1
+	ordered = False #order bar by best performance
 
-	num_colors = 14
-	color_list = [plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)]
-	color_gabor = color_list[1]
+	num_colors = 20
+	color_list = np.array([plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)])
+	color_cycle_idx = np.arange(n_measures)%5 
 	trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 
-	# if normalize:
-	# 	best_gabor = np.array(best_gabor)/max(best_gabor)
-	if ordered:
+	if normalize:
+		for param in order_bar:
+			best_param_all[param] = best_param_all[param]/best_param_all['dHigh']
+	if ordered and best_perf_all is not None:
 		sorter = best_perf_all.argsort()[::-1]
 		best_perf_all = best_perf_all[sorter]
 		for param in order_bar:
@@ -234,12 +236,10 @@ def bar_plot(best_param_all, best_perf_all):
 
 	fig, ax = plt.subplots(figsize=(7.5,4))
 	fig.patch.set_facecolor('white')
-	n_measures = len(best_param_all['dHigh'])
 	width = 0.8/n_measures
-	grey = (0.6, 0.6, 0.6)
 
 	for idx, param in enumerate(order_bar):
-		ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[1], color=color_list[0])
+		ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
 
 	#x-axis
 	ax.set_xticks(np.arange(len(order_bar))+0.4)
@@ -248,11 +248,9 @@ def bar_plot(best_param_all, best_perf_all):
 	ax.xaxis.set_ticks_position('bottom')
 	ax.spines['top'].set_visible(False)
 	ax.spines['bottom'].set_visible(False)
-	ax.hlines(0, 0, 4)
+	# ax.hlines(0, 0, 4)
 
 	#y-axis
-	# ax.set_ylim(np.ceil(np.min(best_gabor)), np.ceil(np.max(best_gabor)))
-	# ax.set_yticks(np.arange(np.ceil(np.min(best_gabor)), np.ceil(np.max(best_gabor))+1)[::2])
 	ax.set_ylabel('VTA value', fontsize=18)
 	ax.yaxis.set_ticks_position('left')
 	ax.spines['right'].set_visible(False)
@@ -260,7 +258,6 @@ def bar_plot(best_param_all, best_perf_all):
 	#both axes
 	ax.tick_params(axis='both', which='major', direction='out', width=2, labelsize=18)
 	fig.set_tight_layout(True)
-	fig.savefig(os.path.join('plots/param_xplr_faceting', 'release.pdf'), format='pdf')
 
 	return fig
 
@@ -350,20 +347,12 @@ def faceting(folder_path):
 			t, prob = stats.ttest_ind(best_perf, perc_correct_all[arg, :], equal_var=True) #two-sided t-test with independent samples
 			if prob > t_threshold: #not statistically significantly different
 				arg_best_all = np.append(arg_best_all, arg)
-		best_param_all = {}
-		for k in param.keys():
-			best_param_all[k] = param[k][arg_best_all]
-		best_perf_all = perc_correct[arg_best_all]
-
 	else: #...within [threshold]% of best performance
 		arg_best_all = np.argwhere(perc_correct >= np.max(perc_correct)-threshold*np.max(perc_correct))
-		best_param_all = {}
-		for k in param.keys():
-			best_param_all[k] = param[k][arg_best_all]
-		best_perf_all = perc_correct[arg_best_all]
-	
-
-		import pdb; pdb.set_trace()
+	best_param_all = {}
+	for k in param.keys():
+		best_param_all[k] = np.hstack(param[k][arg_best_all])
+	best_perf_all = np.hstack(perc_correct[arg_best_all])
 
 	""" faceting plot """
 	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
