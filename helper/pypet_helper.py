@@ -218,17 +218,20 @@ def bar_plot(best_param_all, best_perf_all=None):
 	order_bar 	= ['dMid',	'dNeut',	'dHigh',	'dLow']
 	n_measures = len(best_param_all['dHigh'])
 	normalize = False #normalize bar height so dHigh=1
-	ordered = False #order bar by best performance
+	order_perf = False #order bar by best performance
+	order_value = True #order bar by VTA value
 
 	num_colors = 20
 	color_list = np.array([plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)])
 	color_cycle_idx = np.arange(n_measures)%5 
+	grey_1 = (0.8, 0.8, 0.8, 1.0)
+	grey_2 = (0.3, 0.3, 0.3, 1.0)
 	trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 
 	if normalize:
 		for param in order_bar:
 			best_param_all[param] = best_param_all[param]/best_param_all['dHigh']
-	if ordered and best_perf_all is not None:
+	if order_perf and best_perf_all is not None:
 		sorter = best_perf_all.argsort()[::-1]
 		best_perf_all = best_perf_all[sorter]
 		for param in order_bar:
@@ -239,7 +242,10 @@ def bar_plot(best_param_all, best_perf_all=None):
 	width = 0.8/n_measures
 
 	for idx, param in enumerate(order_bar):
-		ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
+		if order_value:
+			ax.bar(np.arange(n_measures)*width+idx, np.sort(best_param_all[param]+1e-10), width=width, edgecolor=grey_1, color=grey_1)
+		else:
+			ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
 
 	#x-axis
 	ax.set_xticks(np.arange(len(order_bar))+0.4)
