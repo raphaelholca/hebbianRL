@@ -213,6 +213,52 @@ def launch_assess(save_path, file_name, images, labels, curve_method='with_noise
 	best_net = pickle.load(net_file)
 	an.assess(best_net, curve_method=curve_method, slope_binned=slope_binned, save_path=os.path.join(save_path, 'best_net'))
 
+def bar_plot(best_param_all):
+	""" best release properties bar plot """
+	order_bar 	= ['dMid',	'dNeut',	'dHigh',	'dLow']
+	normalize = False
+
+	num_colors = 14
+	color_list = [plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)]
+	color_gabor = color_list[1]
+	color_digit = color_list[6]
+	trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
+
+	if normalize:
+		best_gabor = np.array(best_gabor)/max(best_gabor)
+		best_digit = np.array(best_digit)/max(best_digit)
+
+	fig, ax = plt.subplots(figsize=(7.5,4))
+	fig.patch.set_facecolor('white')
+	width=0.4
+	grey = (0.6, 0.6, 0.6)
+
+	for param in order_bar:
+		for value in len(best_param_all[param]):
+			best_param_all[param][value]
+			ax.bar(np.arange(len(best_gabor))+width/8, best_gabor, width=width, edgecolor=color_gabor, color=color_gabor)
+
+	# #x-axis
+	# ax.set_xticks(np.arange(len(order_bar))+0.5)
+	# ax.set_xticklabels([trans[order_bar[i]] for i in range(len(order_bar))], fontsize=18)
+	# ax.set_xlabel('reward prediction error', fontsize=18)
+	# ax.xaxis.set_ticks_position('bottom')
+	# ax.spines['top'].set_visible(False)
+	# ax.spines['bottom'].set_visible(False)
+	# ax.hlines(0, 0, len(best_gabor))
+
+	# #y-axis
+	# # ax.set_ylim(np.ceil(np.min(best_gabor)), np.ceil(np.max(best_gabor)))
+	# ax.set_yticks(np.arange(np.ceil(np.min(best_gabor)), np.ceil(np.max(best_gabor))+1)[::2])
+	# ax.set_ylabel('VTA value', fontsize=18)
+	# ax.yaxis.set_ticks_position('left')
+	# ax.spines['right'].set_visible(False)
+
+	# #both axes
+	# ax.tick_params(axis='both', which='major', direction='out', width=2, labelsize=18)
+	# fig.set_tight_layout(True)
+	# fig.savefig(os.path.join('plots/param_xplr_faceting', 'release.pdf'), format='pdf')
+
 def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	print "importing data..."
 	traj = pypet.load_trajectory(traj_name, filename=os.path.join(folder_path, file_name+'.hdf5'), force=True)
@@ -255,7 +301,7 @@ def faceting(folder_path):
 	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
-	stat_test = True #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
+	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
 	threshold = 0.001
 	t_threshold = 0.10#0.05
 	vmin=0.80#1
@@ -311,6 +357,8 @@ def faceting(folder_path):
 			best_param_all[k] = param[k][arg_best_all]
 		best_perf_all = perc_correct[arg_best_all]
 	
+
+		import pdb; pdb.set_trace()
 
 	""" faceting plot """
 	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
@@ -388,6 +436,9 @@ def faceting(folder_path):
 	fig.text(0.025, 0.975, 'best perf: '+best_perf_str, va='center', fontsize=font_small, weight='semibold')
 
 	fig.savefig(os.path.join(folder_path, 'faceting.pdf'), format='pdf')
+
+	fig_bar = bar_plot(best_param_all)
+	fig_bar.savefig(os.path.join(folder_path, 'release_values.pdf'), format='pdf')
 
 
 

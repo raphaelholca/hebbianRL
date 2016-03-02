@@ -482,10 +482,11 @@ def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
 	alte_avg = np.mean(alte)
 	alte_std = np.std(alte)
 
-	# diff_std = np.sqrt( ( (best_num-1)*(best_std**2) + (alte_num-1)*(alte_std**2) / (best_num+alte_num-2) ) * ( 1/best_num +  1/alte_num) )
-	diff_std = np.sqrt( best_avg*(1-best_avg)/best_num + alte_avg*(1-alte_avg)/alte_num )
+	diff_std = np.sqrt( ( (best_num-1)*(best_std**2) + (alte_num-1)*(alte_std**2) / (best_num+alte_num-2) ) * ( 1/best_num +  1/alte_num) )
+	# diff_std = np.sqrt( best_avg*(1-best_avg)/best_num + alte_avg*(1-alte_avg)/alte_num )
 
 	t = np.abs( (best_avg-alte_avg-diff_tol) / diff_std )
+	# import pdb; pdb.set_trace()
 
 	return t > z_value 
 
