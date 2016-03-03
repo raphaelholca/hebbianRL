@@ -459,12 +459,12 @@ class Network:
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
 		if self.classifier=='neural' or self._e>=self.n_epi_crit:
-			print_perf += 'train performance: ' + str(np.round(perf_train*100,1)) + '%'
+			print_perf += 'train performance: ' + str(np.round(perf_train*100,2)) + '%'
 		else:
 			print_perf += 'train performance: ' + '-N/A-'
 		if self.test_each_epi:
 			perf_test = self.test(images_dict, labels_dict, during_training=True)
-			print_perf += ' ; test performance: ' + str(np.round(perf_test*100,1)) + '%'
+			print_perf += ' ; test performance: ' + str(np.round(perf_test*100,2)) + '%'
 		if self.verbose: print print_perf
 
 		self.perf_train_prog[self._r, self._e] = perf_train
