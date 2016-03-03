@@ -29,6 +29,7 @@ ori_to_tests = np.array([0.])
 net = pickle.load(open(os.path.join('output', net_name, 'Network'), 'r'))
 
 #re-initialize output weights
+np.random.seed(net.seed)##
 net.out_W = (np.random.random_sample(size=(net.n_hid_neurons, net.n_out_neurons))/1000+1.0)/net.n_hid_neurons
 
 n_runs_network = net.n_runs 
@@ -37,7 +38,6 @@ net.n_runs 			= 1
 net.n_epi_crit		= 5
 net.n_epi_dopa		= 0
 net.lr_hid 			= 0
-# net.lr_out 			= 0
 net.init_file 		= 'NO_INIT'
 net.test_each_epi 	= False
 net.verbose 	 	= True

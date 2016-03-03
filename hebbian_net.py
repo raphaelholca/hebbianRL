@@ -201,7 +201,7 @@ class Network:
 			returns:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
-
+		np.random.seed(self.seed)
 		images_train, images_test = np.copy(images_dict['train']), np.copy(images_dict['test'])
 		labels_train, labels_test = labels_dict['train'], labels_dict['test']
 
