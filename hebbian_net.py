@@ -48,7 +48,7 @@ class Network:
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
-				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or 'None' for random initialization. Default: None
+				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
@@ -273,7 +273,9 @@ class Network:
 
 	def _init_weights(self):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
-		if self.init_file != '' and self.init_file != None:
+		if self.init_file == 'NO_INIT':
+			pass
+		elif self.init_file != '' and self.init_file != None:
 			self._init_weights_file()
 		else:
 			self._init_weights_random()

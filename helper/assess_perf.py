@@ -36,8 +36,9 @@ n_runs_network = net.n_runs
 net.n_runs 			= 1
 net.n_epi_crit		= 5
 net.n_epi_dopa		= 0
-# net.lr_hid 			= 0
-net.lr_out 			= 0
+net.lr_hid 			= 0
+# net.lr_out 			= 0
+net.init_file 		= 'NO_INIT'
 net.test_each_epi 	= False
 net.verbose 	 	= True
 
