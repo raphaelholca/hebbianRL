@@ -20,10 +20,10 @@ hebbian_net = reload(hebbian_net)
 ex = reload(ex)
 an = reload(an)
 
-net_name = 'gabor_test_all_ori_3'
+net_name = 'gabor_test_all_ori_2'
 # ori_to_tests = np.array([-60., -20., -10., -5., 0., +5., +10., +20., +60.])
-# ori_to_tests = np.array([-60., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +60.])
-ori_to_tests = np.array([-20., 0.])
+ori_to_tests = np.array([-60., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +60.])
+# ori_to_tests = np.array([-20., 0.])
 verbose = True
 
 #load net from file
@@ -53,7 +53,7 @@ for i_ori, ori in enumerate(ori_to_tests):
 	#load and pre-process training and testing images
 	gabor_params = net.images_params
 	gabor_params['target_ori'] = target_ori_ori + ori	
-	if verbose: print "test orientation: " + str(gabor_params['target_ori'])
+	if verbose: print "test orientation: " + str(ori) + " (" + str(gabor_params['target_ori']) + ")"
 	
 	np.random.seed(0)
 	images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
@@ -81,24 +81,28 @@ print
 print perf_at_ori
 
 """ plot of performance for different orientations """
-# fig, ax = plt.subplots()
+fig, ax = plt.subplots()
 			
-# ax.scatter(ori_to_tests, np.mean(perf_at_ori,0), lw=2)
+ax.scatter(np.ones_like(perf_at_ori)*ori_to_tests, perf_at_ori, alpha=0.2)
+ax.errorbar(ori_to_tests, np.mean(perf_at_ori,0), yerr=np.std(perf_at_ori,0)/np.sqrt(n_runs_ori), marker='o', ms=5, ls='-', lw=1.5, c='r', mfc='r', mec='r', ecolor='r', mew=1)
+# ax.plot(ori_to_tests, np.mean(perf_at_ori,0), )
 
-# # ax.vlines(0, 0, 1, colors=u'k', linewidth=1.5, linestyle=':')
+# ax.scatter(ori_to_tests, np.mean(perf_at_ori,0), facecolor='r')
 
-# fig.patch.set_facecolor('white')
-# ax.spines['right'].set_visible(False)
-# ax.spines['top'].set_visible(False)
-# ax.xaxis.set_ticks_position('bottom')
-# ax.yaxis.set_ticks_position('left')
-# ax.set_xlabel('angle from target (deg)', fontsize=18)
-# ax.set_ylabel('% correct', fontsize=18)
-# ax.set_xlim([-90,90])
-# ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
-# plt.tight_layout()
+# ax.vlines(0, 0, 1, colors=u'k', linewidth=1.5, linestyle=':')
 
-# plt.savefig(os.path.join('output', net_name, 'perf_all_ori.pdf'))
+fig.patch.set_facecolor('white')
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+ax.set_xlabel('angle from target (deg)', fontsize=18)
+ax.set_ylabel('% correct', fontsize=18)
+ax.set_xlim([-90,90])
+ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
+plt.tight_layout()
+
+plt.savefig(os.path.join('output', net_name, 'perf_all_ori.pdf'))
 
 
 
