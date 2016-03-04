@@ -66,6 +66,9 @@ def assess(net, curve_method='with_noise', slope_binned=False, show_W_act=True, 
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
+	""" plot performance at various orientations """
+	if net.protocol=='gabor': perf_all_ori(net, save_path=save_path)
+
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
@@ -461,7 +464,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	# ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([50.,100.])
+	ax.set_ylim([70.,100.])
 	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, np.clip(n_epi_plot/10, 1, 10000)))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
@@ -471,7 +474,112 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.close(fig)	
 
 
+def perf_all_ori(net, save_path=''):
+	""" assess performance of network at various orientations """
+	# ori_to_tests = np.array([-60., -20., -10., -5., 0., +5., +10., +20., +60.])
+	ori_to_tests = np.array([-60., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +60.])
+	# ori_to_tests = np.array([-20., -5., 0.])
+	verbose = True
 
+	if save_path=='':
+		save_path=os.path.join('output', net.name)
+
+	#save original variables:
+	n_runs_ori 			= net.n_runs
+	n_epi_crit_ori		= net.n_epi_crit
+	n_epi_dopa_ori 		= net.n_epi_dopa
+	lr_hid_ori 			= net.lr_hid
+	lr_out_ori			= net.lr_out
+	init_file_ori		= net.init_file
+	test_each_epi_ori	= net.test_each_epi
+	verbose_ori			= net.verbose
+	target_ori_ori 		= net.images_params['target_ori']
+	hid_W_ori 			= np.copy(net.hid_W)
+	out_W_ori 			= np.copy(net.out_W)
+	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
+	out_W_trained_ori 	= np.copy(net.out_W_trained)
+	#set training variables:
+	net.n_runs 			= 1
+	net.n_epi_crit		= 1
+	net.n_epi_dopa		= 0
+	net.lr_hid 			= 0
+	net.lr_out 			*= 100
+	net.init_file 		= 'NO_INIT'
+	net.test_each_epi 	= False
+	net.verbose 	 	= False
+
+	perf_at_ori = np.zeros((n_runs_ori, len(ori_to_tests)))
+
+	#test each orientation
+	for i_ori, ori in enumerate(ori_to_tests):
+		if net.verbose: print "\n----------------------------------------------------------------------------------------"
+		else: print
+		
+		#load and pre-process training and testing images
+		gabor_params = net.images_params
+		gabor_params['target_ori'] = target_ori_ori + ori	
+		if verbose: print "test orientation: " + str(ori) + " (" + str(gabor_params['target_ori']) + ")"
+		
+		np.random.seed(0)
+		images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
+																	A 				= net.A,
+																	verbose 		= net.verbose,
+																	gabor_params 	= gabor_params
+																	)
+
+		#test each run
+		for i_run in range(n_runs_ori):
+			#re-initialize output weights
+			np.random.seed(0)
+			net.out_W = (np.random.random_sample(size=(net.n_hid_neurons, net.n_out_neurons))/1000+1.0)/net.n_hid_neurons
+
+			#load weights for each runs
+			net.hid_W = hid_W_trained_ori[i_run,:,:]
+
+			#train net
+			net.train(images_dict, labels_dict, images_params)
+
+			#test net
+			perf_at_ori[i_run, i_ori] = net.test(images_dict, labels_dict, during_training=True)
+
+			if verbose: print "performance: " + str(perf_at_ori[i_run, i_ori])
+
+	print
+	print perf_at_ori
+
+	#reset changed variables
+	net.n_runs 			= n_runs_ori
+	net.n_epi_crit		= n_epi_crit_ori
+	net.n_epi_dopa 		= n_epi_dopa_ori
+	net.lr_hid 			= lr_hid_ori
+	net.lr_out			= lr_out_ori
+	net.init_file		= init_file_ori
+	net.test_each_epi	= test_each_epi_ori
+	net.verbose			= verbose_ori
+	net.hid_W 			= np.copy(hid_W_ori)
+	net.out_W 			= np.copy(out_W_ori)
+	net.hid_W_trained 	= np.copy(hid_W_trained_ori)
+	net.out_W_trained  	= np.copy(out_W_trained_ori)
+	net.images_params['target_ori'] = target_ori_ori 
+
+	""" plot of performance for different orientations """
+	fig, ax = plt.subplots()
+				
+	ax.scatter(np.ones_like(perf_at_ori)*ori_to_tests, perf_at_ori, alpha=0.2)
+	ax.errorbar(ori_to_tests, np.mean(perf_at_ori,0), yerr=np.std(perf_at_ori,0)/np.sqrt(n_runs_ori), marker='o', ms=5, ls='-', lw=1.5, c='r', mfc='r', mec='r', ecolor='r', mew=1)
+
+	fig.patch.set_facecolor('white')
+	ax.spines['right'].set_visible(False)
+	ax.spines['top'].set_visible(False)
+	ax.xaxis.set_ticks_position('bottom')
+	ax.yaxis.set_ticks_position('left')
+	ax.set_xlabel('angle from target (deg)', fontsize=18)
+	ax.set_ylabel('% correct', fontsize=18)
+	ax.set_xlim([-90,90])
+	ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
+	plt.tight_layout()
+
+	plt.savefig(os.path.join(save_path, 'perf_all_ori.pdf'))
 
 
 

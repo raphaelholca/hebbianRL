@@ -136,7 +136,6 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 			ax.tick_params(axis='both', which='major', direction='out', labelsize=16)
 			plt.tight_layout()
 		
-		if plot:
 			plt.savefig(os.path.join(save_path, 'TCs', 'TCs_' + name + '_' + str(r).zfill(3) + '.pdf'))
 			plt.close(fig)
 
