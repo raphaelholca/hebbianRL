@@ -89,7 +89,7 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 		print '!!! invalid method - using \'basic\' method !!!'
 		curve_method='basic'
 
-	noise = images_params['noise']
+	noise = 0.0 #images_params['noise']
 	noise_trial = 10#100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
@@ -294,8 +294,8 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 			ax.errorbar(bin_centers, post_slopes_mean, yerr=post_slopes_ste, marker='o', ms=10, ls='-', lw=3, c='r', mfc='r', mec='r', ecolor='r', mew=2, label='reward-based')
 			
 			#marker of statistical significance
-			Y = np.ones(np.sum(stat_signif))*np.nanmax(post_slopes_mean)*1.20
-			ax.scatter(bin_centers[stat_signif], Y, marker='*', c='k')
+			# Y = np.ones(np.sum(stat_signif))*np.nanmax(post_slopes_mean)*1.20
+			# ax.scatter(bin_centers[stat_signif], Y, marker='*', c='k')
 		else:
 			ax.scatter(pre_dist, pre_slopes, c='b')
 			ax.scatter(post_dist, post_slopes, c='r')
@@ -306,6 +306,10 @@ def slope_difference(pre_dist, pre_slopes, post_dist, post_slopes, name, plot=Tr
 		ax.yaxis.set_ticks_position('left')
 		if slope_binned: ax.set_xticks(bin_centers)
 		ax.set_xlim([-50,50])
+		if slope_binned:
+			ax.set_ylim([np.nanmax(post_slopes_mean)*-0.20, np.nanmax(post_slopes_mean)*1.20])
+		else:
+			ax.set_ylim([np.nanmax(post_slopes)*-0.20, np.nanmax(post_slopes)*1.20])
 		ax.set_xlabel('preferred orientation-trained orientation (degrees)', fontsize=18)
 		ax.set_ylabel('slope at TO', fontsize=18)
 		ax.tick_params(axis='both', which='major', direction='out', labelsize=16)

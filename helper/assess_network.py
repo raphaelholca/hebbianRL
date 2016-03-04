@@ -121,21 +121,35 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
-		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
+		# RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
+		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
 	
-		nbins = 21
-		h_mean, bin_edge = np.histogram(np.hstack(net.RF_info['pref_ori']), bins=nbins, range=(-90,+90))
-		bin_mid = (bin_edge + ((180./21.)/2.))[:-1]
-		fig = plot_hist(h_mean/net.n_runs, map(str, map(int, bin_mid)))
-		
-		# n_runs = np.size(RF_info['pref_ori'],0)
+		##method 1
+		# nbins = 21
+		# h_mean, bin_edge = np.histogram(np.hstack(net.RF_info['pref_ori']), bins=nbins, range=(-90,+90))
+		# bin_mid = (bin_edge + ((180./21.)/2.))[:-1]
+		# fig = plot_hist(h_mean/net.n_runs, map(str, map(int, bin_mid)))
+
+		##method 2
+		bin_edge = np.arange(-90,91,5)[1::2]
+		bin_mid = np.arange(-80,81,5)[::2]
+		bin_num = len(bin_edge)-1
+		n_runs = np.size(net.RF_info['pref_ori'],0)
+		h_all = np.zeros((n_runs, bin_num))
+		for r in range(n_runs):
+			h_all[r, :] = np.histogram(net.RF_info['pref_ori_naive'][r,:], bin_edge)[0]
+		h_mean = np.mean(h_all,0)
+		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
+		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+
+		##method 3
+		# n_runs = np.size(net.RF_info['pref_ori'],0)
 		# bin_edge = np.arange(-90,91,5)[1::2]
 		# bin_mid = np.arange(-90,91,5)[::2]
 		# bin_num = len(bin_edge)-1
 		# h_all = np.zeros((n_runs, bin_num))
 		# for r in range(n_runs):
-		# 	h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
+		# 	h_all[r, :] = np.histogram(net.RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
 		# h_mean = np.mean(h_all,0)
 		# h_ste = np.std(h_all,0)/np.sqrt(n_runs)
 		# fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
@@ -499,6 +513,10 @@ def perf_all_ori(net, save_path=''):
 	out_W_ori 			= np.copy(net.out_W)
 	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
 	out_W_trained_ori 	= np.copy(net.out_W_trained)
+	perf_train_prog_ori = np.copy(net.perf_train_prog)
+	perf_test_prog_ori 	= np.copy(net.perf_test_prog)
+	perf_dict_ori 		= net.perf_dict.copy()
+	RF_info_ori 		= net.RF_info.copy()
 	
 	#set training variables:
 	net.n_runs 			= 1
@@ -562,6 +580,10 @@ def perf_all_ori(net, save_path=''):
 	net.out_W 			= np.copy(out_W_ori)
 	net.hid_W_trained 	= np.copy(hid_W_trained_ori)
 	net.out_W_trained  	= np.copy(out_W_trained_ori)
+	net.perf_train_prog = np.copy(perf_train_prog_ori)
+	net.perf_test_prog 	= np.copy(perf_test_prog_ori)
+	net.perf_dict 		= perf_dict_ori.copy()
+	net.RF_info 		= RF_info_ori.copy()
 	net.images_params['target_ori'] = target_ori_ori 
 
 	""" plot of performance for different orientations """
