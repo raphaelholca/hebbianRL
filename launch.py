@@ -24,10 +24,10 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dNeut 			= -0.2,#-0.08,#
 							dLow 			= -1.6,#-0.4,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_long',
+							name 			= 'gabor_long_2',
 							n_runs 			= 100,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 10,				
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 20,				
 							t				= 0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -43,7 +43,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							classifier		= 'neural',
 							test_each_epi	= True,
 							verbose			= True,
-							seed 			= 977 #np.random.randint(1000)
+							seed 			= 978 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """

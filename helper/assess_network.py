@@ -123,22 +123,23 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 	elif net.protocol=='gabor':
 		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
 		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
-		# bin_edge = np.arange(-90,91,2.5)[::2]
-		# bin_mid = np.arange(-90,91,2.5)[1::2]
-		# bin_edge = np.arange(-90,91,10)[::2]
-		# bin_mid = np.arange(-90,91,10)[1::2]
-		bin_edge = np.arange(-90,91,5)[1::2]
-		bin_mid = np.arange(-90,91,5)[::2]
-		bin_num = len(bin_edge)-1
-
-		n_runs = np.size(RF_info['pref_ori'],0)
-		h_all = np.zeros((n_runs, bin_num))
-		for r in range(n_runs):
-			h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
-		h_mean = np.mean(h_all,0)
-		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
-
-		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+	
+		nbins = 21
+		h_mean, bin_edge = np.histogram(np.hstack(net.RF_info['pref_ori']), bins=nbins, range=(-90,+90))
+		bin_mid = (bin_edge + ((180./21.)/2.))[:-1]
+		fig = plot_hist(h_mean/net.n_runs, map(str, map(int, bin_mid)))
+		
+		# n_runs = np.size(RF_info['pref_ori'],0)
+		# bin_edge = np.arange(-90,91,5)[1::2]
+		# bin_mid = np.arange(-90,91,5)[::2]
+		# bin_num = len(bin_edge)-1
+		# h_all = np.zeros((n_runs, bin_num))
+		# for r in range(n_runs):
+		# 	h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
+		# h_mean = np.mean(h_all,0)
+		# h_ste = np.std(h_all,0)/np.sqrt(n_runs)
+		# fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+		
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
@@ -498,6 +499,7 @@ def perf_all_ori(net, save_path=''):
 	out_W_ori 			= np.copy(net.out_W)
 	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
 	out_W_trained_ori 	= np.copy(net.out_W_trained)
+	
 	#set training variables:
 	net.n_runs 			= 1
 	net.n_epi_crit		= 1
