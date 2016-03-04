@@ -20,11 +20,11 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
-							dMid 			= 0.2,#0.0,#
+							dMid 			= 1.0,#0.0,#
 							dNeut 			= -0.2,#-0.08,#
-							dLow 			= -0.8,#-0.4,#
+							dLow 			= -1.6,#-0.4,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_test_all_ori_4',
+							name 			= 'gabor_long',
 							n_runs 			= 100,		
 							n_epi_crit		= 10,				
 							n_epi_dopa		= 10,				
