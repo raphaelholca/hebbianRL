@@ -19,29 +19,31 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 		: 0.0,
-					'dMid' 			: 0.0,
-					'dNeut' 		: 0.0,
-					'dLow' 			: 0.0,
-					'protocol'		: 'gabor',#'digit',#
-					'name' 			: 'pypet_gabor_noExcent_2',
-					'n_runs' 		: 40,#3,#
-					'n_epi_crit'	: 20,				
-					'n_epi_dopa'	: 20,#50,#
-					't'				: 0.1,#0.1,#
-					'A' 			: 1.2,
-					'lr'			: 0.005,#0.005,#
-					'batch_size' 	: 50,
-					'n_hid_neurons'	: 16,#49,#
-					'init_file'		: '',
-					'lim_weights'	: False,
-					'noise_std'		: 0.2,
-					'exploration'	: True,
-					'pdf_method' 	: 'fit',
-					'classifier'	: 'neural',
-					'test_each_epi'	: False,
-					'verbose'		: False,
-					'seed' 			: 977 #np.random.randint(1000)
+parameter_dict = {	'dHigh' 			: 0.0,
+					'dMid' 				: 0.0,
+					'dNeut' 			: 0.0,
+					'dLow' 				: 0.0,
+					'protocol'			: 'gabor',#'digit',#
+					'name' 				: 'pypet_gabor_noExcent_2',
+					'n_runs' 			: 50,#3,#
+					'n_epi_crit'		: 20,				
+					'n_epi_dopa'		: 20,#50,#
+					't'					: 0.1,#0.1,#
+					'A' 				: 1.2,
+					'lr_hid'			: 5e-3,
+					'lr_out'			: 5e-7,
+					'batch_size' 		: 50,
+					'block_feedback'	: False,
+					'n_hid_neurons'		: 16,#49,#
+					'init_file'			: '',
+					'lim_weights'		: False,
+					'noise_std'			: 0.2,
+					'exploration'		: True,
+					'pdf_method' 		: 'fit',
+					'classifier'		: 'neural',
+					'test_each_epi'		: False,
+					'verbose'			: False,
+					'seed' 				: 978 #np.random.randint(1000)
 					}
 
 """ explored parameters """
