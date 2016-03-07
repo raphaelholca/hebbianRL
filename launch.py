@@ -25,9 +25,9 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#
 							dLow 			= -0.4,#-0.8,#
 							protocol		= 'digit',#'gabor',#
 							name 			= 'digit_long',
-							n_runs 			= 2,		
-							n_epi_crit		= 10,				
-							n_epi_dopa		= 10,				
+							n_runs 			= 20,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 20,				
 							t				= 0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,

@@ -570,9 +570,6 @@ def perf_all_ori(net, save_path=''):
 
 			if verbose: print "performance: " + str(perf_at_ori[i_run, i_ori])
 
-	print
-	print perf_at_ori
-
 	#reset changed variables
 	net.n_runs 			= n_runs_ori
 	net.n_epi_crit		= n_epi_crit_ori
@@ -592,6 +589,10 @@ def perf_all_ori(net, save_path=''):
 	net.RF_info 		= RF_info_ori.copy()
 	net.images_params['target_ori'] = target_ori_ori 
 
+	#add computed performance as network variable and save network to file again
+	net.perf_at_ori = {'perf':perf_at_ori, 'ori':ori_to_tests}
+	pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
+
 	""" plot of performance for different orientations """
 	fig, ax = plt.subplots()
 				
@@ -610,6 +611,7 @@ def perf_all_ori(net, save_path=''):
 	plt.tight_layout()
 
 	plt.savefig(os.path.join(save_path, 'perf_all_ori.pdf'))
+	plt.close(fig)
 
 
 
