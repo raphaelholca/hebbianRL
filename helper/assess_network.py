@@ -12,7 +12,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='with_noise', slope_binned=False, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -69,7 +69,7 @@ def assess(net, curve_method='with_noise', slope_binned=False, show_W_act=True, 
 	""" plot performance at various orientations """
 	if net.protocol=='gabor': perf_all_ori(net, save_path=save_path)
 
-def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
+def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -93,14 +93,20 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	n_neurons = np.size(W,2)
 
 	RFproba = np.zeros((n_runs,n_neurons,n_bins))
+	RFproba_naive = np.zeros((n_runs,n_neurons,n_bins))
 	RFclass = np.zeros((n_runs,n_bins))
 	RFselec = np.zeros((n_runs,n_bins))
 	for r in range(n_runs):
 		if verbose: print 'run: ' + str(r+1)
 		mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
+		if W_naive is not None: 
+			mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r]),1)
 		for n in range(n_neurons):
 			RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 			RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
+			if W_naive is not None: 
+				RFproba_naive[int(r),n,:] = np.histogram(labels[mostActiv_naive==n], bins=n_bins, range=(-0.5,9.5))[0]
+				RFproba_naive[int(r),n,:]/= np.sum(RFproba_naive[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
 		RFclass[r,:], _ = np.histogram(np.argmax(RFproba[r],1), bins=n_bins, range=(-0.5,9.5))
 		for c in range(n_bins):
 			RFselec[r,c] = np.mean(np.max(RFproba[r],1)[np.argmax(RFproba[r],1)==c])
@@ -108,7 +114,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
+	RF_info = {'RFproba':RFproba, 'RFproba_naive':RFproba_naive, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	return RF_info
 
