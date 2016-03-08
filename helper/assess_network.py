@@ -127,7 +127,7 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		# RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
+		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
 		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
 	
 		nbins = 180	

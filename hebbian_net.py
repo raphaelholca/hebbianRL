@@ -127,6 +127,10 @@ class Network:
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
+				if r != 0: #reload new training gabor filter
+					images_dict_new, labels_dict_new, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
+					images, images_task = images_dict_new['train'], images_dict_new['task']
+					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
 				gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
 
 			""" train network """
