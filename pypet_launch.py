@@ -41,6 +41,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'exploration'		: True,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
+					'early_stop'		: True,
 					'test_each_epi'		: False,
 					'verbose'			: False,
 					'seed' 				: 978 #np.random.randint(1000)

@@ -463,9 +463,12 @@ class Network:
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:
 					p_range_train = self.perf_train_prog[self._r, self._e-e:self._e]
-					p_range_test = self.perf_test_prog[self._r, self._e-e:self._e]
 					cond_train = np.max(p_range_train)-np.min(p_range_train) <= t
-					cond_test = np.max(p_range_test)-np.min(p_range_test) <= t
+					if self.test_each_epi:
+						p_range_test = self.perf_test_prog[self._r, self._e-e:self._e]
+						cond_test = np.max(p_range_test)-np.min(p_range_test) <= t
+					else:
+						cond_test = True
 					if np.logical_and(cond_train, cond_test):
 						if self.verbose: print "----------early stop condition reached: %d episodes with equal or less than %.4f change in performance----------" %(e, t)
 						self._early_stop_cond.append({'epi':self._e, 'epi_cond':e, 'threshold_cond': t})
