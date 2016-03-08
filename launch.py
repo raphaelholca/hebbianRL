@@ -24,10 +24,10 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#
 							dNeut 			= -0.08,#-0.1,#
 							dLow 			= -0.4,#-0.8,#
 							protocol		= 'digit',#'gabor',#
-							name 			= 'digit_long',
-							n_runs 			= 20,		
+							name 			= 'digit_test_long',
+							n_runs 			= 3,		
 							n_epi_crit		= 20,				
-							n_epi_dopa		= 20,				
+							n_epi_dopa		= 1000,				
 							t				= 0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -42,6 +42,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
+							early_stop 		= True,
 							verbose			= True,
 							seed 			= 978 #np.random.randint(1000)
 							)

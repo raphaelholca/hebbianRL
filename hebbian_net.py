@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr_hid=5e-3, lr_out=5e-7, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=50, block_feedback=False, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr_hid=5e-3, lr_out=5e-7, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=50, block_feedback=False, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -50,6 +50,7 @@ class Network:
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
+				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
 		"""
@@ -74,8 +75,10 @@ class Network:
 		self.classifier		= classifier
 		self.init_file		= init_file
 		self.test_each_epi	= test_each_epi
+		self.early_stop 	= early_stop
 		self.verbose 		= verbose
 		self.seed 			= seed
+		self._early_stop_cond = []
 	
 		np.random.seed(self.seed)
 		self._check_parameters()
@@ -185,7 +188,11 @@ class Network:
 				#assess performance
 				self._assess_perf_progress(correct/n_images, images_dict, labels_dict)
 
+				#assess early stop
+				if self._assess_early_stop(): break
+
 			#save data
+			print 'data is saved'
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
@@ -449,7 +456,21 @@ class Network:
 		return W
 
 	def _assess_early_stop(self):
-		""" assesses whether to stop training if performance saturates after a given number of episodes """
+		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
+		if self.early_stop:
+			n_epi 		= [3, 	10,		20]
+			threshold 	= [0.0,	0.0005,	0.001]
+			for e, t in zip(n_epi, threshold):
+				if self._e>=e:
+					p_range_train = self.perf_train_prog[self._r, self._e-e:self._e]
+					p_range_test = self.perf_test_prog[self._r, self._e-e:self._e]
+					cond_train = np.max(p_range_train)-np.min(p_range_train) <= t
+					cond_test = np.max(p_range_test)-np.min(p_range_test) <= t
+					if np.logical_and(cond_train, cond_test):
+						if self.verbose: print "----------early stop condition reached: %d episodes with equal or less than %.4f change in performance----------" %(e, t)
+						self._early_stop_cond.append({'epi':self._e, 'epi_cond':e, 'threshold_cond': t})
+						return True
+		return False
 
 	def _assess_perf_progress(self, perf_train, images_dict, labels_dict):
 		""" assesses progression of performance of network as it is being trained """
