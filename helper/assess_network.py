@@ -12,7 +12,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -67,7 +67,7 @@ def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
 	""" plot performance at various orientations """
-	if net.protocol=='gabor': perf_all_ori(net, save_path=save_path)
+	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
 	"""
@@ -130,35 +130,14 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		# RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
 		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
 	
-		##method 1
-		# nbins = 21
-		# h_mean, bin_edge = np.histogram(np.hstack(net.RF_info['pref_ori']), bins=nbins, range=(-90,+90))
-		# bin_mid = (bin_edge + ((180./21.)/2.))[:-1]
-		# fig = plot_hist(h_mean/net.n_runs, map(str, map(int, bin_mid)))
-
-		##method 2
-		bin_edge = np.arange(-90,91,5)[1::2]
-		bin_mid = np.arange(-80,81,5)[::2]
-		bin_num = len(bin_edge)-1
-		n_runs = np.size(net.RF_info['pref_ori'],0)
-		h_all = np.zeros((n_runs, bin_num))
-		for r in range(n_runs):
-			h_all[r, :] = np.histogram(net.RF_info['pref_ori_naive'][r,:], bin_edge)[0]
+		nbins = 180	
+		h_all = np.zeros((net.n_runs, nbins))
+		for r in range(net.n_runs):
+			h_all[r, :], bin_edge = np.histogram(net.RF_info['pref_ori'][r,:], bins=nbins, range=(-90,+90))
 		h_mean = np.mean(h_all,0)
-		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
-		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
-
-		##method 3
-		# n_runs = np.size(net.RF_info['pref_ori'],0)
-		# bin_edge = np.arange(-90,91,5)[1::2]
-		# bin_mid = np.arange(-90,91,5)[::2]
-		# bin_num = len(bin_edge)-1
-		# h_all = np.zeros((n_runs, bin_num))
-		# for r in range(n_runs):
-		# 	h_all[r, :] = np.histogram(net.RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
-		# h_mean = np.mean(h_all,0)
-		# h_ste = np.std(h_all,0)/np.sqrt(n_runs)
-		# fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+		h_err = np.std(h_all,0)/np.sqrt(net.n_runs)
+		bin_mid = (bin_edge + ((180./nbins)/2.))[:-1]
+		fig = plot_hist(h_mean, map(str, map(int, bin_mid)), h_err=h_err)
 		
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
@@ -428,8 +407,6 @@ def plot_hist(h, bins, h_err=None):
 	ax.spines['top'].set_visible(False)
 	ax.set_xticks(Xs+0.5)
 	ax.set_xticklabels(bins)
-	s = np.where(y_max>4, 2,1)
-	ax.set_yticks(np.arange(y_max+1, step=s))
 	ax.tick_params(axis='both', which='major', direction='out', labelsize=17)
 	ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
