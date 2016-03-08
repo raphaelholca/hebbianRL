@@ -263,7 +263,7 @@ class Network:
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
-				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose)
+				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive)
 			elif self.protocol=='gabor':
 				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params, save_data=False, verbose=self.verbose)
 

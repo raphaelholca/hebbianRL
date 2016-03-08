@@ -12,7 +12,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='with_noise', slope_binned=False, show_W_act=True, sort=None, target=None, save_path=''):
+def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=None, target=None, save_path=''):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -69,7 +69,7 @@ def assess(net, curve_method='with_noise', slope_binned=False, show_W_act=True, 
 	""" plot performance at various orientations """
 	if net.protocol=='gabor': perf_all_ori(net, save_path=save_path)
 
-def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path=''):
+def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -93,14 +93,20 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	n_neurons = np.size(W,2)
 
 	RFproba = np.zeros((n_runs,n_neurons,n_bins))
+	RFproba_naive = np.zeros((n_runs,n_neurons,n_bins))
 	RFclass = np.zeros((n_runs,n_bins))
 	RFselec = np.zeros((n_runs,n_bins))
 	for r in range(n_runs):
 		if verbose: print 'run: ' + str(r+1)
 		mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
+		if W_naive is not None: 
+			mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r]),1)
 		for n in range(n_neurons):
 			RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 			RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
+			if W_naive is not None: 
+				RFproba_naive[int(r),n,:] = np.histogram(labels[mostActiv_naive==n], bins=n_bins, range=(-0.5,9.5))[0]
+				RFproba_naive[int(r),n,:]/= np.sum(RFproba_naive[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
 		RFclass[r,:], _ = np.histogram(np.argmax(RFproba[r],1), bins=n_bins, range=(-0.5,9.5))
 		for c in range(n_bins):
 			RFselec[r,c] = np.mean(np.max(RFproba[r],1)[np.argmax(RFproba[r],1)==c])
@@ -108,7 +114,7 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	RFclass_mean = np.mean(RFclass, 0)
 	RFclass_ste = np.std(RFclass, 0)/np.sqrt(np.size(RFclass,0))
 
-	RF_info = {'RFproba':RFproba, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
+	RF_info = {'RFproba':RFproba, 'RFproba_naive':RFproba_naive, 'RFclass_all':RFclass, 'RFclass_mean':RFclass_mean, 'RFclass_ste':RFclass_ste, 'RFselec':RFselec}
 
 	return RF_info
 
@@ -121,24 +127,39 @@ def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
-		_ = gr.slope_difference(RF_info['slopes_naive']['all_dist_from_target'], RF_info['slopes_naive']['all_slope_at_target'], RF_info['slopes']['all_dist_from_target'], RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
-		# bin_edge = np.arange(-90,91,2.5)[::2]
-		# bin_mid = np.arange(-90,91,2.5)[1::2]
-		# bin_edge = np.arange(-90,91,10)[::2]
-		# bin_mid = np.arange(-90,91,10)[1::2]
-		bin_edge = np.arange(-90,91,5)[1::2]
-		bin_mid = np.arange(-90,91,5)[::2]
-		bin_num = len(bin_edge)-1
+		# RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
+		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
+	
+		##method 1
+		# nbins = 21
+		# h_mean, bin_edge = np.histogram(np.hstack(net.RF_info['pref_ori']), bins=nbins, range=(-90,+90))
+		# bin_mid = (bin_edge + ((180./21.)/2.))[:-1]
+		# fig = plot_hist(h_mean/net.n_runs, map(str, map(int, bin_mid)))
 
-		n_runs = np.size(RF_info['pref_ori'],0)
+		##method 2
+		bin_edge = np.arange(-90,91,5)[1::2]
+		bin_mid = np.arange(-80,81,5)[::2]
+		bin_num = len(bin_edge)-1
+		n_runs = np.size(net.RF_info['pref_ori'],0)
 		h_all = np.zeros((n_runs, bin_num))
 		for r in range(n_runs):
-			h_all[r, :] = np.histogram(RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
+			h_all[r, :] = np.histogram(net.RF_info['pref_ori_naive'][r,:], bin_edge)[0]
 		h_mean = np.mean(h_all,0)
 		h_ste = np.std(h_all,0)/np.sqrt(n_runs)
-
 		fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+
+		##method 3
+		# n_runs = np.size(net.RF_info['pref_ori'],0)
+		# bin_edge = np.arange(-90,91,5)[1::2]
+		# bin_mid = np.arange(-90,91,5)[::2]
+		# bin_num = len(bin_edge)-1
+		# h_all = np.zeros((n_runs, bin_num))
+		# for r in range(n_runs):
+		# 	h_all[r, :] = np.histogram(net.RF_info['pref_ori'][r,:], bin_edge)[0] #, range=(0.,180.)
+		# h_mean = np.mean(h_all,0)
+		# h_ste = np.std(h_all,0)/np.sqrt(n_runs)
+		# fig = plot_hist(h_mean, map(str,bin_mid), h_err=h_ste)
+		
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
@@ -498,6 +519,11 @@ def perf_all_ori(net, save_path=''):
 	out_W_ori 			= np.copy(net.out_W)
 	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
 	out_W_trained_ori 	= np.copy(net.out_W_trained)
+	perf_train_prog_ori = np.copy(net.perf_train_prog)
+	perf_test_prog_ori 	= np.copy(net.perf_test_prog)
+	perf_dict_ori 		= net.perf_dict.copy()
+	RF_info_ori 		= net.RF_info.copy()
+	
 	#set training variables:
 	net.n_runs 			= 1
 	net.n_epi_crit		= 1
@@ -544,9 +570,6 @@ def perf_all_ori(net, save_path=''):
 
 			if verbose: print "performance: " + str(perf_at_ori[i_run, i_ori])
 
-	print
-	print perf_at_ori
-
 	#reset changed variables
 	net.n_runs 			= n_runs_ori
 	net.n_epi_crit		= n_epi_crit_ori
@@ -560,7 +583,15 @@ def perf_all_ori(net, save_path=''):
 	net.out_W 			= np.copy(out_W_ori)
 	net.hid_W_trained 	= np.copy(hid_W_trained_ori)
 	net.out_W_trained  	= np.copy(out_W_trained_ori)
+	net.perf_train_prog = np.copy(perf_train_prog_ori)
+	net.perf_test_prog 	= np.copy(perf_test_prog_ori)
+	net.perf_dict 		= perf_dict_ori.copy()
+	net.RF_info 		= RF_info_ori.copy()
 	net.images_params['target_ori'] = target_ori_ori 
+
+	#add computed performance as network variable and save network to file again
+	net.perf_at_ori = {'perf':perf_at_ori, 'ori':ori_to_tests}
+	pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
 
 	""" plot of performance for different orientations """
 	fig, ax = plt.subplots()
@@ -580,6 +611,7 @@ def perf_all_ori(net, save_path=''):
 	plt.tight_layout()
 
 	plt.savefig(os.path.join(save_path, 'perf_all_ori.pdf'))
+	plt.close(fig)
 
 
 
