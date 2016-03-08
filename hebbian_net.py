@@ -192,7 +192,6 @@ class Network:
 				if self._assess_early_stop(): break
 
 			#save data
-			print 'data is saved'
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
@@ -470,7 +469,7 @@ class Network:
 					else:
 						cond_test = True
 					if np.logical_and(cond_train, cond_test):
-						if self.verbose: print "----------early stop condition reached: %d episodes with equal or less than %.4f change in performance----------" %(e, t)
+						print "----------early stop condition reached: %d episodes with equal or less than %.4f change in performance----------" %(e, t)
 						self._early_stop_cond.append({'epi':self._e, 'epi_cond':e, 'threshold_cond': t})
 						return True
 		return False
