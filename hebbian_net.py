@@ -457,7 +457,7 @@ class Network:
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
 		if self.early_stop:
-			n_epi 		= [3, 	10,		20]
+			n_epi 		= [3, 	20,		50]
 			threshold 	= [0.0,	0.0005,	0.001]
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:
