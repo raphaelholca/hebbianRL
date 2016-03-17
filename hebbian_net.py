@@ -97,6 +97,8 @@ class Network:
 		labels, labels_task = labels_dict['train'], labels_dict['task']
 		if self.protocol=='gabor':
 			images_params['noise'] = np.clip(images_params['noise'], 1e-30, np.inf)
+		if self.block_feedback:
+			print "***** training using block feedback *****"
 
 		self.images_params = images_params
 		self.classes = np.sort(np.unique(labels))
@@ -461,7 +463,7 @@ class Network:
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
 		if self.early_stop:
-			n_epi 		= [3, 	10,		20]
+			n_epi 		= [3, 	20,		50]
 			threshold 	= [0.0,	0.0005,	0.001]
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:

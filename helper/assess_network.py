@@ -12,7 +12,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False):
+def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False, plot_RFs=True):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -59,9 +59,10 @@ def assess(net, curve_method='basic', slope_binned=False, show_W_act=True, sort=
 		correct_out_W = 0.
 
 	""" plot weights """
-	if show_W_act: W_act_pass=net.out_W_trained
-	else: W_act_pass=None
-	plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+	if plot_RFs:
+		if show_W_act: W_act_pass=net.out_W_trained
+		else: W_act_pass=None
+		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
 	
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
@@ -118,17 +119,19 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 
 	return RF_info
 
-def plot_RF_info(net, save_path, curve_method='no_softmax', slope_binned=False):
+def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 	""" plot RF properties """
 	
+	if save_path=='': save_path=os.path.join('.', 'output', net.name)
+
 	if net.protocol=='digit':
 		fig = plot_hist(net.RF_info['RFclass_mean'][net.classes], net.classes, h_err=net.RF_info['RFclass_ste'][net.classes])
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
-		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned)
+		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
+		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned, bin_width=4)
 	
 		nbins = 180	
 		h_all = np.zeros((net.n_runs, nbins))
@@ -462,7 +465,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	# ax.xaxis.set_ticks_position('bottom')
 	ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([0.,100.])
+	ax.set_ylim([85.,100.])
 	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, np.clip(n_epi_plot/10, 1, 10000)))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
@@ -486,6 +489,7 @@ def perf_all_ori(net, save_path=''):
 	n_runs_ori 			= net.n_runs
 	n_epi_crit_ori		= net.n_epi_crit
 	n_epi_dopa_ori 		= net.n_epi_dopa
+	n_epi_tot_ori 		= net.n_epi_tot
 	lr_hid_ori 			= net.lr_hid
 	lr_out_ori			= net.lr_out
 	init_file_ori		= net.init_file
@@ -494,7 +498,9 @@ def perf_all_ori(net, save_path=''):
 	target_ori_ori 		= net.images_params['target_ori']
 	hid_W_ori 			= np.copy(net.hid_W)
 	out_W_ori 			= np.copy(net.out_W)
+	hid_W_naive_ori 	= np.copy(net.hid_W_naive)
 	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
+	out_W_naive_ori 	= np.copy(net.out_W_naive)
 	out_W_trained_ori 	= np.copy(net.out_W_trained)
 	perf_train_prog_ori = np.copy(net.perf_train_prog)
 	perf_test_prog_ori 	= np.copy(net.perf_test_prog)
@@ -551,6 +557,7 @@ def perf_all_ori(net, save_path=''):
 	net.n_runs 			= n_runs_ori
 	net.n_epi_crit		= n_epi_crit_ori
 	net.n_epi_dopa 		= n_epi_dopa_ori
+	net.n_epi_tot 		= n_epi_tot_ori
 	net.lr_hid 			= lr_hid_ori
 	net.lr_out			= lr_out_ori
 	net.init_file		= init_file_ori
@@ -558,7 +565,9 @@ def perf_all_ori(net, save_path=''):
 	net.verbose			= verbose_ori
 	net.hid_W 			= np.copy(hid_W_ori)
 	net.out_W 			= np.copy(out_W_ori)
+	net.hid_W_naive 	= np.copy(hid_W_naive_ori)
 	net.hid_W_trained 	= np.copy(hid_W_trained_ori)
+	net.out_W_naive  	= np.copy(out_W_naive_ori)
 	net.out_W_trained  	= np.copy(out_W_trained_ori)
 	net.perf_train_prog = np.copy(perf_train_prog_ori)
 	net.perf_test_prog 	= np.copy(perf_test_prog_ori)

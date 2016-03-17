@@ -19,16 +19,16 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
-							dMid 			= 0.1,#0.0,#
-							dNeut 			= -0.1,#-0.08,#
-							dLow 			= -0.8,#-0.4,#
+net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
+							dMid 			= 0.1,#0.001,#0.0,#
+							dNeut 			= -0.1,#-0.04,#-0.08,#
+							dLow 			= -0.8,#-0.2,#-0.4,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_long_noDA_4',
-							n_runs 			= 50,		
+							name 			= 'gabor_t_1-0_lrgIm_DA_noise_0-3_2',
+							n_runs 			= 5,		
 							n_epi_crit		= 20,				
-							n_epi_dopa		= 0,				
-							t				= 0.1,
+							n_epi_dopa		= 20,				
+							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
 							lr_out			= 5e-7,
@@ -44,7 +44,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 978 #np.random.randint(1000)
+							seed 			= 952 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -59,10 +59,10 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
-																				'target_ori' 	: 162.,
+																				'target_ori' 	: 165.,
 																				'excentricity' 	: 90.,#3.0,#1.5,
-																				'noise'			: 0.2,
-																				'im_size'		: 28,
+																				'noise'			: 0.3,
+																				'im_size'		: 50#28,
 																				}
 															)
 
