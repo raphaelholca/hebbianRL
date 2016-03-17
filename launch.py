@@ -19,22 +19,22 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#
-							dMid 			= 0.0,#0.1,#
-							dNeut 			= -0.08,#-0.1,#
-							dLow 			= -0.4,#-0.8,#
-							protocol		= 'digit',#'gabor',#
-							name 			= 'digit_test_long',
-							n_runs 			= 3,		
+net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
+							dMid 			= 0.1,#0.001,#0.0,#
+							dNeut 			= -0.1,#-0.04,#-0.08,#
+							dLow 			= -0.8,#-0.2,#-0.4,#
+							protocol		= 'gabor',#'digit',#
+							name 			= 'gabor_t_1-0_lrgIm_DA_noise_0-3_2',
+							n_runs 			= 5,		
 							n_epi_crit		= 20,				
-							n_epi_dopa		= 1000,				
-							t				= 0.1,
+							n_epi_dopa		= 20,				
+							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
 							lr_out			= 5e-7,
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 49,#16,#
+							n_hid_neurons	= 16,#49,#
 							init_file		= '',
 							lim_weights		= False,
 							noise_std		= 0.2,
@@ -42,9 +42,9 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
-							early_stop 		= True,
+							early_stop 		= False,
 							verbose			= True,
-							seed 			= 978 #np.random.randint(1000)
+							seed 			= 952 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -59,10 +59,10 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				},
 															gabor_params 	= {	'n_train' 		: 10000,
 																				'n_test' 		: 10000,
-																				'target_ori' 	: 167.,
+																				'target_ori' 	: 165.,
 																				'excentricity' 	: 90.,#3.0,#1.5,
-																				'noise'			: 0.2,
-																				'im_size'		: 28,
+																				'noise'			: 0.3,
+																				'im_size'		: 50#28,
 																				}
 															)
 
@@ -77,9 +77,10 @@ perf_dict = net.test(images_dict, labels_dict)
 ex.save_net(net)
 
 an.assess(	net,
-			show_W_act	= True, 
-			sort		= None, 
-			target 		= None
+			show_W_act		= True, 
+			sort			= None, 
+			target 			= None,
+			test_all_ori 	= False
 			)
 
 print '\nrun name:\t' + net.name

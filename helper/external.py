@@ -18,7 +18,7 @@ from array import array
 
 gr = reload(gr)
 
-def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
+def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, load_test=True):
 	""" 
 	Load images training and testing images 
 
@@ -38,6 +38,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 				excentricity (float): degree range within wich to test the network (on each side of target orientation)
 				noise (float): noise injected in the gabor filter
 				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
+			load_test (bool, optional): whether to load test images (True) or not (False). Default: True
 
 		returns:
 			(2D numpy array): training images
@@ -88,8 +89,11 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}):
 		orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
 		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
 
-		orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
-		images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
+		if load_test:
+			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
+			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
+		else:
+			images_test, labels_test = None, None
 
 		images_params = gabor_params
 
