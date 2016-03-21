@@ -123,7 +123,7 @@ class Network:
 		""" execute multiple training runs """
 		for r in range(self.n_runs):
 			self._r = r
-			if self.verbose: print '\nrun: ' + str(r+1)
+			if self.verbose: print '\nrun: %d' %r
 
 			np.random.seed(self.seed+r)
 			self._init_weights()
@@ -145,6 +145,13 @@ class Network:
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
 
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
+				
+				###
+				# if e==0: 
+				# 	self.lr_hid = 5e-3
+				# elif e==self.n_epi_crit: 
+				# 	self.lr_hid = 5e-4
+				###
 
 				#shuffle input images
 				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
@@ -488,12 +495,12 @@ class Network:
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
 		if self.classifier=='neural' or self._e>=self.n_epi_crit:
-			print_perf += 'train performance: ' + str(np.round(perf_train*100,2)) + '%'
+			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
 			print_perf += 'train performance: ' + '-N/A-'
 		if self.test_each_epi:
 			perf_test = self.test(images_dict, labels_dict, during_training=True)
-			print_perf += ' ; test performance: ' + str(np.round(perf_test*100,2)) + '%'
+			print_perf += ' ; test performance: %.2f%%' %(perf_test*100)
 		if self.verbose: print print_perf
 
 		self.perf_train_prog[self._r, self._e] = perf_train
