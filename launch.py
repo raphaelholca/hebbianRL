@@ -20,14 +20,14 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
-							dMid 			= 0.1,#0.001,#0.0,#
-							dNeut 			= -0.1,#-0.04,#-0.08,#
-							dLow 			= -0.8,#-0.2,#-0.4,#
+							dMid 			= 0.0,#0.001,#0.0,#
+							dNeut 			= -0.0,#-0.04,#-0.08,#
+							dLow 			= -2.4,#-0.2,#-0.4,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_t_1-0_lrgIm_DA_noise_0-3_2',
-							n_runs 			= 5,		
-							n_epi_crit		= 20,				
-							n_epi_dopa		= 20,				
+							name 			= 'gabor_trainset_diff_2',
+							n_runs 			= 2,		
+							n_epi_crit		= 0,				
+							n_epi_dopa		= 200,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -35,34 +35,35 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= '',
+							init_file		= 'gabor_pretrained',
 							lim_weights		= False,
 							noise_std		= 0.2,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
-							early_stop 		= False,
+							early_stop 		= True,
 							verbose			= True,
-							seed 			= 952 #np.random.randint(1000)
+							seed 			= 950 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 															A 				= net.A,
 															verbose 		= net.verbose,
-															digit_params 	= {	'dataset_train'	: 'train',
-																				# 'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
-																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																				'shuffle'		: False
+															digit_params 	= {	'dataset_train'		: 'train',
+																				# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
+																				'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'			: False
 																				},
-															gabor_params 	= {	'n_train' 		: 10000,
-																				'n_test' 		: 10000,
-																				'target_ori' 	: 165.,
-																				'excentricity' 	: 90.,#3.0,#1.5,
-																				'noise'			: 0.3,
-																				'im_size'		: 50#28,
+															gabor_params 	= {	'n_train' 			: 10000,
+																				'n_test' 			: 10000,
+																				'fixed_trainset'	: False,
+																				'target_ori' 		: 165.,
+																				'excentricity' 		: 90.,#3.0,#1.5,
+																				'noise'				: 0.0,
+																				'im_size'			: 50#28,
 																				}
 															)
 
