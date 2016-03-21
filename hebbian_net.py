@@ -112,8 +112,8 @@ class Network:
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self._train_class_layer = False if self.classifier=='bayesian' else True
-		n_images = np.size(images,0)
-		n_batches = int(np.ceil(float(n_images)/self.batch_size))
+		self._n_images = np.size(images,0)
+		self._n_batches = int(np.ceil(float(self._n_images)/self.batch_size))
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -157,7 +157,11 @@ class Network:
 				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit:
-					rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+					if self.images_params['fixed_trainset']:
+						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+					else:
+						b_orientations = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						rnd_images, rnd_labels = ex.generate_gabors(b_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -167,7 +171,7 @@ class Network:
 
 				#train network with mini-batches
 				correct = 0.
-				for b in range(n_batches):
+				for b in range(self._n_batches):
 					self._b = b
 					#update pdf for bayesian inference
 					self._update_pdf(rnd_images, rnd_labels)
@@ -199,7 +203,7 @@ class Network:
 					correct += np.sum(out_greedy == b_labels)
 
 				#assess performance
-				self._assess_perf_progress(correct/n_images, images_dict, labels_dict)
+				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
 
 				#assess early stop
 				if self._assess_early_stop(): break
@@ -470,19 +474,59 @@ class Network:
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
 		if self.early_stop:
-			n_epi 		= [3, 	20,		50]
-			threshold 	= [0.0,	0.0005,	0.001]
+			#check if performance is maximal
+			cond_train = self.perf_train_prog[self._r, self._e]==1.0
+			if self.test_each_epi:
+				cond_test = self.perf_test_prog[self._r, self._e]==1.0
+			else:
+				cond_test = True
+			if np.logical_and(cond_train, cond_test):
+				print "----------early stop condition reached: performance reached 100.0%----------"
+				self._early_stop_cond.append({'epi':self._e, 'epi_cond':'max_perf', 'threshold_cond':'max_perf'})
+				return True
+
+			#check if performance is minimal
+			cond_train = self.perf_train_prog[self._r, self._e] < 1./self.n_out_neurons+1e-5
+			if self.test_each_epi:
+				cond_test = self.perf_test_prog[self._r, self._e] < 1./self.n_out_neurons+1e-5
+			else:
+				cond_test = True
+			if np.logical_and(cond_train, cond_test):
+				print "----------early stop condition reached: performance reached chance level of %.2f%%----------" %((1./self.n_out_neurons)*100.)
+				self._early_stop_cond.append({'epi':self._e, 'epi_cond':'min_perf', 'threshold_cond':'min_perf'})
+				return True
+
+			#check if perfmance is decreasing
+			n_epi=5
+			if self._e>=n_epi:
+				perf = self.perf_train_prog[self._r, self._e-n_epi:self._e]
+				cond_train = ((np.roll(perf,-1)-perf)[:-1]<0).all()
+				if self.test_each_epi:
+					perf = self.perf_test_prog[self._r, self._e-n_epi:self._e]
+					cond_test = ((np.roll(perf,-1)-perf)[:-1]<0).all()
+				else:
+					cond_test = True
+				if np.logical_and(cond_train, cond_test):
+					print "----------early stop condition reached: performance decreased for %d episodes----------" %n_epi
+					self._early_stop_cond.append({'epi':self._e, 'epi_cond':'max_perf', 'threshold_cond':'max_perf'})
+					return True
+
+			#check if performance reached a plateau
+			n_epi 		= [10, 		20,		50]
+			threshold 	= [0.0001,	0.0005,	0.001]
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:
+					#condition for training performance
 					p_range_train = self.perf_train_prog[self._r, self._e-e:self._e]
 					cond_train = np.max(p_range_train)-np.min(p_range_train) <= t
+					#condition for testing performance
 					if self.test_each_epi:
 						p_range_test = self.perf_test_prog[self._r, self._e-e:self._e]
 						cond_test = np.max(p_range_test)-np.min(p_range_test) <= t
 					else:
 						cond_test = True
 					if np.logical_and(cond_train, cond_test):
-						print "----------early stop condition reached: %d episodes with equal or less than %.4f change in performance----------" %(e, t)
+						print "----------early stop condition reached: %d episodes with equal or less than %.2f%% change in performance----------" %(e, t*100.)
 						self._early_stop_cond.append({'epi':self._e, 'epi_cond':e, 'threshold_cond': t})
 						return True
 		return False

@@ -312,8 +312,8 @@ def faceting(folder_path):
 	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
 	threshold = 0.0002
 	t_threshold = 0.10#0.05
-	vmin=0.7#0.985
-	vmax=0.95#1.0
+	vmin=0.985#0.7#
+	vmax=1.0#0.95
 	font_large = 20
 	font_small = 18
 

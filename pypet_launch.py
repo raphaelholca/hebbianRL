@@ -23,54 +23,55 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
-					'protocol'			: 'digit',#'gabor',#
-					'name' 				: 'pypet_digit_blockfeedback',
-					'n_runs' 			: 1,#4,#50,#
-					'n_epi_crit'		: 20,				
-					'n_epi_dopa'		: 500,#50,#
-					't'					: 0.1,#0.1,#
+					'protocol'			: 'gabor',#'digit',#
+					'name' 				: 'pypet_gabor_t_1-0_newtrainset',
+					'n_runs' 			: 4,#50,#
+					'n_epi_crit'		: 0,				
+					'n_epi_dopa'		: 60,#500,#
+					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
 					'lr_hid'			: 5e-3,
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
-					'block_feedback'	: True,
-					'n_hid_neurons'		: 49,#16,#
-					'init_file'			: '',
+					'block_feedback'	: False,
+					'n_hid_neurons'		: 16,#49,#
+					'init_file'			: 'gabor_pretrained',
 					'lim_weights'		: False,
 					'noise_std'			: 0.2,
 					'exploration'		: True,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
+					'test_each_epi'		: True,
 					'early_stop'		: True,
-					'test_each_epi'		: False,
 					'verbose'			: False,
-					'seed' 				: 978 #np.random.randint(1000)
+					'seed' 				: 973 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #[-1.000, +0.000, +1.000, +2.000, +3.000], #
-					'dNeut'			: [-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.40, -0.30, -0.20, -0.10, -0.00], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
+explore_dict = {	'dHigh'			: [+1.000, +2.000, +3.000], #[-1.000, +0.000, +1.000, +2.000, +3.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
+					'dNeut'			: [-0.200, -0.100, -0.000], #[-0.400, -0.300, -0.200, -0.100, -0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
 					
-					'dMid'			: [0.000, 0.001, 0.005, 0.010, 0.050], #[0.000, 0.100, 0.200, 0.300, 0.400], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
-					'dLow'			: [0.000, -0.20, -0.40, -0.60, -0.80]  #[0.000, -0.80, -1.60, -2.40, -3.20]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
+					'dMid'			: [+0.000, +0.001, +0.010], #[+0.000, +0.100, +0.200, +0.300, +0.400], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
+					'dLow'			: [-0.800, -1.600, -2.400]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 															A 				= parameter_dict['A'],
 															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'dataset_train'	: 'train',
-																				# 'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
-																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																				'shuffle'		: False
+															digit_params 	= {	'dataset_train'		: 'train',
+																				# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
+																				'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'			: False
 																				},
-															gabor_params 	= {	'n_train' 		: 10000,
-																				'n_test' 		: 10000,
-																				'target_ori' 	: 28.,
-																				'excentricity' 	: 90.,#3.0,
-																				'noise'			: 0.2,
-																				'im_size'		: 28
+															gabor_params 	= {	'n_train' 			: 10000,
+																				'n_test' 			: 10000,
+																				'fixed_trainset'	: False,
+																				'target_ori' 		: 165.,
+																				'excentricity' 		: 90.,#3.0,
+																				'noise'				: 0.0,#0.3,
+																				'im_size'			: 50#28
 																				}
 															)
 

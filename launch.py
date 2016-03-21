@@ -35,14 +35,14 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= '',
+							init_file		= 'gabor_pretrained',
 							lim_weights		= False,
 							noise_std		= 0.2,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
-							early_stop 		= False,
+							early_stop 		= True,
 							verbose			= True,
 							seed 			= 956 #np.random.randint(1000)
 							)
@@ -51,18 +51,19 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 															A 				= net.A,
 															verbose 		= net.verbose,
-															digit_params 	= {	'dataset_train'	: 'train',
-																				# 'classes' 		: np.array([ 4, 7, 9 ], dtype=int),
-																				'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
-																				'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																				'shuffle'		: False
+															digit_params 	= {	'dataset_train'		: 'train',
+																				# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
+																				'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																				'shuffle'			: False
 																				},
-															gabor_params 	= {	'n_train' 		: 10000,
-																				'n_test' 		: 10000,
-																				'target_ori' 	: 165.,
-																				'excentricity' 	: 90.,#3.0,#1.5,
-																				'noise'			: 0.0,
-																				'im_size'		: 50#28,
+															gabor_params 	= {	'n_train' 			: 10000,
+																				'n_test' 			: 10000,
+																				'fixed_trainset'	: False,
+																				'target_ori' 		: 165.,
+																				'excentricity' 		: 90.,#3.0,#1.5,
+																				'noise'				: 0.0,
+																				'im_size'			: 50#28,
 																				}
 															)
 
