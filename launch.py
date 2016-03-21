@@ -57,6 +57,7 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																				'shuffle'			: False
 																				},
+<<<<<<< HEAD
 															gabor_params 	= {	'n_train' 			: 10000,
 																				'n_test' 			: 10000,
 																				'fixed_trainset'	: False,
@@ -64,6 +65,14 @@ images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.proto
 																				'excentricity' 		: 90.,#3.0,#1.5,
 																				'noise'				: 0.0,
 																				'im_size'			: 50#28,
+=======
+															gabor_params 	= {	'n_train' 		: 10000,
+																				'n_test' 		: 10000,
+																				'target_ori' 	: 165.,
+																				'excentricity' 	: 90.,#3.0,#1.5,
+																				'noise'			: 0.5,
+																				'im_size'		: 50#28,
+>>>>>>> 31677efa713d7555c9f59dd11d0b3305e3cdbe0d
 																				}
 															)
 
