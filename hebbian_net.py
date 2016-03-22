@@ -112,6 +112,7 @@ class Network:
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		self._n_images = np.size(images,0)
 		self._n_batches = int(np.ceil(float(self._n_images)/self.batch_size))
+		self._rnd_orientations = np.zeros((self.n_epi_tot, self.images_params['n_train']))
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -146,13 +147,6 @@ class Network:
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
 
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
-				
-				###
-				# if e==0: 
-				# 	self.lr_hid = 5e-3
-				# elif e==self.n_epi_crit: 
-				# 	self.lr_hid = 5e-4
-				###
 
 				#shuffle input images
 				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
@@ -160,9 +154,9 @@ class Network:
 				elif self.protocol=='gabor' and e >= self.n_epi_crit:
 					if self.images_params['fixed_trainset']:
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
-					else:
-						rnd_orientations = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
+					else: #create new training images
+						self._rnd_orientations[e,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -205,6 +199,7 @@ class Network:
 
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
+				# self._assess_perf_progress(correct/self._n_images, {'train':rnd_images, 'test':rnd_images}, {'train':rnd_labels, 'test':rnd_labels})
 
 				#assess early stop
 				if self._assess_early_stop(): break
@@ -225,22 +220,23 @@ class Network:
 			returns:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
-		np.random.seed(self.seed)
 		images_train, images_test = np.copy(images_dict['train']), np.copy(images_dict['test'])
 		labels_train, labels_test = labels_dict['train'], labels_dict['test']
 
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
-			images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+			if self.images_params['noise']>0.0:
+				images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+				if self.classifier=='bayesian':
+					images_train += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_train)) #add Gaussian noise
 			images_test = ex.normalize(images_test, self.A*np.size(images_test,1))
-			if self.classifier=='bayesian':
-				images_train += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_train)) #add Gaussian noise
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
 		""" variable initialization """
 		CM_all = []
 		perf_all = []
+		class_results = []
 		n_runs = self.n_runs if not during_training else 1
 
 		for iw in range(n_runs):
@@ -264,6 +260,7 @@ class Network:
 				posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
 				classIdx = np.argmax(posterior, 1)
 				classResults = self.classes[classIdx]
+			class_results.append(classResults==labels_test)
 			correct_classif = float(np.sum(classResults==labels_test))/len(labels_test)
 			perf_all.append(correct_classif)
 			
@@ -283,7 +280,7 @@ class Network:
 			CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
 			perf_avg = np.mean(perf_all)
 			perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
-			self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste}
+			self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste, 'class_results':class_results}
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
@@ -476,15 +473,16 @@ class Network:
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
 		if self.early_stop:
 			#check if performance is maximal
-			cond_train = self.perf_train_prog[self._r, self._e]==1.0
-			if self.test_each_epi:
-				cond_test = self.perf_test_prog[self._r, self._e]==1.0
-			else:
-				cond_test = True
-			if np.logical_and(cond_train, cond_test):
-				print "----------early stop condition reached: performance reached 100.0%----------"
-				self._early_stop_cond.append({'epi':self._e, 'epi_cond':'max_perf', 'threshold_cond':'max_perf'})
-				return True
+			if self._e>=2:
+				cond_train = self.perf_train_prog[self._r, self._e-1:self._e+1]==1.0
+				if self.test_each_epi:
+					cond_test = self.perf_test_prog[self._r, self._e-1:self._e+1]==1.0
+				else:
+					cond_test = True
+				if np.logical_and(cond_train, cond_test):
+					print "----------early stop condition reached: performance reached 100.0%----------"
+					self._early_stop_cond.append({'epi':self._e, 'epi_cond':'max_perf', 'threshold_cond':'max_perf'})
+					return True
 
 			#check if performance is minimal
 			cond_train = self.perf_train_prog[self._r, self._e] < 1./self.n_out_neurons+1e-5
@@ -513,8 +511,8 @@ class Network:
 					return True
 
 			#check if performance reached a plateau
-			n_epi 		= [10, 		20,		50]
-			threshold 	= [0.0001,	0.0005,	0.001]
+			n_epi 		= [10, 		30]
+			threshold 	= [0.0001,	0.0005]
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:
 					#condition for training performance

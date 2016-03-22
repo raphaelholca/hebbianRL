@@ -19,15 +19,15 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
-							dMid 			= 0.001,#0.001,#0.0,#
+net = hebbian_net.Network(	dHigh 			= 3.0,#0.8,#1.6,#
+							dMid 			= 0.0,#0.001,#0.0,#
 							dNeut 			= -0.1,#-0.04,#-0.08,#
-							dLow 			= -0.8,#-0.2,#-0.4,#
+							dLow 			= -2.4,#-0.2,#-0.4,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_t_1-0_lrgIm_DA_noise_0-0_4_2_1',
+							name 			= 'gabor_newtrainset',#'gabor_t_1-0_lrgIm_DA_noise_0-0_4_2_1',
 							n_runs 			= 1,		
-							n_epi_crit		= 20,				
-							n_epi_dopa		= 60,				
+							n_epi_crit		= 0,				
+							n_epi_dopa		= 200,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -48,24 +48,24 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							)
 
 """ load and pre-process training and testing images """
-images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-															A 				= net.A,
-															verbose 		= net.verbose,
-															digit_params 	= {	'dataset_train'		: 'train',
-																				# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
-																				'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
-																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																				'shuffle'			: False
-																				},
-															gabor_params 	= {	'n_train' 			: 10000,
-																				'n_test' 			: 10000,
-																				'fixed_trainset'	: False,
-																				'target_ori' 		: 165.,
-																				'excentricity' 		: 90.,#3.0,#1.5,
-																				'noise'				: 0.0,
-																				'im_size'			: 50#28,
-																				}
-															)
+images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
+																	A 				= net.A,
+																	verbose 		= net.verbose,
+																	digit_params 	= {	'dataset_train'		: 'train',
+																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																						'shuffle'			: False
+																						},
+																	gabor_params 	= {	'n_train' 			: 10000,
+																						'n_test' 			: 10000,
+																						'fixed_trainset'	: False,
+																						'target_ori' 		: 165.,
+																						'excentricity' 		: 90.,#3.0,#1.5,
+																						'noise'				: 0.0,
+																						'im_size'			: 50#28,
+																						}
+																	)
 
 tic = time.time()
 
