@@ -414,8 +414,8 @@ class Network:
 		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
 			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-			dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
+			dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
+			# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
 
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = dopa_release
@@ -510,7 +510,7 @@ class Network:
 					return True
 
 			#check if performance reached a plateau
-			n_epi 		= [10, 		30]
+			n_epi 		= [10, 		20]
 			threshold 	= [0.0001,	0.0005]
 			for e, t in zip(n_epi, threshold):
 				if self._e>=e:

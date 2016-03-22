@@ -79,6 +79,10 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 		labels_task = None
 		images_params = digit_params
 
+		orientations = None
+		orientations_test = None
+		orientations_task = None
+
 	elif protocol == 'gabor':
 		if verbose: print 'creating gabor training images...'
 		gabor_params['target_ori'] %= 180.
