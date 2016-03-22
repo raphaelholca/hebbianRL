@@ -95,8 +95,6 @@ class Network:
 
 		images, images_task = images_dict['train'], images_dict['task']
 		labels, labels_task = labels_dict['train'], labels_dict['task']
-		if self.protocol=='gabor':
-			images_params['noise'] = np.clip(images_params['noise'], 1e-30, np.inf)
 		if self.block_feedback:
 			print "***** training using block feedback *****"
 
@@ -133,7 +131,10 @@ class Network:
 					images_dict_new, labels_dict_new, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
 					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
-				gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
+				if self.images_params['noise'] > 0.0:
+					gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
+				else:
+					gaussian_noise = np.zeros(np.shape(images))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -160,8 +161,8 @@ class Network:
 					if self.images_params['fixed_trainset']:
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 					else:
-						b_orientations = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(b_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						rnd_orientations = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
