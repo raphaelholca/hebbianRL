@@ -474,9 +474,9 @@ class Network:
 		if self.early_stop:
 			#check if performance is maximal
 			if self._e>=2:
-				cond_train = self.perf_train_prog[self._r, self._e-1:self._e+1]==1.0
+				cond_train = (self.perf_train_prog[self._r, self._e-1:self._e+1]==1.0).all()
 				if self.test_each_epi:
-					cond_test = self.perf_test_prog[self._r, self._e-1:self._e+1]==1.0
+					cond_test = (self.perf_test_prog[self._r, self._e-1:self._e+1]==1.0).all()
 				else:
 					cond_test = True
 				if np.logical_and(cond_train, cond_test):
