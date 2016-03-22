@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_t_1-0_newtrainset',
+					'name' 				: 'pypet_gabor_t_1-0_newtrainset_2',
 					'n_runs' 			: 4,#50,#
 					'n_epi_crit'		: 0,				
 					'n_epi_dopa'		: 60,#500,#
@@ -56,24 +56,24 @@ explore_dict = {	'dHigh'			: [+1.000, +2.000, +3.000], #[-1.000, +0.000, +1.000,
 				}
 
 """ load and pre-process images """
-images_dict, labels_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
-															A 				= parameter_dict['A'],
-															verbose 		= parameter_dict['verbose'],
-															digit_params 	= {	'dataset_train'		: 'train',
-																				# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
-																				'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
-																				'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																				'shuffle'			: False
-																				},
-															gabor_params 	= {	'n_train' 			: 10000,
-																				'n_test' 			: 10000,
-																				'fixed_trainset'	: False,
-																				'target_ori' 		: 165.,
-																				'excentricity' 		: 90.,#3.0,
-																				'noise'				: 0.0,#0.3,
-																				'im_size'			: 50#28
-																				}
-															)
+images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
+																	A 				= parameter_dict['A'],
+																	verbose 		= parameter_dict['verbose'],
+																	digit_params 	= {	'dataset_train'		: 'train',
+																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																						'shuffle'			: False
+																						},
+																	gabor_params 	= {	'n_train' 			: 10000,
+																						'n_test' 			: 10000,
+																						'fixed_trainset'	: False,
+																						'target_ori' 		: 165.,
+																						'excentricity' 		: 90.,#3.0,
+																						'noise'				: 0.0,#0.3,
+																						'im_size'			: 50#28
+																						}
+																	)
 
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])

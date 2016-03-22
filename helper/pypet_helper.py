@@ -20,7 +20,8 @@ def launch_exploration(traj, images_dict, labels_dict, images_params, save_path)
 	try:
 		test_perf, stat_diff = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
 	except ValueError:
-		test_perf = [-1.]	
+		test_perf = [-1.]
+		stat_diff = [-1.]	
 
 	traj.f_add_result('test_perf', test_perf=test_perf)
 	traj.f_add_result('stat_diff', stat_diff=stat_diff)

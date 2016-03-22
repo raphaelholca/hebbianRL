@@ -199,7 +199,6 @@ class Network:
 
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
-				# self._assess_perf_progress(correct/self._n_images, {'train':rnd_images, 'test':rnd_images}, {'train':rnd_labels, 'test':rnd_labels})
 
 				#assess early stop
 				if self._assess_early_stop(): break
