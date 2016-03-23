@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_set=True, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_fixed=True, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -31,7 +31,7 @@ class Network:
 				dMid (float): values of dopamine release for +reward expectation, +reward delivery
 				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
 				dLow (float): values of dopamine release for +reward expectation, -reward delivery
-				dopa_out_set (bool, optional): whether to use pre-set dopa values for the output layer (True) or use the values provided in the 'd' variables above. Default: True
+				dopa_out_fixed (bool, optional): whether to use pre-set dopa values for the output layer (True) or use the values provided in the 'd' variables above. Default: True
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				n_runs (int, optional): number of runs. Default: 1
@@ -57,7 +57,7 @@ class Network:
 		"""
 		
 		self.dopa_values 	= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
-		self.dopa_out_set 	= dopa_out_set
+		self.dopa_out_fixed = dopa_out_fixed
 		self.protocol		= protocol
 		self.name 			= name
 		self.n_runs 		= n_runs
@@ -154,11 +154,11 @@ class Network:
 				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit:
-					if self.images_params['fixed_trainset']:
-						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
-					else: #create new training images
+					if self.images_params['renew_trainset']: #create new training images
 						self._rnd_orientations[e,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
 						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
+					else: 
+						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -415,7 +415,7 @@ class Network:
 		""" compute dopa release based on predicted and delivered reward """
 		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
-			if self.dopa_out_set:
+			if self.dopa_out_fixed:
 				dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
 				# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh'=0.0, 'dMid'=0.75, 'dNeut'=0.0, 'dLow'=-0.5}) #original param give close to optimal results
 			else:

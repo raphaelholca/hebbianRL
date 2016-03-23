@@ -312,7 +312,7 @@ def faceting(folder_path):
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
 	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
-	threshold = 0.0002
+	threshold = 0.0001
 	t_threshold = 0.10#0.05
 	vmin=0.985#0.7#
 	vmax=1.0#0.95

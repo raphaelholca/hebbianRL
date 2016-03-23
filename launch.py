@@ -23,12 +23,12 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dMid 			= 0.0,#0.001,#0.0,#
 							dNeut 			= -0.0,#-0.04,#-0.08,#
 							dLow 			= -1.6,#-0.2,#-0.4,#
-							dopa_out_set 	= True,
+							dopa_out_fixed 	= True,
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_newtrainset_noise_0-0',#'gabor_t_1-0_lrgIm_DA_noise_0-0_4_2_1',
-							n_runs 			= 4,		
-							n_epi_crit		= 0,				
-							n_epi_dopa		= 50,				
+							name 			= 'gabor_pretrained_noise',#'gabor_t_1-0_lrgIm_DA_noise_0-0_4_2_1',
+							n_runs 			= 5,		
+							n_epi_crit		= 40,				
+							n_epi_dopa		= 0,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -36,14 +36,14 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= 'gabor_pretrained',
+							init_file		= '',
 							lim_weights		= False,
 							noise_std		= 0.2,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
-							early_stop 		= True,
+							early_stop 		= False,
 							verbose			= True,
 							seed 			= 956 #np.random.randint(1000)
 							)
@@ -60,10 +60,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
-																						'fixed_trainset'	: False,
+																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.0,
+																						'noise'				: 0.3,
 																						'im_size'			: 50#28,
 																						}
 																	)
