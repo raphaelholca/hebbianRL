@@ -158,7 +158,7 @@ def hist_gabor(name, hid_W_naive, hid_W_trained, t, images_params, save_data, ve
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
 	
-	RF_info = {'RFproba':RFproba, 'curves':curves, 'pref_ori':pref_ori, 'pref_ori_naive':pref_ori_naive, 'slopes':slopes, 'slopes_naive':slopes_naive}
+	RF_info = {'RFproba':RFproba, 'curves':curves, 'curves_naive':curves_naive, 'pref_ori':pref_ori, 'pref_ori_naive':pref_ori_naive, 'slopes':slopes, 'slopes_naive':slopes_naive}
 	
 	return RF_info
 
@@ -478,7 +478,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
 	# ori_to_tests = np.array([-60., -20., -10., -5., 0., +5., +10., +20., +60.])
-	ori_to_tests = np.array([-60., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +60.])
+	ori_to_tests = np.array([-45., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +45.])
 	# ori_to_tests = np.array([-20., -5., 0.])
 	verbose = True
 
@@ -530,11 +530,11 @@ def perf_all_ori(net, save_path=''):
 		if verbose: print "test orientation: " + str(ori) + " (" + str(gabor_params['target_ori']) + ")"
 		
 		np.random.seed(0)
-		images_dict, labels_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																	A 				= net.A,
-																	verbose 		= net.verbose,
-																	gabor_params 	= gabor_params
-																	)
+		images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
+																			A 				= net.A,
+																			verbose 		= net.verbose,
+																			gabor_params 	= gabor_params
+																			)
 
 		#test each run
 		for i_run in range(n_runs_ori):

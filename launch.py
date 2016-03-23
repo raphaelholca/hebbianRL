@@ -25,10 +25,10 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dLow 			= -1.6,#-0.2,#-0.4,#
 							dopa_out_fixed 	= True,
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_pretrained_noise',#'gabor_t_1-0_lrgIm_DA_noise_0-0_4_2_1',
-							n_runs 			= 5,		
+							name 			= 'gabor_t_1-0_lrgIm_noise_0-0_long',
+							n_runs 			= 100,		
 							n_epi_crit		= 40,				
-							n_epi_dopa		= 0,				
+							n_epi_dopa		= 50,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -63,7 +63,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.3,
+																						'noise'				: 0.0,
 																						'im_size'			: 50#28,
 																						}
 																	)
@@ -82,7 +82,7 @@ an.assess(	net,
 			show_W_act		= True, 
 			sort			= None, 
 			target 			= None,
-			test_all_ori 	= False
+			test_all_ori 	= True
 			)
 
 print '\nrun name:\t' + net.name
