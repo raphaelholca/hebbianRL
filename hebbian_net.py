@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, n_hid_neurons=49, lim_weights=False, lr_hid=5e-3, lr_out=5e-7, noise_std=0.2, exploration=True, pdf_method='fit', batch_size=50, block_feedback=False, protocol='digit', classifier='neural', init_file=None, test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_set=True, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -31,24 +31,25 @@ class Network:
 				dMid (float): values of dopamine release for +reward expectation, +reward delivery
 				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
 				dLow (float): values of dopamine release for +reward expectation, -reward delivery
+				dopa_out_set (bool, optional): whether to use pre-set dopa values for the output layer (True) or use the values provided in the 'd' variables above. Default: True
+				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				n_runs (int, optional): number of runs. Default: 1
 				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 10
 				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 10
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
 				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default: 1.2
-				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
-				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
 				lr_out (float, optiona): learning rate for the output layer. Default: 5e-7
+				batch_size (int, optional): mini-batch size. Default: 20
+				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
+				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
+				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
+				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				noise_std (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn. Default: 0.2
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
-				batch_size (int, optional): mini-batch size. Default: 20
-				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
-				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
-				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
@@ -56,24 +57,25 @@ class Network:
 		"""
 		
 		self.dopa_values 	= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
+		self.dopa_out_set 	= dopa_out_set
+		self.protocol		= protocol
 		self.name 			= name
 		self.n_runs 		= n_runs
 		self.n_epi_crit		= n_epi_crit				
 		self.n_epi_dopa		= n_epi_dopa				
 		self.t				= t 						
 		self.A 				= A
-		self.n_hid_neurons 	= n_hid_neurons
-		self.lim_weights	= lim_weights
 		self.lr_hid			= lr_hid
 		self.lr_out			= lr_out
+		self.batch_size 	= batch_size
+		self.block_feedback = block_feedback
+		self.n_hid_neurons 	= n_hid_neurons
+		self.init_file		= init_file
+		self.lim_weights	= lim_weights
 		self.noise_std		= noise_std
 		self.exploration	= exploration
 		self.pdf_method 	= pdf_method
-		self.batch_size 	= batch_size
-		self.block_feedback = block_feedback
-		self.protocol		= protocol
 		self.classifier		= classifier
-		self.init_file		= init_file
 		self.test_each_epi	= test_each_epi
 		self.early_stop 	= early_stop
 		self.verbose 		= verbose
@@ -112,7 +114,6 @@ class Network:
 		self._train_class_layer = False if self.classifier=='bayesian' else True
 		self._n_images = np.size(images,0)
 		self._n_batches = int(np.ceil(float(self._n_images)/self.batch_size))
-		self._rnd_orientations = np.zeros((self.n_epi_tot, self.images_params['n_train']))
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -128,8 +129,9 @@ class Network:
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
+				self._rnd_orientations = np.zeros((self.n_epi_tot, self.images_params['n_train']))
 				if r != 0: #reload new training gabor filter
-					images_dict_new, labels_dict_new, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
+					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
 					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
 				if self.images_params['noise'] > 0.0:
@@ -413,9 +415,11 @@ class Network:
 		""" compute dopa release based on predicted and delivered reward """
 		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
-			# dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #original param give close to optimal results
-			dopa_release = ex.compute_dopa(predicted_reward, reward, dHigh=dHigh, dMid=dMid, dNeut=dNeut, dLow=dLow)
-			# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
+			if self.dopa_out_set:
+				dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
+				# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh'=0.0, 'dMid'=0.75, 'dNeut'=0.0, 'dLow'=-0.5}) #original param give close to optimal results
+			else:
+				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
 
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = dopa_release
@@ -425,7 +429,7 @@ class Network:
 			dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
 
 			dopa_hid = dopa_release
-			# dopa_out = ex.compute_dopa(out_greedy, out_explore, reward, dHigh=0.0, dMid=0.75, dNeut=0.0, dLow=-0.5) #continuous learning in L2
+			# dopa_out = dopa_release #continuous learning in output layer
 			dopa_out = np.zeros(self.batch_size)
 		else:
 			dopa_hid = None
