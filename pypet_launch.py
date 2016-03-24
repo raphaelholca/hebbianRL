@@ -23,11 +23,11 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
-					'dopa_out_fixed'	: True,
+					'dopa_out_fixed'	: False,
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_t_1-0_newtrainset_3',
+					'name' 				: 'pypet_gabor_t_1-0_newtrainset_3_2layers',
 					'n_runs' 			: 3,#50,#
-					'n_epi_crit'		: 0,				
+					'n_epi_crit'		: 20,				
 					'n_epi_dopa'		: 30,#500,#
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
@@ -36,7 +36,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 16,#49,#
-					'init_file'			: 'gabor_pretrained',
+					'init_file'			: '',
 					'lim_weights'		: False,
 					'noise_std'			: 0.2,
 					'exploration'		: True,
