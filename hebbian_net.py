@@ -129,7 +129,7 @@ class Network:
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
-				self._rnd_orientations = np.zeros((self.n_epi_tot, self.images_params['n_train']))
+				self._rnd_orientations = np.zeros((self.n_epi_dopa, self.images_params['n_train']))
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
@@ -155,8 +155,8 @@ class Network:
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit:
 					if self.images_params['renew_trainset']: #create new training images
-						self._rnd_orientations[e,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						self._rnd_orientations[e-self.n_epi_crit,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e-self.n_epi_crit,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 

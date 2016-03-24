@@ -478,106 +478,141 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
 	# ori_to_tests = np.array([-60., -20., -10., -5., 0., +5., +10., +20., +60.])
-	ori_to_tests = np.array([-45., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +45.])
-	# ori_to_tests = np.array([-20., -5., 0.])
+	# ori_to_tests = np.array([-45., -30., -20., -10., -5., -2., -1., 0., +1., +2., +5., +10., +20., +30., +45.])
+	ori_to_tests = np.array([ 0.])
 	verbose = True
 
 	if save_path=='':
 		save_path=os.path.join('output', net.name)
 
 	#save original variables:
-	n_runs_ori 			= net.n_runs
-	n_epi_crit_ori		= net.n_epi_crit
-	n_epi_dopa_ori 		= net.n_epi_dopa
-	n_epi_tot_ori 		= net.n_epi_tot
-	lr_hid_ori 			= net.lr_hid
-	lr_out_ori			= net.lr_out
-	init_file_ori		= net.init_file
-	test_each_epi_ori	= net.test_each_epi
-	verbose_ori			= net.verbose
-	target_ori_ori 		= net.images_params['target_ori']
-	hid_W_ori 			= np.copy(net.hid_W)
-	out_W_ori 			= np.copy(net.out_W)
-	hid_W_naive_ori 	= np.copy(net.hid_W_naive)
-	hid_W_trained_ori 	= np.copy(net.hid_W_trained)
-	out_W_naive_ori 	= np.copy(net.out_W_naive)
-	out_W_trained_ori 	= np.copy(net.out_W_trained)
-	perf_train_prog_ori = np.copy(net.perf_train_prog)
-	perf_test_prog_ori 	= np.copy(net.perf_test_prog)
-	perf_dict_ori 		= net.perf_dict.copy()
-	RF_info_ori 		= net.RF_info.copy()
+	n_runs_ori 				= net.n_runs
+	n_epi_crit_ori			= net.n_epi_crit
+	n_epi_dopa_ori 			= net.n_epi_dopa
+	dopa_out_fixed_ori 		= net.dopa_out_fixed
+	n_epi_tot_ori 			= net.n_epi_tot
+	lr_hid_ori 				= net.lr_hid
+	lr_out_ori				= net.lr_out
+	init_file_ori			= net.init_file
+	test_each_epi_ori		= net.test_each_epi
+	verbose_ori				= net.verbose
+	target_ori_ori 			= net.images_params['target_ori']
+	hid_W_ori 				= np.copy(net.hid_W)
+	out_W_ori 				= np.copy(net.out_W)
+	hid_W_naive_ori 		= np.copy(net.hid_W_naive)
+	hid_W_trained_ori 		= np.copy(net.hid_W_trained)
+	out_W_naive_ori 		= np.copy(net.out_W_naive)
+	out_W_trained_ori 		= np.copy(net.out_W_trained)
+	perf_train_prog_ori 	= np.copy(net.perf_train_prog)
+	perf_test_prog_ori 		= np.copy(net.perf_test_prog)
+	rnd_orientations_ori	= np.copy(net._rnd_orientations)
+	perf_dict_ori 			= net.perf_dict.copy()
+	RF_info_ori 			= net.RF_info.copy()
 	
 	#set training variables:
 	net.n_runs 			= 1
-	net.n_epi_crit		= 1
+	net.n_epi_crit		= 1 ##<-----------?
 	net.n_epi_dopa		= 0
 	net.lr_hid 			= 0
 	net.lr_out 			*= 100
 	net.init_file 		= 'NO_INIT'
 	net.test_each_epi 	= False
-	net.verbose 	 	= False
+	net.verbose 	 	= True
+	net.dopa_out_fixed 	= False
 
 	perf_at_ori = np.zeros((n_runs_ori, len(ori_to_tests)))
 
-	#test each orientation
-	for i_ori, ori in enumerate(ori_to_tests):
-		if net.verbose: print "\n----------------------------------------------------------------------------------------"
-		else: print
-		
-		#load and pre-process training and testing images
-		gabor_params = net.images_params
-		gabor_params['target_ori'] = target_ori_ori + ori	
-		if verbose: print "test orientation: " + str(ori) + " (" + str(gabor_params['target_ori']) + ")"
-		
-		np.random.seed(0)
-		images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																			A 				= net.A,
-																			verbose 		= net.verbose,
-																			gabor_params 	= gabor_params
-																			)
-
-		#test each run
-		for i_run in range(n_runs_ori):
-			#re-initialize output weights
+	try:
+		#test each orientation
+		for i_ori, ori in enumerate(ori_to_tests):
+			if net.verbose: print "\n----------------------------------------------------------------------------------------"
+			else: print
+			
+			#load and pre-process training and testing images
+			gabor_params = net.images_params
+			gabor_params['target_ori'] = target_ori_ori + ori	
+			if verbose: print "test orientation: " + str(ori) + " (" + str(gabor_params['target_ori']) + ")"
+			
 			np.random.seed(0)
-			net.out_W = (np.random.random_sample(size=(net.n_hid_neurons, net.n_out_neurons))/1000+1.0)/net.n_hid_neurons
+			images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
+																				A 				= net.A,
+																				verbose 		= net.verbose,
+																				gabor_params 	= gabor_params
+																				)
 
-			#load weights for each runs
-			net.hid_W = hid_W_trained_ori[i_run,:,:]
+			#test each run
+			for i_run in range(n_runs_ori):
+				#re-initialize output weights
+				np.random.seed(0)
+				net.out_W = (np.random.random_sample(size=(net.n_hid_neurons, net.n_out_neurons))/1000+1.0)/net.n_hid_neurons
 
-			#train net
-			net.train(images_dict, labels_dict, images_params)
+				# load weights for each runs
+				net.hid_W = hid_W_trained_ori[i_run,:,:]
 
-			#test net
-			perf_at_ori[i_run, i_ori] = net.test(images_dict, labels_dict, during_training=True)
+				# train net
+				net.train(images_dict, labels_dict, images_params)
 
-			if verbose: print "performance: " + str(perf_at_ori[i_run, i_ori])
+				# test net
+				perf_at_ori[i_run, i_ori] = net.test(images_dict, labels_dict, during_training=True)
 
-	#reset changed variables
-	net.n_runs 			= n_runs_ori
-	net.n_epi_crit		= n_epi_crit_ori
-	net.n_epi_dopa 		= n_epi_dopa_ori
-	net.n_epi_tot 		= n_epi_tot_ori
-	net.lr_hid 			= lr_hid_ori
-	net.lr_out			= lr_out_ori
-	net.init_file		= init_file_ori
-	net.test_each_epi	= test_each_epi_ori
-	net.verbose			= verbose_ori
-	net.hid_W 			= np.copy(hid_W_ori)
-	net.out_W 			= np.copy(out_W_ori)
-	net.hid_W_naive 	= np.copy(hid_W_naive_ori)
-	net.hid_W_trained 	= np.copy(hid_W_trained_ori)
-	net.out_W_naive  	= np.copy(out_W_naive_ori)
-	net.out_W_trained  	= np.copy(out_W_trained_ori)
-	net.perf_train_prog = np.copy(perf_train_prog_ori)
-	net.perf_test_prog 	= np.copy(perf_test_prog_ori)
-	net.perf_dict 		= perf_dict_ori.copy()
-	net.RF_info 		= RF_info_ori.copy()
-	net.images_params['target_ori'] = target_ori_ori 
+				if verbose: print "performance: " + str(perf_at_ori[i_run, i_ori])	
 
-	#add computed performance as network variable and save network to file again
-	net.perf_at_ori = {'perf':perf_at_ori, 'ori':ori_to_tests}
-	pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
+		#reset changed variables
+		net.n_runs 				= n_runs_ori
+		net.n_epi_crit			= n_epi_crit_ori
+		net.n_epi_dopa 			= n_epi_dopa_ori
+		net.n_epi_tot 			= n_epi_tot_ori
+		net.dopa_out_fixed 		= dopa_out_fixed_ori
+		net.lr_hid 				= lr_hid_ori
+		net.lr_out				= lr_out_ori
+		net.init_file			= init_file_ori
+		net.test_each_epi		= test_each_epi_ori
+		net.verbose				= verbose_ori
+		net.hid_W 				= np.copy(hid_W_ori)
+		net.out_W 				= np.copy(out_W_ori)
+		net.hid_W_naive 		= np.copy(hid_W_naive_ori)
+		net.hid_W_trained 		= np.copy(hid_W_trained_ori)
+		net.out_W_naive  		= np.copy(out_W_naive_ori)
+		net.out_W_trained  		= np.copy(out_W_trained_ori)
+		net.perf_train_prog 	= np.copy(perf_train_prog_ori)
+		net.perf_test_prog 		= np.copy(perf_test_prog_ori)
+		net._rnd_orientations 	= np.copy(rnd_orientations_ori)
+		net.perf_dict 			= perf_dict_ori.copy()
+		net.RF_info 			= RF_info_ori.copy()
+		net.images_params['target_ori'] = target_ori_ori 
+
+		#add computed performance as network variable and save network to file again
+		net.perf_at_ori = {'perf':perf_at_ori, 'ori':ori_to_tests}
+		pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
+	
+	except KeyboardInterrupt:
+		#reset changed variables
+		net.n_runs 				= n_runs_ori
+		net.n_epi_crit			= n_epi_crit_ori
+		net.n_epi_dopa 			= n_epi_dopa_ori
+		net.n_epi_tot 			= n_epi_tot_ori
+		net.dopa_out_fixed 		= dopa_out_fixed_ori
+		net.lr_hid 				= lr_hid_ori
+		net.lr_out				= lr_out_ori
+		net.init_file			= init_file_ori
+		net.test_each_epi		= test_each_epi_ori
+		net.verbose				= verbose_ori
+		net.hid_W 				= np.copy(hid_W_ori)
+		net.out_W 				= np.copy(out_W_ori)
+		net.hid_W_naive 		= np.copy(hid_W_naive_ori)
+		net.hid_W_trained 		= np.copy(hid_W_trained_ori)
+		net.out_W_naive  		= np.copy(out_W_naive_ori)
+		net.out_W_trained  		= np.copy(out_W_trained_ori)
+		net.perf_train_prog 	= np.copy(perf_train_prog_ori)
+		net.perf_test_prog 		= np.copy(perf_test_prog_ori)
+		net._rnd_orientations 	= np.copy(rnd_orientations_ori)
+		net.perf_dict 			= perf_dict_ori.copy()
+		net.RF_info 			= RF_info_ori.copy()
+		net.images_params['target_ori'] = target_ori_ori
+
+		pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
+
+		sys.exit(0)
 
 	""" plot of performance for different orientations """
 	fig, ax = plt.subplots()

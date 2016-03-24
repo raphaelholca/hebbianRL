@@ -20,15 +20,15 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
-							dMid 			= 0.0,#0.001,#0.0,#
+							dMid 			= 0.00,#0.001,#0.0,#
 							dNeut 			= -0.0,#-0.04,#-0.08,#
 							dLow 			= -1.6,#-0.2,#-0.4,#
 							dopa_out_fixed 	= True,
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_t_1-0_lrgIm_noise_0-0_long',
-							n_runs 			= 100,		
-							n_epi_crit		= 40,				
-							n_epi_dopa		= 50,				
+							name 			= 'gabor_t_1-0_lrgIm_noise_0-1_long_2',
+							n_runs 			= 4,		
+							n_epi_crit		= 50,				
+							n_epi_dopa		= 40,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -45,7 +45,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 956 #np.random.randint(1000)
+							seed 			= 973 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -63,7 +63,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.0,
+																						'noise'				: 0.1,
 																						'im_size'			: 50#28,
 																						}
 																	)
@@ -82,7 +82,7 @@ an.assess(	net,
 			show_W_act		= True, 
 			sort			= None, 
 			target 			= None,
-			test_all_ori 	= True
+			test_all_ori 	= False
 			)
 
 print '\nrun name:\t' + net.name
