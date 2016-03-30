@@ -22,13 +22,17 @@ pp = reload(pp)
 parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
-					'dLow' 				: 0.0,
-					'dopa_out_fixed'	: False,
+					'dLow' 				: -1.0,
+					'dopa_out_same'		: True,
+					'dHigh_out'			: 12.0,#0.0
+					'dMid_out'			: 0.00,#0.2
+					'dNeut_out'			: -0.1,#-0.3
+					'dLow_out'			: -1.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_t_1-0_newtrainset_3_2layers',
+					'name' 				: 'pypet_gabor_t_1-0_noise_0-1_classLayer_2',
 					'n_runs' 			: 3,#50,#
-					'n_epi_crit'		: 20,				
-					'n_epi_dopa'		: 30,#500,#
+					'n_epi_crit'		: 30,				
+					'n_epi_dopa'		: 0,#500,#
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
 					'lr_hid'			: 5e-3,
@@ -45,15 +49,15 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'test_each_epi'		: False,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 979 #np.random.randint(1000)
+					'seed' 				: 978 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
-					'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], #[-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
+explore_dict = {	'dHigh'			: [+8.000, +12.00, +16.00, +20.00], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
+					'dNeut'			: [-0.100, -0.050, -0.010, -0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
 					
-					'dMid'			: [-0.001, +0.000, +0.001, +0.010, +0.100], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
-					'dLow'			: [-0.000, -1.000, -2.000, -3.000, -4.000]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
+					# 'dMid'			: [-0.010, +0.000, +0.010, +0.100], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
+					# 'dLow'			: [-0.000, -0.500, -1.000, -1.500]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
 				}
 
 """ load and pre-process images """
@@ -71,7 +75,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,
-																						'noise'				: 0.0,#0.3,
+																						'noise'				: 0.1,
 																						'im_size'			: 50#28
 																						}
 																	)
@@ -106,9 +110,9 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 print "\n\nplotting results"
-pp.faceting(save_path)
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
+pp.faceting(save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))

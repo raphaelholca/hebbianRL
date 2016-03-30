@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_fixed=True, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -31,7 +31,11 @@ class Network:
 				dMid (float): values of dopamine release for +reward expectation, +reward delivery
 				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
 				dLow (float): values of dopamine release for +reward expectation, -reward delivery
-				dopa_out_fixed (bool, optional): whether to use pre-set dopa values for the output layer (True) or use the values provided in the 'd' variables above. Default: True
+				dopa_out_same (bool, optional): whether to use the same dopa values in the output layer as in the hidden layer (True) or use the values provided in the 'd_out' variables below. Default: True
+				dHigh_out (float, optional): values of dopamine release for -reward expectation, +reward delivery for output layer. Default: 0.0
+				dMid_out (float, optional): values of dopamine release for +reward expectation, +reward delivery for output layer. Default: 0.2
+				dNeut_out (float, optional): values of dopamine release for -reward expectation, -reward delivery for output layer. Default: -0.3
+				dLow_out (float, optional): values of dopamine release for +reward expectation, -reward delivery for output layer. Default: -0.5
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				n_runs (int, optional): number of runs. Default: 1
@@ -56,31 +60,32 @@ class Network:
 				seed (int, optional): seed of the random number generator. Default: None
 		"""
 		
-		self.dopa_values 	= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
-		self.dopa_out_fixed = dopa_out_fixed
-		self.protocol		= protocol
-		self.name 			= name
-		self.n_runs 		= n_runs
-		self.n_epi_crit		= n_epi_crit				
-		self.n_epi_dopa		= n_epi_dopa				
-		self.t				= t 						
-		self.A 				= A
-		self.lr_hid			= lr_hid
-		self.lr_out			= lr_out
-		self.batch_size 	= batch_size
-		self.block_feedback = block_feedback
-		self.n_hid_neurons 	= n_hid_neurons
-		self.init_file		= init_file
-		self.lim_weights	= lim_weights
-		self.noise_std		= noise_std
-		self.exploration	= exploration
-		self.pdf_method 	= pdf_method
-		self.classifier		= classifier
-		self.test_each_epi	= test_each_epi
-		self.early_stop 	= early_stop
-		self.verbose 		= verbose
-		self.seed 			= seed
-		self._early_stop_cond = []
+		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
+		self.dopa_values_out	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out}
+		self.dopa_out_same 		= dopa_out_same
+		self.protocol			= protocol
+		self.name 				= name
+		self.n_runs 			= n_runs
+		self.n_epi_crit			= n_epi_crit				
+		self.n_epi_dopa			= n_epi_dopa				
+		self.t					= t 						
+		self.A 					= A
+		self.lr_hid				= lr_hid
+		self.lr_out				= lr_out
+		self.batch_size 		= batch_size
+		self.block_feedback 	= block_feedback
+		self.n_hid_neurons 		= n_hid_neurons
+		self.init_file			= init_file
+		self.lim_weights		= lim_weights
+		self.noise_std			= noise_std
+		self.exploration		= exploration
+		self.pdf_method 		= pdf_method
+		self.classifier			= classifier
+		self.test_each_epi		= test_each_epi
+		self.early_stop 		= early_stop
+		self.verbose 			= verbose
+		self.seed 				= seed
+		self._early_stop_cond 	= []
 	
 		np.random.seed(self.seed)
 		self._check_parameters()
@@ -415,11 +420,10 @@ class Network:
 		""" compute dopa release based on predicted and delivered reward """
 		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
-			if hasattr(self, 'dopa_out_fixed') and self.dopa_out_fixed:
-				dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
-				# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh'=0.0, 'dMid'=0.75, 'dNeut'=0.0, 'dLow'=-0.5}) #original param give close to optimal results
-			else:
+			if self.dopa_out_same:
 				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
+			else:
+				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values_out)
 
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = dopa_release
