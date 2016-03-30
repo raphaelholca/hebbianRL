@@ -26,7 +26,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dopa_out_fixed 	= True,
 							protocol		= 'gabor',#'digit',#
 							name 			= 'gabor_t_1-0_lrgIm_noise_0-1_long_2',
-							n_runs 			= 4,		
+							n_runs 			= 40,		
 							n_epi_crit		= 50,				
 							n_epi_dopa		= 40,				
 							t				= 1.0,#0.1,
@@ -45,7 +45,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 973 #np.random.randint(1000)
+							seed 			= 981 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
