@@ -17,12 +17,11 @@ hebbian_net = reload(hebbian_net)
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
 	""" launch all the exploration of the parameters """
 	parameter_dict = traj.parameters.f_to_dict(short_names=True, fast_access=True)
-	# try:
-	test_perf, stat_diff = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
-	# except ValueError:
-	# 	print "*******ValueError Raised; exploration finished*******"
-	# 	test_perf = [-1.]
-	# 	stat_diff = [-1.]	
+	try:
+		test_perf, stat_diff = launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path)
+	except ValueError:
+		test_perf = [-1.]
+		stat_diff = [-1.]	
 
 	traj.f_add_result('test_perf', test_perf=test_perf)
 	traj.f_add_result('stat_diff', stat_diff=stat_diff)
@@ -315,7 +314,7 @@ def faceting(folder_path):
 	threshold = 0.00#01
 	t_threshold = 0.10#0.05
 	vmin=0.985#0.7#
-	vmax=1.0#0.95
+	vmax=1.0#0.96#
 	font_large = 20
 	font_small = 18
 

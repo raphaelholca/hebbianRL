@@ -25,10 +25,10 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dLow 			= -1.6,#-0.2,#-0.4,#
 							dopa_out_fixed 	= True,
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_t_1-0_lrgIm_noise_0-1_long_2',
-							n_runs 			= 4,		
-							n_epi_crit		= 50,				
-							n_epi_dopa		= 40,				
+							name 			= 'gabor_pretrained_noise_1-0',#'gabor_t_1-0_lrgIm_noise_0-1_long_2',
+							n_runs 			= 10,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 0,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
@@ -63,7 +63,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.1,
+																						'noise'				: 1.0,
 																						'im_size'			: 50#28,
 																						}
 																	)

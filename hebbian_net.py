@@ -416,8 +416,7 @@ class Network:
 		if self._e < self.n_epi_crit and self._train_class_layer:
 			""" critical period; train class layer """
 			if hasattr(self, 'dopa_out_fixed') and self.dopa_out_fixed:
-				dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':0.0, 'dMid':0.2, 'dNeut':-0.3, 'dLow':-0.5})
-				# dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh'=0.0, 'dMid'=0.75, 'dNeut'=0.0, 'dLow'=-0.5}) #original param give close to optimal results
+				dopa_release = ex.compute_dopa(predicted_reward, reward, {'dHigh':12.0, 'dMid':0.0, 'dNeut':-0.1, 'dLow':-1.0})
 			else:
 				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
 
