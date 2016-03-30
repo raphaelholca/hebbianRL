@@ -23,7 +23,11 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: -1.0,
-					'dopa_out_fixed'	: False,
+					'dopa_out_same'		: True,
+					'dHigh_out'			: 12.0,#0.0
+					'dMid_out'			: 0.00,#0.2
+					'dNeut_out'			: -0.1,#-0.3
+					'dLow_out'			: -1.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
 					'name' 				: 'pypet_gabor_t_1-0_noise_0-1_classLayer_2',
 					'n_runs' 			: 3,#50,#
