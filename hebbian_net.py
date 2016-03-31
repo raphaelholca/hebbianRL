@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_std=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -32,6 +32,7 @@ class Network:
 				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
 				dLow (float): values of dopamine release for +reward expectation, -reward delivery
 				dopa_out_same (bool, optional): whether to use the same dopa values in the output layer as in the hidden layer (True) or use the values provided in the 'd_out' variables below. Default: True
+				train_out_dopa (bool, optional): whether to train the output layer during the dopa period. Default: True
 				dHigh_out (float, optional): values of dopamine release for -reward expectation, +reward delivery for output layer. Default: 0.0
 				dMid_out (float, optional): values of dopamine release for +reward expectation, +reward delivery for output layer. Default: 0.2
 				dNeut_out (float, optional): values of dopamine release for -reward expectation, -reward delivery for output layer. Default: -0.3
@@ -63,6 +64,7 @@ class Network:
 		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
 		self.dopa_values_out	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out}
 		self.dopa_out_same 		= dopa_out_same
+		self.train_out_dopa		= train_out_dopa
 		self.protocol			= protocol
 		self.name 				= name
 		self.n_runs 			= n_runs
