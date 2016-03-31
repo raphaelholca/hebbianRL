@@ -25,7 +25,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dLow' 				: 0.0,
 					'dopa_out_same'		: False,
 					'train_out_dopa'	: False,
-					'dHigh_out'			: 12.0,#0.0
+					'dHigh_out'			: 8.0,#0.0
 					'dMid_out'			: 0.00,#0.2
 					'dNeut_out'			: -0.1,#-0.3
 					'dLow_out'			: -1.0,#-0.5
