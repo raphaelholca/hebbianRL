@@ -20,11 +20,12 @@ an = reload(an)
 
 """ create Hebbian neural network """
 net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
-							dMid 			= 0.00,#0.001,#0.0,#
-							dNeut 			= -0.1,#-0.04,#-0.08,#
-							dLow 			= -1.0,#-0.2,#-0.4,#
+							dMid 			= 0.10,#0.001,#0.0,#
+							dNeut 			= -0.0,#-0.04,#-0.08,#
+							dLow 			= -0.0,#-0.2,#-0.4,#
 							dopa_out_same 	= False,
-							dHigh_out		= 8.0,#0.0
+							train_out_dopa 	= True,
+							dHigh_out		= 12.0,#0.0
 							dMid_out		= 0.00,#0.2
 							dNeut_out		= -0.1,#-0.3
 							dLow_out		= -1.0,#-0.5
@@ -67,7 +68,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.3,
+																						'noise'				: 3.0,
 																						'im_size'			: 50#28,
 																						}
 																	)
