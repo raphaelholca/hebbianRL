@@ -30,10 +30,10 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dNeut_out		= -0.1,#-0.3
 							dLow_out		= -1.0,#-0.5
 							protocol		= 'gabor',#'digit',#
-							name 			= 'out_train_True',
+							name 			= 'out_train_True_DA',
 							n_runs 			= 1,		
 							n_epi_crit		= 20,				
-							n_epi_dopa		= 0,				
+							n_epi_dopa		= 30,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
