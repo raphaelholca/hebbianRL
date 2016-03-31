@@ -62,9 +62,9 @@ class Network:
 		"""
 		
 		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
-		self.dopa_values_out	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out}
 		self.dopa_out_same 		= dopa_out_same
 		self.train_out_dopa		= train_out_dopa
+		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
 		self.protocol			= protocol
 		self.name 				= name
 		self.n_runs 			= n_runs
@@ -185,26 +185,28 @@ class Network:
 					b_labels = rnd_labels[b*self.batch_size:(b+1)*self.batch_size]
 					
 					#propagate images through the network
-					out_greedy, out_explore, posterior = self._propagate(b_images)
+					greedy, explore_hid, explore_out, posterior = self._propagate(b_images)
 
 					#compute reward prediction
-					predicted_reward = ex.reward_prediction(out_greedy, out_explore, posterior=posterior)
+					predicted_reward_hid = ex.reward_prediction(greedy, explore_hid, posterior=posterior)
+					predicted_reward_out = ex.reward_prediction(greedy, explore_out, posterior=posterior)
 
 					#compute reward
-					reward = ex.reward_delivery(b_labels, out_explore)
+					reward_hid = ex.reward_delivery(b_labels, explore_hid)
+					reward_out = ex.reward_delivery(b_labels, explore_out)
 
 					#compute dopa signal
-					dopa_hid, dopa_out = self._dopa_release(predicted_reward, reward)
+					dopa_hid, dopa_out = self._dopa_release(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 						
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
 
 					#update weights
-					hid_W = self._learning_step(b_images, self.hid_neurons, self.hid_W, lr=self.lr_hid, dopa=dopa_hid)
+					hid_W = self._learning_step(b_images, self.hid_neurons_explore, self.hid_W, lr=self.lr_hid, dopa=dopa_hid)
 					if self._train_class_layer: 
-						out_W = self._learning_step(self.hid_neurons, self.out_neurons, self.out_W, lr=self.lr_out, dopa=dopa_out)
+						out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=self.lr_out, dopa=dopa_out)
 
-					correct += np.sum(out_greedy == b_labels)
+					correct += np.sum(greedy==b_labels)
 
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
@@ -356,90 +358,100 @@ class Network:
 	def _propagate(self, b_images):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
-			out_greedy, out_explore, posterior = self._propagate_bayesian(b_images)
+			greedy, explore_hid, explore_out, posterior = self._propagate_bayesian(b_images)
 		else:
-			out_greedy, out_explore, posterior = self._propagate_neural(b_images)
+			greedy, explore_hid, explore_out, posterior = self._propagate_neural(b_images)
 
-		return out_greedy, out_explore, posterior
+		return greedy, explore_hid, explore_out, posterior
 
 	def _propagate_neural(self, b_images):
 		""" propagate input images through the network with a layer of neurons on top """
+		#reset activity (important for cases in which no noise is added)
+		self.hid_neurons_greedy = None
+		self.hid_neurons_explore = None
+		self.out_neurons_greedy = None
+		self.out_neurons_explore_hid = None
+		self.out_neurons_explore_out = None
+
 		#compute activation of hidden neurons
-		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
-		
-		#compute activation of class neurons in greedy case
-		self.out_neurons = ex.propagate_layerwise(ex.softmax(self.hid_neurons, t=self.t), self.out_W, SM=False)
-		out_greedy = self.classes[np.argmax(self.out_neurons,1)]
+		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and self._e >= self.n_epi_crit:
-			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
-			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
-			self.out_neurons = ex.propagate_layerwise(self.hid_neurons, self.out_W, SM=False)
-		else:
-			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_std, np.shape(hid_activ))
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
+			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t)
+
+		#softmax hidden neurons
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
+
+		#compute activation of class neurons in greedy case
+		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False)
 
 		#adds noise in out_W neurons
 		if self._e < self.n_epi_crit:
-			self.out_neurons += np.random.normal(0, 4.0, np.shape(self.out_neurons))
-		
-		#compute activation of class neurons in explorative case
-		self.out_neurons = ex.softmax(self.out_neurons, t=self.t)
-		out_explore = self.classes[np.argmax(self.out_neurons,1)]	
+			self.out_neurons_explore_out = out_activ + np.random.normal(0, 4.0, np.shape(self.out_neurons_greedy))
+			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t)
 
-		return out_greedy, out_explore, None
+		#softmax output neurons
+		self.out_neurons_greedy = ex.softmax(out_activ, t=self.t)
+		
+		#set activation values for neurons when no exploration
+		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
+		if self.out_neurons_explore_hid is None: self.out_neurons_explore_hid = np.copy(self.out_neurons_greedy)
+		if self.out_neurons_explore_out is None: self.out_neurons_explore_out = np.copy(self.out_neurons_greedy)
+
+		#set return variables
+		greedy = self.classes[np.argmax(self.out_neurons_greedy,1)]
+		explore_hid = self.classes[np.argmax(self.out_neurons_explore_hid,1)]
+		explore_out = self.classes[np.argmax(self.out_neurons_explore_out,1)]
+
+		return greedy, explore_hid, explore_out, None
 
 	def _propagate_bayesian(self, b_images):
-		""" propagate input images through the network with a bayesian decoder on top """
-		#compute activation of hidden neurons
-		self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
+		raise NotImplementedError ("bayesian method not updated since parallel training of output layer during dopa")
+		# """ propagate input images through the network with a bayesian decoder on top """
+		# #compute activation of hidden neurons
+		# self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
-		#compute posterior of the bayesian decoder in greedy case
-		if self._e >= self.n_epi_crit:
-			posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-			out_greedy = self.classes[np.argmax(posterior,1)]
-		else:
-			posterior = None
-			out_greedy = None
+		# #compute posterior of the bayesian decoder in greedy case
+		# if self._e >= self.n_epi_crit:
+		# 	posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+		# 	out_greedy = self.classes[np.argmax(posterior,1)]
+		# else:
+		# 	posterior = None
+		# 	out_greedy = None
 
-		#add noise to activation of hidden neurons (exploration)
-		if self.exploration and self._e >= self.n_epi_crit:
-			self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
-			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
-		else:
-			self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+		# #add noise to activation of hidden neurons (exploration)
+		# if self.exploration and self._e >= self.n_epi_crit:
+		# 	self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_std, np.shape(self.hid_neurons))
+		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+		# else:
+		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
 
-		#compute posterior of the bayesian decoder in explorative case
-		if self._e >= self.n_epi_crit:
-			posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-			out_explore = self.classes[np.argmax(posterior_noise,1)]
-		else: 
-			out_explore = None
+		# #compute posterior of the bayesian decoder in explorative case
+		# if self._e >= self.n_epi_crit:
+		# 	posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+		# 	out_explore = self.classes[np.argmax(posterior_noise,1)]
+		# else: 
+		# 	out_explore = None
 
-		return out_greedy, out_explore, posterior
+		# return out_greedy, out_explore, posterior
 
-	def _dopa_release(self, predicted_reward, reward):
+	def _dopa_release(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
 		""" compute dopa release based on predicted and delivered reward """
 		if self._e < self.n_epi_crit and self._train_class_layer:
-			""" critical period; train class layer """
-			if self.dopa_out_same:
-				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
-			else:
-				dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values_out)
-
+			""" Critical period """
 			dopa_hid = np.ones(self.batch_size)
-			dopa_out = dopa_release
-
+			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
+	
 		elif self._e >= self.n_epi_crit: 
-			""" Dopa - perceptual learning """
-			dopa_release = ex.compute_dopa(predicted_reward, reward, self.dopa_values)
-
-			dopa_hid = dopa_release
-			# dopa_out = dopa_release #continuous learning in output layer
+			""" Perceptual learning """
+			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values)
+			## add parallel out training here
 			dopa_out = np.zeros(self.batch_size)
 		else:
-			dopa_hid = None
-			dopa_out = None
+			raise ValueError ("episode not within training range")
 
 		return dopa_hid, dopa_out
 
