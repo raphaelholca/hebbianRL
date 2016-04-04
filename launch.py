@@ -19,31 +19,32 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
-							dMid 			= 0.1,#0.001,#0.0,#
-							dNeut 			= -0.0,#-0.04,#-0.08,#
-							dLow 			= -0.0,#-0.2,#-0.4,#
+net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#0.8,#
+							dMid 			= 0.0,#0.001,#0.001,#
+							dNeut 			= -0.08,#-0.01,#-0.04,#
+							dLow 			= -0.4,#-2.0,#-0.2,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
-							dHigh_out		= 12.0,#0.0
-							dMid_out		= 0.00,#0.2
-							dNeut_out		= -0.1,#-0.3
-							dLow_out		= -1.0,#-0.5
-							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_noise_3-0_long_train_out_dopa',
-							n_runs 			= 30,		
-							n_epi_crit		= 15,				
-							n_epi_dopa		= 25,				
+							dHigh_out		= 0.0,#8.0,#
+							dMid_out		= 0.2,#0.00,#
+							dNeut_out		= -0.3,#-0.1,#
+							dLow_out		= -0.5,#-1.0,#
+							protocol		= 'digit',#'gabor',#
+							name 			= 'test_newstd_digit',
+							n_runs 			= 1,		
+							n_epi_crit		= 20,				
+							n_epi_dopa		= 30,				
 							t				= 1.0,#0.1,
 							A 				= 1.2,
 							lr_hid			= 5e-3,
 							lr_out			= 5e-7,
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 16,#49,#
+							n_hid_neurons	= 49,#16,#
 							init_file		= '',
 							lim_weights		= False,
-							noise_std		= 0.2,
+							noise_xplr_hid	= 0.2,
+							noise_xplr_out	= 2e4,
 							exploration		= True,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
