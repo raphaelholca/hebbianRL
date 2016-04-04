@@ -23,17 +23,17 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
-					'dopa_out_same'		: False,
+					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 8.0,#0.0
 					'dMid_out'			: 0.00,#0.2
 					'dNeut_out'			: -0.1,#-0.3
 					'dLow_out'			: -1.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_t_1-0_noise_1-0',
+					'name' 				: 'pypet_gabor_t_1-0_noise_0-0_classLayer',
 					'n_runs' 			: 3,#50,#
-					'n_epi_crit'		: 0,				
-					'n_epi_dopa'		: 30,#500,#
+					'n_epi_crit'		: 30,				
+					'n_epi_dopa'		: 0,
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
 					'lr_hid'			: 5e-3,
@@ -41,23 +41,23 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 16,#49,#
-					'init_file'			: 'gabor_pretrained_noise_3-0',
+					'init_file'			: '',
 					'lim_weights'		: False,
 					'noise_std'			: 0.2,
 					'exploration'		: True,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
-					'test_each_epi'		: False,
+					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
 					'seed' 				: 978 #np.random.randint(1000)
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+1.000, +2.000, +3.000, +4.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
+explore_dict = {	'dHigh'			: [+3.000, +6.000, +9.000, +12.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
 					'dNeut'			: [-0.500, -0.100, -0.010, -0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
 					
-					'dMid'			: [+0.000, +0.001, +0.010, +0.100], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
+					'dMid'			: [+0.000, +0.010, +0.100, +0.500], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
 					'dLow'			: [-0.000, -0.500, -1.000, -2.000]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
 				}
 
@@ -76,7 +76,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,
-																						'noise'				: 1.0,
+																						'noise'				: 0.0,
 																						'im_size'			: 50#28
 																						}
 																	)
