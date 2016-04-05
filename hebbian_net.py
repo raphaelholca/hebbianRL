@@ -160,12 +160,14 @@ class Network:
 				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
 
 				#shuffle input images
-				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
+				if self.protocol=='digit' :##or (self.protocol=='gabor' and e < self.n_epi_crit):
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
-				elif self.protocol=='gabor' and e >= self.n_epi_crit:
+				elif self.protocol=='gabor': ##and e >= self.n_epi_crit:
 					if self.images_params['renew_trainset']: #create new training images
-						self._rnd_orientations[e-self.n_epi_crit,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e-self.n_epi_crit,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						self._rnd_orientations = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						# self._rnd_orientations[e-self.n_epi_crit,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
+						# rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e-self.n_epi_crit,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 
@@ -191,11 +193,11 @@ class Network:
 
 					#compute reward prediction
 					predicted_reward_hid = ex.reward_prediction(greedy, explore_hid, posterior=posterior)
-					predicted_reward_out = ex.reward_prediction(greedy, explore_out, posterior=posterior)
+					predicted_reward_out = ex.reward_prediction(greedy, explore_out, posterior=posterior) if self._train_class_layer else None
 
 					#compute reward
 					reward_hid = ex.reward_delivery(b_labels, explore_hid)
-					reward_out = ex.reward_delivery(b_labels, explore_out)
+					reward_out = ex.reward_delivery(b_labels, explore_out) if self._train_class_layer else None
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
@@ -205,8 +207,7 @@ class Network:
 
 					#update weights
 					hid_W = self._learning_step(b_images, self.hid_neurons_explore, self.hid_W, lr=self.lr_hid, dopa=dopa_hid)
-					if self._train_class_layer: 
-						out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=self.lr_out, dopa=dopa_out)
+					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=self.lr_out, dopa=dopa_out) if self._train_class_layer else None
 
 					correct += np.sum(greedy==b_labels)
 
@@ -390,11 +391,6 @@ class Network:
 		#compute activation of class neurons in greedy case
 		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False)
 
-		##
-		if self._b==0:
-			print np.mean(np.std(out_activ))
-		##
-
 		#adds noise in out_W neurons
 		if self._e < self.n_epi_crit or self.train_out_dopa:
 			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))
@@ -416,34 +412,38 @@ class Network:
 		return greedy, explore_hid, explore_out, None
 
 	def _propagate_bayesian(self, b_images):
-		raise NotImplementedError ("bayesian method not updated since parallel training of output layer during dopa")
-		# """ propagate input images through the network with a bayesian decoder on top """
-		# #compute activation of hidden neurons
-		# self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
+		""" propagate input images through the network with a bayesian decoder on top """
+		#reset activity (important for cases in which no noise is added)
+		self.hid_neurons_greedy = None
+		self.hid_neurons_explore = None
+
+		#compute activation of hidden neurons
+		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
-		# #compute posterior of the bayesian decoder in greedy case
-		# if self._e >= self.n_epi_crit:
-		# 	posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-		# 	out_greedy = self.classes[np.argmax(posterior,1)]
-		# else:
-		# 	posterior = None
-		# 	out_greedy = None
+		#add noise to activation of hidden neurons (exploration)
+		if self.exploration and self._e >= self.n_epi_crit:
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
 
-		# #add noise to activation of hidden neurons (exploration)
-		# if self.exploration and self._e >= self.n_epi_crit:
-		# 	self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_xplr_hid, np.shape(self.hid_neurons))
-		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
-		# else:
-		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+		#softmax hidden neurons
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
+		
+		#set activation values for neurons when no exploration
+		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
 
-		# #compute posterior of the bayesian decoder in explorative case
-		# if self._e >= self.n_epi_crit:
-		# 	posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-		# 	out_explore = self.classes[np.argmax(posterior_noise,1)]
-		# else: 
-		# 	out_explore = None
+		#compute posteriors of the bayesian decoder in greedy and explorative cases
+		if self._e >= self.n_epi_crit:
+			posterior_greedy = bc.bayesian_decoder(self.hid_neurons_greedy, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+			greedy = self.classes[np.argmax(posterior_greedy,1)]
+			
+			posterior_explore = bc.bayesian_decoder(self.hid_neurons_explore, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+			explore = self.classes[np.argmax(posterior_explore,1)]
+		else:
+			posterior_greedy = None
+			greedy = None
+			explore = None		
 
-		# return out_greedy, out_explore, posterior
+		return greedy, explore, None, posterior_greedy
 
 	def _dopa_release(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
 		""" compute dopa release based on predicted and delivered reward """
@@ -458,7 +458,8 @@ class Network:
 			## add parallel out training here
 			dopa_out = np.zeros(self.batch_size)
 		else:
-			raise ValueError ("episode not within training range")
+			dopa_hid = np.ones(self.batch_size)
+			dopa_out = np.ones(self.batch_size)
 
 		return dopa_hid, dopa_out
 

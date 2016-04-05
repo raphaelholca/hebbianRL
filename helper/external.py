@@ -90,14 +90,17 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A)
 
-		orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
-		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
+		if not gabor_params['renew_trainset']:
+			orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
+			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
+		else:
+			orientations_task, images_task, labels_task = None, None, None
 
 		if load_test:
 			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
 			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
 		else:
-			images_test, labels_test = None, None
+			orientations_test, images_test, labels_test = None, None, None
 
 		images_params = gabor_params
 
@@ -417,8 +420,11 @@ def reward_delivery(labels, actions):
 		numpy array: 1 (reward) for correct label-action pair, otherwise 0
 	"""
 
-	reward = np.zeros(len(labels), dtype=int)
-	reward[labels==actions] = 1
+	if actions is not None:
+		reward = np.zeros(len(labels), dtype=int)
+		reward[labels==actions] = 1
+	else:
+		reward = None
 
 	return reward
 
