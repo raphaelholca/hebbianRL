@@ -488,6 +488,7 @@ def perf_all_ori(net, save_path=''):
 	#save original variables:
 	n_runs_ori 				= net.n_runs
 	n_epi_crit_ori			= net.n_epi_crit
+	n_epi_post_ori 			= net.n_epi_post
 	n_epi_dopa_ori 			= net.n_epi_dopa
 	dopa_out_same_ori 		= net.dopa_out_same
 	train_out_dopa_ori 		= net.train_out_dopa
@@ -513,6 +514,7 @@ def perf_all_ori(net, save_path=''):
 	#set training variables:
 	net.n_runs 			= 1
 	net.n_epi_crit		= 1 ##<-----------?
+	net.n_epi_post 		= 0
 	net.n_epi_dopa		= 0
 	net.lr_hid 			= 0
 	net.lr_out 			*= 100
@@ -561,6 +563,7 @@ def perf_all_ori(net, save_path=''):
 		#reset changed variables
 		net.n_runs 				= n_runs_ori
 		net.n_epi_crit			= n_epi_crit_ori
+		net.n_epi_post 			= n_epi_post_ori
 		net.n_epi_dopa 			= n_epi_dopa_ori
 		net.n_epi_tot 			= n_epi_tot_ori
 		net.dopa_out_same 		= dopa_out_same_ori
@@ -591,6 +594,7 @@ def perf_all_ori(net, save_path=''):
 		#reset changed variables
 		net.n_runs 				= n_runs_ori
 		net.n_epi_crit			= n_epi_crit_ori
+		net.n_epi_post 			= n_epi_post_ori
 		net.n_epi_dopa 			= n_epi_dopa_ori
 		net.n_epi_tot 			= n_epi_tot_ori
 		net.dopa_out_same 		= dopa_out_same_ori
