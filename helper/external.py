@@ -269,8 +269,7 @@ def print_params(param_dict, save_file):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_xplr_hid', 'noise_xplr_out',
-		'exploration', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')

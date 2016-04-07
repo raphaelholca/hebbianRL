@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_xplr_hid=0.2, noise_xplr_out=2e4, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -46,7 +46,7 @@ class Network:
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
 				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default: 1.2
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
-				lr_out (float, optiona): learning rate for the output layer. Default: 5e-7
+				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
@@ -54,6 +54,7 @@ class Network:
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				noise_xplr_hid (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn, for exploration in the hidden layer. Default: 0.2
 				noise_xplr_out (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn, for exploration in the output layer. Default: 2e4
+				noise_activ (float, optional): standard deviation of additive noise corrupting the activation of hidden neurons. Default: 0.2
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
@@ -85,6 +86,7 @@ class Network:
 		self.noise_xplr_hid		= noise_xplr_hid
 		self.noise_xplr_out 	= noise_xplr_out
 		self.exploration		= exploration
+		self.noise_activ 		= np.clip(noise_activ, 1e-20, np.inf)
 		self.pdf_method 		= pdf_method
 		self.classifier			= classifier
 		self.test_each_epi		= test_each_epi
@@ -92,7 +94,7 @@ class Network:
 		self.verbose 			= verbose
 		self.seed 				= seed
 		self._early_stop_cond 	= []
-	
+
 		np.random.seed(self.seed)
 		self._check_parameters()
 
@@ -220,6 +222,7 @@ class Network:
 
 					correct += np.sum(greedy==b_labels)
 
+
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
 
@@ -272,7 +275,11 @@ class Network:
 
 			""" testing of the classifier """
 			if self.classifier=='neural':
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t)
+				# hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t)
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False) 
+				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				hidNeurons = ex.softmax(hidNeurons, t=self.t)
+
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W)
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
@@ -386,7 +393,8 @@ class Network:
 		self.out_neurons_explore_out = None
 
 		#compute activation of hidden neurons
-		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
+		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False) 
+		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and self._e >= self.n_epi_crit and self._e < self.n_epi_crit + self.n_epi_dopa:

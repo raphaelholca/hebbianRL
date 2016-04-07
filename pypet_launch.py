@@ -23,17 +23,17 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
-					'dopa_out_same'		: True,
+					'dopa_out_same'		: False,
 					'train_out_dopa'	: False,
-					'dHigh_out'			: 8.0,#0.0
+					'dHigh_out'			: 0.0,#0.0
 					'dMid_out'			: 0.00,#0.2
-					'dNeut_out'			: -0.1,#-0.3
-					'dLow_out'			: -1.0,#-0.5
+					'dNeut_out'			: -0.0,#-0.3
+					'dLow_out'			: -5.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_noExplr_classLayer_t0',
-					'n_runs' 			: 1,#50,#
-					'n_epi_crit'		: 5,				
-					'n_epi_dopa'		: 0,
+					'name' 				: 'pypet_gabor_noExplr_hidLayer_noiseActiv_1-0',
+					'n_runs' 			: 3,#50,#
+					'n_epi_crit'		: 20,				
+					'n_epi_dopa'		: 20,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
@@ -47,11 +47,12 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'noise_xplr_hid'	: 0.2,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: False,
+					'noise_activ'		: 1.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
 					'test_each_epi'		: True,
 					'early_stop'		: False,
-					'verbose'			: True,
+					'verbose'			: False,
 					'seed' 				: 978 #np.random.randint(1000)
 					}
 
@@ -59,8 +60,8 @@ parameter_dict = {	'dHigh' 			: 0.0,
 explore_dict = {	#'dHigh'			: [+3.000, +6.000, +9.000, +12.000], #[0.000, 0.800, 1.600, 2.400, 3.200], #[-1.00, 0.000, 1.000, 2.000, 3.000], #
 					#'dNeut'			: [-0.500, -0.100, -0.010, -0.000], #[-0.10, -0.08, -0.06, -0.04, -0.02], #[-0.500, -0.200, -0.100, +0.000, +0.100], #
 					
-					'dMid'			: [2.0],# [+1.500, +1.750, +2.000, +2.250, +2.500], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
-					'dLow'			: [-2.0],# #[-1.500, -1.750, -2.000, -2.250, -2.500]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
+					'dMid'			: [-0.010, +0.000, +0.010, +0.100, +0.500], #[0.000, 0.001, 0.005, 0.010, 0.050], #[-0.050, -0.001, +0.000, +0.001, +0.050], #
+					'dLow'			: [-20.00, -10.00, -5.000, -2.000, -1.000]  #[+0.000, -0.800, -1.600, -2.400, -3.200]  #[0.000, -0.20, -0.40, -0.60, -0.80]  #[-1.500, -1.000, -0.500, +0.000, +0.500]  #
 				}
 
 """ load and pre-process images """
