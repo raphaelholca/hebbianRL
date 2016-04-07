@@ -30,19 +30,19 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'test_post_noise_1-0',
-							n_runs 			= 10,		
-							n_epi_crit		= 20,
-							n_epi_dopa		= 20,				
-							n_epi_post 		= 20,				
+							name 			= 'test_post_xplr',
+							n_runs 			= 1,		
+							n_epi_crit		= 11,
+							n_epi_dopa		= 0,				
+							n_epi_post 		= 0,				
 							t				= 1.0,#0.1,#
 							A 				= 1.2,
-							lr_hid			= 5e-3,#5e-3,
-							lr_out			= 5e-7,#5e-7
+							lr_hid			= 0.,#5e-3,#5e-3,
+							lr_out			= 5e-9,#5e-7
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= '',
+							init_file		= 'test_neural_basis_2',
 							lim_weights		= False,
 							noise_xplr_hid	= 0.2,
 							noise_xplr_out	= 2e4,
@@ -52,7 +52,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 983 #np.random.randint(1000)
+							seed 			= 978 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -70,7 +70,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 3.0,
+																						'noise'				: 0.0,
 																						'im_size'			: 50#28,
 																						}
 																	)

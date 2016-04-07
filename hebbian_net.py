@@ -208,7 +208,7 @@ class Network:
 
 					#set lr_hid=0 during the 'post' period ##
 					if e >= self.n_epi_crit + self.n_epi_dopa:
-						lr_hid = 0
+						lr_hid = 0.0
 						lr_out = 5e-9
 					else: 
 						lr_hid = self.lr_hid 
@@ -456,7 +456,7 @@ class Network:
 
 	def _dopa_release(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
 		""" compute dopa release based on predicted and delivered reward """
-		if (self._e < self.n_epi_crit or self._e <= self.n_epi_crit + self.n_epi_dopa) and self._train_class_layer:
+		if (self._e < self.n_epi_crit or self._e >= self.n_epi_crit + self.n_epi_dopa) and self._train_class_layer:
 			""" Critical and Post period """
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
