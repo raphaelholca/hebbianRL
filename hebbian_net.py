@@ -21,7 +21,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=10, n_epi_dopa=10, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_xplr_hid=0.2, noise_xplr_out=2e4, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, noise_xplr_hid=0.2, noise_xplr_out=2e4, exploration=True, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -40,8 +40,9 @@ class Network:
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				n_runs (int, optional): number of runs. Default: 1
-				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 10
-				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 10
+				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 20
+				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
+				n_epi_post (int, optional): number of episodes after the dopa period to train output layer without learning in the hidden layer. Default: 5
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
 				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default: 1.2
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
@@ -69,8 +70,9 @@ class Network:
 		self.protocol			= protocol
 		self.name 				= name
 		self.n_runs 			= n_runs
-		self.n_epi_crit			= n_epi_crit				
+		self.n_epi_crit			= n_epi_crit
 		self.n_epi_dopa			= n_epi_dopa				
+		self.n_epi_post 		= n_epi_post			
 		self.t					= t 						
 		self.A 					= A
 		self.lr_hid				= lr_hid
@@ -113,7 +115,7 @@ class Network:
 		self.classes = np.sort(np.unique(labels))
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
-		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa
+		self.n_epi_tot = self.n_epi_crit + self.n_epi_dopa + self.n_epi_post
 		self.hid_W_naive = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
@@ -138,7 +140,7 @@ class Network:
 			self._init_weights()
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
-				self._rnd_orientations = np.zeros((self.n_epi_dopa, self.images_params['n_train']))
+				self._rnd_orientations = np.zeros((self.n_epi_dopa + self.n_epi_post, self.images_params['n_train']))
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
@@ -153,16 +155,17 @@ class Network:
 				self._e = e
 
 				#save weights just after the end of statistical pre-training
-				if e==self.n_epi_crit:
+				if e == self.n_epi_crit:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
-
-				if self.verbose and e==self.n_epi_crit: print '----------end crit-----------'
+					if self.verbose: print '----------end crit-----------'
+				if e == self.n_epi_crit + self.n_epi_dopa:
+					if self.verbose: print '----------end dopa-----------'
 
 				#shuffle input images
-				if self.protocol=='digit' or (self.protocol=='gabor' and e < self.n_epi_crit):
+				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit or  e >= self.n_epi_crit + self.n_epi_dopa)):
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
-				elif self.protocol=='gabor' and e >= self.n_epi_crit:
+				elif self.protocol=='gabor' and e >= self.n_epi_crit and e < self.n_epi_crit + self.n_epi_dopa: ##
 					if self.images_params['renew_trainset']: #create new training images
 						self._rnd_orientations[e-self.n_epi_crit,:] = np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
 						rnd_images, rnd_labels = ex.generate_gabors(self._rnd_orientations[e-self.n_epi_crit,:], self.images_params['target_ori'], self.images_params['im_size'], self.A)
@@ -191,11 +194,11 @@ class Network:
 
 					#compute reward prediction
 					predicted_reward_hid = ex.reward_prediction(greedy, explore_hid, posterior=posterior)
-					predicted_reward_out = ex.reward_prediction(greedy, explore_out, posterior=posterior)
+					predicted_reward_out = ex.reward_prediction(greedy, explore_out, posterior=posterior) if self._train_class_layer else None
 
 					#compute reward
 					reward_hid = ex.reward_delivery(b_labels, explore_hid)
-					reward_out = ex.reward_delivery(b_labels, explore_out)
+					reward_out = ex.reward_delivery(b_labels, explore_out) if self._train_class_layer else None
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
@@ -203,10 +206,17 @@ class Network:
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
 
+					#set lr_hid=0 during the 'post' period ##
+					if e >= self.n_epi_crit + self.n_epi_dopa:
+						lr_hid = 0
+						lr_out = 5e-9
+					else: 
+						lr_hid = self.lr_hid 
+						lr_out = self.lr_out
+					
 					#update weights
-					hid_W = self._learning_step(b_images, self.hid_neurons_explore, self.hid_W, lr=self.lr_hid, dopa=dopa_hid)
-					if self._train_class_layer: 
-						out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=self.lr_out, dopa=dopa_out)
+					hid_W = self._learning_step(b_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
+					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
 
 					correct += np.sum(greedy==b_labels)
 
@@ -379,7 +389,7 @@ class Network:
 		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 
 		#add noise to activation of hidden neurons (exploration)
-		if self.exploration and self._e >= self.n_epi_crit:
+		if self.exploration and self._e >= self.n_epi_crit and self._e < self.n_epi_crit + self.n_epi_dopa:
 			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
 			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t)
@@ -390,13 +400,8 @@ class Network:
 		#compute activation of class neurons in greedy case
 		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False)
 
-		##
-		if self._b==0:
-			print np.mean(np.std(out_activ))
-		##
-
 		#adds noise in out_W neurons
-		if self._e < self.n_epi_crit or self.train_out_dopa:
+		if self._e < self.n_epi_crit or self.train_out_dopa or self._e >= self.n_epi_crit + self.n_epi_dopa:
 			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))
 			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t)
 
@@ -416,49 +421,54 @@ class Network:
 		return greedy, explore_hid, explore_out, None
 
 	def _propagate_bayesian(self, b_images):
-		raise NotImplementedError ("bayesian method not updated since parallel training of output layer during dopa")
-		# """ propagate input images through the network with a bayesian decoder on top """
-		# #compute activation of hidden neurons
-		# self.hid_neurons = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
+		""" propagate input images through the network with a bayesian decoder on top """
+		#reset activity (important for cases in which no noise is added)
+		self.hid_neurons_greedy = None
+		self.hid_neurons_explore = None
+
+		#compute activation of hidden neurons
+		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False)
 		
-		# #compute posterior of the bayesian decoder in greedy case
-		# if self._e >= self.n_epi_crit:
-		# 	posterior = bc.bayesian_decoder(ex.softmax(self.hid_neurons, t=self.t), self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-		# 	out_greedy = self.classes[np.argmax(posterior,1)]
-		# else:
-		# 	posterior = None
-		# 	out_greedy = None
+		#add noise to activation of hidden neurons (exploration)
+		if self.exploration and self._e >= self.n_epi_crit:
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
 
-		# #add noise to activation of hidden neurons (exploration)
-		# if self.exploration and self._e >= self.n_epi_crit:
-		# 	self.hid_neurons += np.random.normal(0, np.std(self.hid_neurons)*self.noise_xplr_hid, np.shape(self.hid_neurons))
-		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
-		# else:
-		# 	self.hid_neurons = ex.softmax(self.hid_neurons, t=self.t)
+		#softmax hidden neurons
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
+		
+		#set activation values for neurons when no exploration
+		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
 
-		# #compute posterior of the bayesian decoder in explorative case
-		# if self._e >= self.n_epi_crit:
-		# 	posterior_noise = bc.bayesian_decoder(self.hid_neurons, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
-		# 	out_explore = self.classes[np.argmax(posterior_noise,1)]
-		# else: 
-		# 	out_explore = None
+		#compute posteriors of the bayesian decoder in greedy and explorative cases
+		if self._e >= self.n_epi_crit:
+			posterior_greedy = bc.bayesian_decoder(self.hid_neurons_greedy, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+			greedy = self.classes[np.argmax(posterior_greedy,1)]
+			
+			posterior_explore = bc.bayesian_decoder(self.hid_neurons_explore, self._pdf_marginals, self._pdf_evidence, self._pdf_labels, self.pdf_method)
+			explore = self.classes[np.argmax(posterior_explore,1)]
+		else:
+			posterior_greedy = None
+			greedy = None
+			explore = None		
 
-		# return out_greedy, out_explore, posterior
+		return greedy, explore, None, posterior_greedy
 
 	def _dopa_release(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
 		""" compute dopa release based on predicted and delivered reward """
-		if self._e < self.n_epi_crit and self._train_class_layer:
-			""" Critical period """
+		if (self._e < self.n_epi_crit or self._e <= self.n_epi_crit + self.n_epi_dopa) and self._train_class_layer:
+			""" Critical and Post period """
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
 	
-		elif self._e >= self.n_epi_crit: 
-			""" Perceptual learning """
+		elif self._e >= self.n_epi_crit and self._e < self.n_epi_crit + self.n_epi_dopa: 
+			""" Perceptual learning (Dopa) period """
 			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values)
 			## add parallel out training here
 			dopa_out = np.zeros(self.batch_size)
 		else:
-			raise ValueError ("episode not within training range")
+			dopa_hid = np.ones(self.batch_size)
+			dopa_out = np.ones(self.batch_size)
 
 		return dopa_hid, dopa_out
 

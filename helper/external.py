@@ -90,14 +90,17 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A)
 
-		orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
-		images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
+		if not gabor_params['renew_trainset']:
+			orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
+			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
+		else:
+			orientations_task, images_task, labels_task = None, None, None
 
 		if load_test:
 			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
 			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
 		else:
-			images_test, labels_test = None, None
+			orientations_test, images_test, labels_test = None, None, None
 
 		images_params = gabor_params
 
@@ -266,7 +269,7 @@ def print_params(param_dict, save_file):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_xplr_hid', 'noise_xplr_out',
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_xplr_hid', 'noise_xplr_out',
 		'exploration', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
@@ -417,8 +420,11 @@ def reward_delivery(labels, actions):
 		numpy array: 1 (reward) for correct label-action pair, otherwise 0
 	"""
 
-	reward = np.zeros(len(labels), dtype=int)
-	reward[labels==actions] = 1
+	if actions is not None:
+		reward = np.zeros(len(labels), dtype=int)
+		reward[labels==actions] = 1
+	else:
+		reward = None
 
 	return reward
 

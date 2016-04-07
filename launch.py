@@ -19,28 +19,29 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.6,#1.0,#0.8,#
-							dMid 			= 0.0,#0.001,#0.001,#
-							dNeut 			= -0.08,#-0.01,#-0.04,#
-							dLow 			= -0.4,#-2.0,#-0.2,#
+net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
+							dMid 			= 0.001,#0.001,#0.0,#
+							dNeut 			= -0.01,#-0.04,#-0.08,#
+							dLow 			= -2.0,#-0.2,#-0.4,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
-							dHigh_out		= 0.0,#8.0,#
-							dMid_out		= 0.2,#0.00,#
-							dNeut_out		= -0.3,#-0.1,#
-							dLow_out		= -0.5,#-1.0,#
-							protocol		= 'digit',#'gabor',#
-							name 			= 'test_newstd_digit',
-							n_runs 			= 1,		
-							n_epi_crit		= 20,				
-							n_epi_dopa		= 30,				
-							t				= 1.0,#0.1,
+							dHigh_out		= 2.0,#0.0,#
+							dMid_out		= 0.0,#0.2,#
+							dNeut_out		= -0.0,#-0.3,#
+							dLow_out		= -2.0,#-0.5,#
+							protocol		= 'gabor',#'digit',#
+							name 			= 'test_post_noise_1-0',
+							n_runs 			= 10,		
+							n_epi_crit		= 20,
+							n_epi_dopa		= 20,				
+							n_epi_post 		= 20,				
+							t				= 1.0,#0.1,#
 							A 				= 1.2,
-							lr_hid			= 5e-3,
-							lr_out			= 5e-7,
+							lr_hid			= 5e-3,#5e-3,
+							lr_out			= 5e-7,#5e-7
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 49,#16,#
+							n_hid_neurons	= 16,#49,#
 							init_file		= '',
 							lim_weights		= False,
 							noise_xplr_hid	= 0.2,
