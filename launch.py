@@ -30,7 +30,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#0.8,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'test_post_noise_1-0',
+							name 			= 'test_post_noise_0-3',
 							n_runs 			= 10,		
 							n_epi_crit		= 20,
 							n_epi_dopa		= 20,				
@@ -70,7 +70,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 1.0,
+																						'noise'				: 0.3,
 																						'im_size'			: 50#28,
 																						}
 																	)
