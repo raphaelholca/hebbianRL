@@ -220,6 +220,7 @@ class Network:
 
 					correct += np.sum(greedy==b_labels)
 
+
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
 
