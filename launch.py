@@ -19,10 +19,10 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 2.0,#0.8,#1.6,#
-							dMid 			= 0.001,#0.001,#0.0,#
-							dNeut 			= -0.01,#-0.04,#-0.08,#
-							dLow 			= -2.0,#-0.2,#-0.4,#
+net = hebbian_net.Network(	dHigh 			= 1.0,#2.0,#0.8,#1.6,#
+							dMid 			= 0.005,#0.001,#0.001,#0.0,#
+							dNeut 			= 0.01,#-0.04,#-0.08,#
+							dLow 			= -3.0,#-0.2,#-0.4,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
@@ -33,8 +33,8 @@ net = hebbian_net.Network(	dHigh 			= 2.0,#0.8,#1.6,#
 							name 			= 'test_noise_activ_0-0_epsilon_1-0_noiseExplr_2e10',
 							n_runs 			= 1,		
 							n_epi_crit		= 20,
-							n_epi_fine 		= 20,
-							n_epi_dopa		= 0,				
+							n_epi_fine 		= 0,
+							n_epi_dopa		= 20,				
 							n_epi_post 		= 0,				
 							t				= 1.0,#0.1,#
 							A 				= 1.2,
@@ -47,9 +47,9 @@ net = hebbian_net.Network(	dHigh 			= 2.0,#0.8,#1.6,#
 							lim_weights		= False,
 							epsilon_xplr 	= 1.0,
 							noise_xplr_hid	= 0.2,
-							noise_xplr_out	= 2e10,#4,
+							noise_xplr_out	= 2e4,
 							exploration		= True,
-							noise_activ		= 0.0,
+							noise_activ		= 1.0,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,

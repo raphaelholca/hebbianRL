@@ -20,21 +20,21 @@ pp = reload(pp)
 
 """ static parameters """
 parameter_dict = {	'dHigh' 			: 0.0,
-					'dMid' 				: 0.0,
-					'dNeut' 			: 0.0,
-					'dLow' 				: 0.0,
-					'dopa_out_same'		: True,
+					'dMid' 				: 0.005,
+					'dNeut' 			: 0.01,
+					'dLow' 				: -3.0,
+					'dopa_out_same'		: False,
 					'train_out_dopa'	: False,
-					'dHigh_out'			: 6.0,#0.0
-					'dMid_out'			: 0.01,#0.2
-					'dNeut_out'			: -0.01,#-0.3
+					'dHigh_out'			: 2.0,#0.0
+					'dMid_out'			: 0.0,#0.2
+					'dNeut_out'			: -0.0,#-0.3
 					'dLow_out'			: -2.0,#-0.5
-					'protocol'			: 'digit',#'gabor',#
-					'name' 				: 'pypet_digit_t_1-0_fine_classLayer',
-					'n_runs' 			: 1,#50,#
+					'protocol'			: 'gabor',#'digit',#
+					'name' 				: 'pypet_gabor_epsilon_noiseXplr_noiseActiv_1-0',
+					'n_runs' 			: 3,#50,#
 					'n_epi_crit'		: 20,	
-					'n_epi_fine' 		: 30,			
-					'n_epi_dopa'		: 0,
+					'n_epi_fine' 		: 0,			
+					'n_epi_dopa'		: 20,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
@@ -42,14 +42,14 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'n_hid_neurons'		: 49,#16,#
+					'n_hid_neurons'		: 16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
-					'epsilon_xplr' 		: 1.0,
+					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.2,
-					'noise_xplr_out'	: 2e4,
+					'noise_xplr_hid'	: 2e4,
 					'exploration'		: True,
-					'noise_activ'		: 0.0,
+					'noise_activ'		: 1.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
 					'test_each_epi'		: True,
@@ -59,11 +59,14 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+0.000, +0.100, +0.500, +2.000],
-					'dNeut'			: [-0.500, -0.100, -0.010, -0.000], 
+explore_dict = {	#'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
+					# 'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], 
 					
-					'dMid'			: [+0.000, +0.010, +0.100, +0.500],
-					'dLow'			: [-2.000, -0.500, -0.100, -0.000]
+					# 'dMid'			: [+0.000, +0.001, +0.005, +0.010, +0.100],
+					# 'dLow'			: [-4.000, -3.000, -2.000, -1.000, -0.000]
+
+					'epsilon_xplr'		: [0.0, 0.25, 0.5, 0.75, 1.0],
+					'noise_xplr_hid' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
 				}
 
 """ load and pre-process images """
@@ -118,7 +121,7 @@ toc = time.time()
 print "\n\nplotting results"
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
-pp.faceting(save_path)
+# pp.faceting(save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))

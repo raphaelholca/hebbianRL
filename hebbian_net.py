@@ -397,14 +397,17 @@ class Network:
 		self.out_neurons_explore_hid = None
 		self.out_neurons_explore_out = None
 
+		#determine which trial will be explorative (e-greedy)
+		explorative_trials = ex.exploration(self.epsilon_xplr, self.batch_size)
+
+
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(b_images, self.hid_W, SM=False) 
 		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons (exploration)
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
-			explorative_trials = ex.exploration(self.epsilon_xplr, self.batch_size)
-			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))*explorative_trials
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))*explorative_trials[:,np.newaxis]
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
 			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t)
 
@@ -416,7 +419,7 @@ class Network:
 
 		#adds noise in out_W neurons
 		if self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa:
-			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))
+			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))*explorative_trials[:,np.newaxis]
 			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t)
 
 		#softmax output neurons
