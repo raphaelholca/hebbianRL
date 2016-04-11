@@ -314,7 +314,7 @@ def faceting(folder_path):
 	threshold = 0.00#01
 	t_threshold = 0.10#0.05
 	vmin=0.96#0.985#0.7#
-	vmax=0.99#1.0#0.96#
+	vmax=1.0#0.96#
 	font_large = 20
 	font_small = 18
 

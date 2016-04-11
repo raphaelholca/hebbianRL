@@ -30,7 +30,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dNeut_out'			: -0.01,#-0.3
 					'dLow_out'			: -2.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_Explr_hidLayer_noiseActiv_1-0',
+					'name' 				: 'pypet_gabor_noExplr_hidLayer_noiseActiv_1-0_3',
 					'n_runs' 			: 3,#50,#
 					'n_epi_crit'		: 20,	
 					'n_epi_fine' 		: 0,			
@@ -47,7 +47,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'lim_weights'		: False,
 					'noise_xplr_hid'	: 0.2,
 					'noise_xplr_out'	: 2e4,
-					'exploration'		: True,
+					'exploration'		: False,
 					'noise_activ'		: 1.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
@@ -58,8 +58,8 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
-					'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], 
+explore_dict = {	#'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
+					#'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], 
 					
 					'dMid'			: [+0.000, +0.001, +0.005, +0.010, +0.100],
 					'dLow'			: [-4.000, -3.000, -2.000, -1.000, -0.000]
@@ -117,7 +117,7 @@ toc = time.time()
 print "\n\nplotting results"
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
-# pp.faceting(save_path)
+pp.faceting(save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
