@@ -23,18 +23,18 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'dMid' 				: 0.0,
 					'dNeut' 			: 0.0,
 					'dLow' 				: 0.0,
-					'dopa_out_same'		: False,
+					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 6.0,#0.0
 					'dMid_out'			: 0.01,#0.2
 					'dNeut_out'			: -0.01,#-0.3
 					'dLow_out'			: -2.0,#-0.5
-					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_noExplr_hidLayer_noiseActiv_1-0_3',
-					'n_runs' 			: 3,#50,#
+					'protocol'			: 'digit',#'gabor',#
+					'name' 				: 'pypet_digit_t_1-0_fine_classLayer',
+					'n_runs' 			: 1,#50,#
 					'n_epi_crit'		: 20,	
-					'n_epi_fine' 		: 0,			
-					'n_epi_dopa'		: 20,
+					'n_epi_fine' 		: 30,			
+					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
@@ -42,13 +42,14 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'n_hid_neurons'		: 16,#49,#
+					'n_hid_neurons'		: 49,#16,#
 					'init_file'			: '',
 					'lim_weights'		: False,
+					'epsilon_xplr' 		: 1.0,
 					'noise_xplr_hid'	: 0.2,
 					'noise_xplr_out'	: 2e4,
-					'exploration'		: False,
-					'noise_activ'		: 1.0,
+					'exploration'		: True,
+					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
 					'test_each_epi'		: True,
@@ -58,11 +59,11 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					}
 
 """ explored parameters """
-explore_dict = {	#'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
-					#'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], 
+explore_dict = {	'dHigh'			: [+0.000, +0.100, +0.500, +2.000],
+					'dNeut'			: [-0.500, -0.100, -0.010, -0.000], 
 					
-					'dMid'			: [+0.000, +0.001, +0.005, +0.010, +0.100],
-					'dLow'			: [-4.000, -3.000, -2.000, -1.000, -0.000]
+					'dMid'			: [+0.000, +0.010, +0.100, +0.500],
+					'dLow'			: [-2.000, -0.500, -0.100, -0.000]
 				}
 
 """ load and pre-process images """

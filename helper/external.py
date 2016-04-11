@@ -269,7 +269,7 @@ def print_params(param_dict, save_file):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -503,7 +503,15 @@ def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
 
 	return t > z_value 
 
+def exploration(epsilon_xplr, batch_size):
+	""" 
+	Returns an array determining whether a trial will be exploratory or not. The values in the array are 1 for exploratory and 0 for explotative trials. The probability of having an exploratory (1) trial is determined by epsilon_xplr. The size of the array is determined by the batch size. 
+	"""
+	explorative_trials = np.zeros(batch_size, dtype=int)
+	explorative_proba = np.random.random(size=batch_size)
+	explorative_trials[explorative_proba < epsilon_xplr] = 1
 
+	return explorative_trials
 
 
 
