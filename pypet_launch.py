@@ -19,7 +19,7 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 			: 0.0,
+parameter_dict = {	'dHigh' 			: 1.0,
 					'dMid' 				: 0.005,
 					'dNeut' 			: 0.01,
 					'dLow' 				: -3.0,
@@ -47,7 +47,7 @@ parameter_dict = {	'dHigh' 			: 0.0,
 					'lim_weights'		: False,
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.2,
-					'noise_xplr_hid'	: 2e4,
+					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'noise_activ'		: 1.0,
 					'pdf_method' 		: 'fit',
@@ -66,7 +66,7 @@ explore_dict = {	#'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
 					# 'dLow'			: [-4.000, -3.000, -2.000, -1.000, -0.000]
 
 					'epsilon_xplr'		: [0.0, 0.25, 0.5, 0.75, 1.0],
-					'noise_xplr_hid' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
+					'noise_xplr_out' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
 				}
 
 """ load and pre-process images """
