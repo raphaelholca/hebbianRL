@@ -231,6 +231,12 @@ def print_save_CM(perf_dict, name, classes, verbose, save_data, save_path):
 	if save_data:
 		perf_file = open(os.path.join(save_path, name+ '_perf.txt'), 'w')
 		perf_file.write(perf_print)
+		if len(perf_all)>2:
+			perf_all_print = '\nall performances:\n================='
+			sorted_perf = (-np.array(perf_all)).argsort().argsort()
+			for r in range(np.size(perf_all)):
+				perf_all_print += '\nrun %d: %.2f%%   %d' % (r, 100.*perf_all[r], sorted_perf[r]+1)
+			perf_file.write(perf_all_print)
 		perf_file.close()
 
 		fig = plot_CM(CM_avg, classes)
