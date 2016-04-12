@@ -263,19 +263,26 @@ def save_net(net):
 	n_file.close()
 
 	save_file = os.path.join('output', net.name, net.name + '_params.txt')
-	print_params(vars(net), save_file)
+	print_params(vars(net), save_file, runtime=net.runtime)
 
-def print_params(param_dict, save_file):
+def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'train_out_dopa', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
 	time_str = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-	time_line = ('created on\t: %s\n\n' % time_str).expandtabs(tab_length)
+	time_line = ('created on\t: %s\n' % time_str).expandtabs(tab_length)
 	param_file.write(time_line)
+
+	if runtime is not None:
+		runtime_str = time.strftime("%H:%M:%S", time.gmtime(runtime))
+		runtime_line = ('runtime\t: %s\n\n' % runtime_str).expandtabs(tab_length)
+		param_file.write(runtime_line)
+	else:
+		param_file.write('\n')
 
 	for p in params_to_print:
 		if p in param_dict.keys():

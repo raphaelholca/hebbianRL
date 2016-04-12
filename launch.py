@@ -30,11 +30,11 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#2.0,#0.8,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'test_noise_activ_0-0_epsilon_1-0_noiseExplr_2e10',
+							name 			= 'test_runtime',
 							n_runs 			= 1,		
-							n_epi_crit		= 20,
+							n_epi_crit		= 10,
 							n_epi_fine 		= 0,
-							n_epi_dopa		= 20,				
+							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
 							t				= 1.0,#0.1,#
 							A 				= 1.2,
@@ -78,11 +78,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						}
 																	)
 
-tic = time.time()
-
 net.train(images_dict, labels_dict, images_params)
-
-toc = time.time()
 
 perf_dict = net.test(images_dict, labels_dict)
 
@@ -96,9 +92,9 @@ an.assess(	net,
 			)
 
 print '\nrun name:\t' + net.name
-print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
-print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
-print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
+print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_start))
+print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_stop))
+print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(net.runtime))
 
 
 

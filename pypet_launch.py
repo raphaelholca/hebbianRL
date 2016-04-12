@@ -92,11 +92,6 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
-print_dict = parameter_dict.copy()
-print_dict.update(explore_dict)
-print_dict.update({'images_params':images_params})
-save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')
-ex.print_params(print_dict, save_file)
 
 """ create pypet environment """
 env = pypet.Environment(trajectory 		= 'explore_perf',
@@ -118,10 +113,17 @@ tic = time.time()
 env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_path)
 toc = time.time()
 
+""" save parameters to file """
+print_dict = parameter_dict.copy()
+print_dict.update(explore_dict)
+print_dict.update({'images_params':images_params})
+save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')
+ex.print_params(print_dict, save_file, runtime=toc-tic)
+
 print "\n\nplotting results"
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
-# pp.faceting(save_path)
+pp.faceting(save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))

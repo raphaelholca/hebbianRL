@@ -10,6 +10,7 @@ import helper.external as ex
 import helper.grating as gr
 import helper.bayesian_decoder as bc
 import helper.assess_network as an
+import time
 import pickle
 import os
 
@@ -111,6 +112,8 @@ class Network:
 				labels_dict (dict): dictionary of label arrays of the images.
 				images_params (dict, optional): parameters used to create the images
 		"""
+
+		self._train_start = time.time()
 
 		images, images_task = images_dict['train'], images_dict['task']
 		labels, labels_task = labels_dict['train'], labels_dict['task']
@@ -237,6 +240,9 @@ class Network:
 			#save data
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
+
+		self._train_stop = time.time()
+		self.runtime = self._train_stop - self._train_start
 
 	def test(self, images_dict, labels_dict, during_training=False):
 		""" 
