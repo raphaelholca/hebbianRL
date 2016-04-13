@@ -269,7 +269,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'dopa_values_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_post', 'n_epi_dopa', 't', 'A', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -434,26 +434,24 @@ def reward_delivery(labels, actions):
 
 	return reward
 
-def reward_prediction(best_action, action_taken, proba_predict=False, posterior=None):
+def reward_prediction(explorative, compare_output, best_action=None, action_taken=None):
 	"""
 	Computes reward prediction based on the best (greedy) action and the action taken
 
 	Args:
-		best_action (numpy array): best (greedy) action for each trial of a batch
-		action_taken (numpy array): action taken for each trial of a batch
-		proba_predict (boolean, optional): whether reward prediction is probabilistic (i.e., the expected value of the reward) or deterministic (i.e., binary)
-		posterior (numpy array, optional): posterior probability of the bayesian decoder 
+		explorative (numpy array): contains 1s for trials where noise is injected (exploratory) and 0s otherwise
+		compare_output (bool): whether to compare the value of greedy and taken action to determine if the trial is exploratory
+		best_action (numpy array, optional): best (greedy) action for each trial of a batch. Default: None
+		action_taken (numpy array, optional): action taken for each trial of a batch. Default: None
 
 	returns:
 		numpy array: reward prediction, either deterministic or expected value (depending on proba_predict)
 	"""
 
-	if not proba_predict:
-		reward_prediction = best_action==action_taken #binary reward prediction
+	if compare_output:
+		return best_action == action_taken
 	else:
-		reward_prediction = posterior[range(np.size(action_taken,0)), val2idx(action_taken)] #expected value of the reward for the action taken
-
-	return reward_prediction
+		return ~explorative
 
 def compute_dopa(predicted_reward, reward, dopa_values):
 	"""
@@ -514,7 +512,7 @@ def exploration(epsilon_xplr, batch_size):
 	""" 
 	Returns an array determining whether a trial will be exploratory or not. The values in the array are 1 for exploratory and 0 for explotative trials. The probability of having an exploratory (1) trial is determined by epsilon_xplr. The size of the array is determined by the batch size. 
 	"""
-	explorative_trials = np.zeros(batch_size, dtype=int)
+	explorative_trials = np.zeros(batch_size, dtype=bool)
 	explorative_proba = np.random.random(size=batch_size)
 	explorative_trials[explorative_proba < epsilon_xplr] = 1
 

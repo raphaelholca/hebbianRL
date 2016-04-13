@@ -25,12 +25,12 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'dLow' 				: -3.0,
 					'dopa_out_same'		: False,
 					'train_out_dopa'	: False,
-					'dHigh_out'			: 2.0,#0.0
-					'dMid_out'			: 0.0,#0.2
-					'dNeut_out'			: -0.0,#-0.3
+					'dHigh_out'			: 2.0,#0.5
+					'dMid_out'			: 0.0,#0.1
+					'dNeut_out'			: -0.0,#-0.1
 					'dLow_out'			: -2.0,#-0.5
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_epsilon_noiseXplr_noiseActiv_1-0',
+					'name' 				: 'pypet_gabor_epsilon_0-5_noiseActiv_1-0_compareOut_True',
 					'n_runs' 			: 3,#50,#
 					'n_epi_crit'		: 20,	
 					'n_epi_fine' 		: 0,			
@@ -45,10 +45,11 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'n_hid_neurons'		: 16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
-					'epsilon_xplr'		: 1.0,
+					'epsilon_xplr'		: 0.5,
 					'noise_xplr_hid'	: 0.2,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
+					'compare_output' 	: True,
 					'noise_activ'		: 1.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
@@ -59,14 +60,14 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					}
 
 """ explored parameters """
-explore_dict = {	#'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +4.000],
-					# 'dNeut'			: [-0.500, -0.100, -0.010, -0.000, +0.010], 
+explore_dict = {	'dHigh'			: [+0.000, +2.000, +4.000],
+					'dNeut'			: [-0.500, -0.100, -0.000], 
 					
-					# 'dMid'			: [+0.000, +0.001, +0.005, +0.010, +0.100],
-					# 'dLow'			: [-4.000, -3.000, -2.000, -1.000, -0.000]
+					'dMid'			: [+0.000, +0.010, +0.100],
+					'dLow'			: [-4.000, -2.000, -0.000]
 
-					'epsilon_xplr'		: [0.0, 0.25, 0.5, 0.75, 1.0],
-					'noise_xplr_out' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
+					# 'epsilon_xplr'		: [0.0, 0.25, 0.5, 0.75, 1.0],
+					# 'noise_xplr_out' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
 				}
 
 """ load and pre-process images """
@@ -101,6 +102,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
+print_dict = parameter_dict.copy()
 traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)
 
@@ -114,7 +116,6 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 """ save parameters to file """
-print_dict = parameter_dict.copy()
 print_dict.update(explore_dict)
 print_dict.update({'images_params':images_params})
 save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')

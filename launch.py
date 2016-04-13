@@ -19,10 +19,10 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#2.0,#0.8,#1.6,#
-							dMid 			= 0.005,#0.001,#0.001,#0.0,#
-							dNeut 			= 0.01,#-0.04,#-0.08,#
-							dLow 			= -3.0,#-0.2,#-0.4,#
+net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
+							dMid 			= 0.01,#0.0,#
+							dNeut 			= -0.5,#-0.08,#
+							dLow 			= -4.0,#-0.4,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
@@ -30,16 +30,16 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#2.0,#0.8,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'test_perfprint',
-							n_runs 			= 3,		
-							n_epi_crit		= 2,
+							name 			= 'gabor_long',
+							n_runs 			= 1,
+							n_epi_crit		= 40,
 							n_epi_fine 		= 0,
-							n_epi_dopa		= 0,				
+							n_epi_dopa		= 20,				
 							n_epi_post 		= 0,				
 							t				= 1.0,#0.1,#
 							A 				= 1.2,
-							lr_hid			= 5e-3,#5e-3,
-							lr_out			= 5e-7,#5e-7
+							lr_hid			= 5e-3,
+							lr_out			= 5e-7,
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
@@ -49,6 +49,7 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#2.0,#0.8,#1.6,#
 							noise_xplr_hid	= 0.2,
 							noise_xplr_out	= 2e4,
 							exploration		= True,
+							compare_output 	= True,
 							noise_activ		= 1.0,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
