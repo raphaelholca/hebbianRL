@@ -19,7 +19,7 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
+net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
 							dMid 			= 0.01,#0.0,#
 							dNeut 			= -0.5,#-0.08,#
 							dLow 			= -4.0,#-0.4,#
@@ -30,9 +30,9 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_long',
+							name 			= 'gabor_dHigh_1-0_noiseXplrHid_0-3',
 							n_runs 			= 1,
-							n_epi_crit		= 40,
+							n_epi_crit		= 0,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 20,				
 							n_epi_post 		= 0,				
@@ -43,20 +43,20 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= '',
+							init_file		= 'gabor_pretrained',
 							lim_weights		= False,
-							epsilon_xplr 	= 1.0,
-							noise_xplr_hid	= 0.2,
+							epsilon_xplr 	= 1.0,#1.0,#
+							noise_xplr_hid	= 0.3,
 							noise_xplr_out	= 2e4,
 							exploration		= True,
-							compare_output 	= True,
+							compare_output 	= False,
 							noise_activ		= 1.0,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 979 #np.random.randint(1000)
+							seed 			= 975 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """

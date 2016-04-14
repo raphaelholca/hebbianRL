@@ -20,19 +20,19 @@ pp = reload(pp)
 
 """ static parameters """
 parameter_dict = {	'dHigh' 			: 1.0,
-					'dMid' 				: 0.005,
-					'dNeut' 			: 0.01,
+					'dMid' 				: 0.01,
+					'dNeut' 			: -0.1,
 					'dLow' 				: -3.0,
 					'dopa_out_same'		: False,
 					'train_out_dopa'	: False,
-					'dHigh_out'			: 2.0,#0.5
-					'dMid_out'			: 0.0,#0.1
-					'dNeut_out'			: -0.0,#-0.1
-					'dLow_out'			: -2.0,#-0.5
+					'dHigh_out'			: 2.0,#0.5,#
+					'dMid_out'			: 0.0,#0.1,#
+					'dNeut_out'			: -0.0,#-0.1,#
+					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_epsilon_0-5_noiseActiv_1-0_compareOut_True',
+					'name' 				: 'pypet_gabor_espilon_0-8_noiseXplrHid_0-3',
 					'n_runs' 			: 3,#50,#
-					'n_epi_crit'		: 20,	
+					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_dopa'		: 20,
 					'n_epi_post' 		: 0,				
@@ -43,10 +43,10 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 16,#49,#
-					'init_file'			: '',
+					'init_file'			: 'gabor_pretrained',
 					'lim_weights'		: False,
-					'epsilon_xplr'		: 0.5,
-					'noise_xplr_hid'	: 0.2,
+					'epsilon_xplr'		: 0.8,#1.0,#
+					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -60,14 +60,14 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+0.000, +2.000, +4.000],
+explore_dict = {	'dHigh'			: [+0.000, +0.500, +1.000],
 					'dNeut'			: [-0.500, -0.100, -0.000], 
 					
 					'dMid'			: [+0.000, +0.010, +0.100],
 					'dLow'			: [-4.000, -2.000, -0.000]
 
-					# 'epsilon_xplr'		: [0.0, 0.25, 0.5, 0.75, 1.0],
-					# 'noise_xplr_out' 	: [2e4, 2e6, 2e8, 2e10, 2e12]
+					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
+					# 'noise_xplr_hid' 	: [0.1, 0.2, 0.3]
 				}
 
 """ load and pre-process images """
@@ -82,7 +82,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
-																						'renew_trainset'	: True,
+																						'renew_trainset'	: False,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,
 																						'noise'				: 0.0,
@@ -93,6 +93,9 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 """ create directory to save data """
 save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
+print_dict = parameter_dict.copy()
+print_dict.update(explore_dict)
+print_dict.update({'images_params':images_params})
 
 """ create pypet environment """
 env = pypet.Environment(trajectory 		= 'explore_perf',
@@ -102,7 +105,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
-print_dict = parameter_dict.copy()
+
 traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)
 
@@ -116,12 +119,10 @@ env.f_run(pp.launch_exploration, images_dict, labels_dict, images_params, save_p
 toc = time.time()
 
 """ save parameters to file """
-print_dict.update(explore_dict)
-print_dict.update({'images_params':images_params})
 save_file = os.path.join(save_path, parameter_dict['name'] + '_params.txt')
 ex.print_params(print_dict, save_file, runtime=toc-tic)
 
-print "\n\nplotting results"
+""" plot results """
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
 pp.faceting(save_path)

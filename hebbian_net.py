@@ -89,8 +89,8 @@ class Network:
 		self.init_file			= init_file
 		self.lim_weights		= lim_weights
 		self.epsilon_xplr 		= epsilon_xplr
-		self.noise_xplr_hid		= noise_xplr_hid
-		self.noise_xplr_out 	= noise_xplr_out
+		self.noise_xplr_hid		= np.clip(noise_xplr_hid, 1e-20, np.inf)
+		self.noise_xplr_out 	= np.clip(noise_xplr_out, 1e-20, np.inf)
 		self.exploration		= exploration
 		self.compare_output 	= compare_output
 		self.noise_activ 		= np.clip(noise_activ, 1e-20, np.inf)
@@ -410,11 +410,12 @@ class Network:
 
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False) 
+		hid_activ_std = np.std(hid_activ)
 		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
-			self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
 			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t)
 
