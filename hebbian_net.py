@@ -155,8 +155,8 @@ class Network:
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
 					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
-				if self.images_params['noise'] > 0.0:
-					gaussian_noise = np.random.normal(0.0, self.images_params['noise'], size=np.shape(images))
+				if self.images_params['noise_pixel'] > 0.0:
+					gaussian_noise = np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images))
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
@@ -263,10 +263,10 @@ class Network:
 
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
-			if self.images_params['noise']>0.0:
-				images_test += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_test)) #add Gaussian noise
+			if self.images_params['noise_pixel']>0.0:
+				images_test += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_test)) #add Gaussian noise
 				if self.classifier=='bayesian':
-					images_train += np.random.normal(0.0, self.images_params['noise'], size=np.shape(images_train)) #add Gaussian noise
+					images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
 			images_test = ex.normalize(images_test, self.A*np.size(images_test,1))
 
 		if self.verbose and not during_training: print "\ntesting network..."

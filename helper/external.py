@@ -36,7 +36,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 				n_test (int): number of testing images
 				target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 				excentricity (float): degree range within wich to test the network (on each side of target orientation)
-				noise (float): noise injected in the gabor filter
+				noise_pixel (float): noise injected in the pixels of gabor filter
 				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 			load_test (bool, optional): whether to load test images (True) or not (False). Default: True
 
@@ -216,7 +216,7 @@ def shuffle(arrays):
 
 	return shuffled_arrays
 
-def generate_gabors(orientations, target_ori, im_size, A, noise=0., phase=0.25):
+def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=0.25):
 	"""
 	Calling function to generate gabor filters
 
@@ -225,7 +225,7 @@ def generate_gabors(orientations, target_ori, im_size, A, noise=0., phase=0.25):
 		target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 		A (float): input normalization constant
-		noise (int,optional): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
+		noise_pixel (int,optional): noise level to add to the pixels of Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1]
 
 	returns:
@@ -233,7 +233,7 @@ def generate_gabors(orientations, target_ori, im_size, A, noise=0., phase=0.25):
 		numpy array: labels (clock-wise / counter clock-wise) of each gabor filter
 	"""
 
-	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise=noise)
+	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise_pixel=noise_pixel)
 
 	orientations = relative_orientations(orientations, target_ori)
 

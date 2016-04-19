@@ -9,7 +9,7 @@ from scipy import stats
 
 ex = reload(ex)
 
-def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
+def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise_pixel=0):
 	"""
 	Creates a Gabor patch
 
@@ -20,13 +20,13 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 		theta (int, float, list or numpy array): Grating orientation in degrees (if list or array, a patch is created for each value)
 		sigma (int or float): gaussian standard deviation (in pixels)
 		phase (float, list or numpy array): phase of the filter; range: [0, 1]
-		noise (int): noise level to add to Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
+		noise_pixel (int): noise level to add to the pixel values of Gabor patches; represents the standard deviation of the Gaussian distribution from which noise_pixel is drawn; range: (0, inf
 
 	Returns:
 		(1D or 2D numpy array): 1D or 2D Gabor patch (n images * n pixels)
 	"""
 	#normalize input parameters
-	noise = np.clip(noise, 1e-10, np.inf)
+	noise_pixel = np.clip(noise_pixel, 1e-10, np.inf)
 	if type(theta) == int or type(theta) == float: theta = np.array([theta])
 	elif type(theta) == list: theta = np.array(theta)
 	if type(phase)==float or type(phase)==int: phase = np.array([phase])
@@ -54,7 +54,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise=0):
 
 	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
-	gratings += np.random.normal(0.0, noise, size=np.shape(gratings)) #add Gaussian noise
+	gratings += np.random.normal(0.0, noise_pixel, size=np.shape(gratings)) #add Gaussian noise_pixel
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
@@ -89,7 +89,7 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 		print '!!! invalid method - using \'basic\' method !!!'
 		curve_method='basic'
 
-	noise = 0.0 #images_params['noise']
+	noise_pixel = 0.0 #images_params['noise_pixel']
 	noise_trial = 10#100
 	ori_step = 0.1
 	n_input = int(180/ori_step)
@@ -100,11 +100,11 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 	orientations = np.arange(-90.+images_params['target_ori'], 90.+images_params['target_ori'], ori_step)
 	SM = False if curve_method=='no_softmax' else True
 	if curve_method != 'with_noise':
-		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=0.0)]
+		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise_pixel=0.0)]
 	else:
 		test_input = []
 		for _ in range(noise_trial):
-			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise=noise))
+			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise_pixel=noise_pixel))
 
 	curves = np.zeros((n_runs, n_input, n_neurons))
 	pref_ori = np.zeros((n_runs, n_neurons))

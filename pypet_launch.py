@@ -23,18 +23,18 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'dMid' 				: 0.01,
 					'dNeut' 			: -0.1,
 					'dLow' 				: -3.0,
-					'dopa_out_same'		: False,
+					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_espilon_0-8_noiseXplrHid_0-3',
-					'n_runs' 			: 3,#50,#
-					'n_epi_crit'		: 0,	
+					'name' 				: 'pypet_gabor_exploration_True_classLayer_2',
+					'n_runs' 			: 3,
+					'n_epi_crit'		: 40,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_dopa'		: 20,
+					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
 					'A' 				: 1.2,
@@ -43,9 +43,9 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 16,#49,#
-					'init_file'			: 'gabor_pretrained',
+					'init_file'			: '',
 					'lim_weights'		: False,
-					'epsilon_xplr'		: 0.8,#1.0,#
+					'epsilon_xplr'		: 1.0,#1.0,#
 					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
@@ -60,11 +60,11 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+0.000, +0.500, +1.000],
-					'dNeut'			: [-0.500, -0.100, -0.000], 
+explore_dict = {	'dHigh'			: [+3.000, +4.000, +5.000],
+					'dNeut'			: [-1.000, -0.500, -0.100], 
 					
-					'dMid'			: [+0.000, +0.010, +0.100],
-					'dLow'			: [-4.000, -2.000, -0.000]
+					'dMid'			: [+0.010, +0.100, +0.500],
+					'dLow'			: [-5.000, -4.000, -3.000]
 
 					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
 					# 'noise_xplr_hid' 	: [0.1, 0.2, 0.3]
@@ -85,7 +85,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'renew_trainset'	: False,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,
-																						'noise'				: 0.0,
+																						'noise_pixel'		: 0.0,
 																						'im_size'			: 50#28
 																						}
 																	)

@@ -19,7 +19,7 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
+net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dMid 			= 0.01,#0.0,#
 							dNeut 			= -0.5,#-0.08,#
 							dLow 			= -4.0,#-0.4,#
@@ -30,11 +30,11 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_dHigh_1-0_noiseXplrHid_0-3',
+							name 			= 'gabor_test_noisePixel',
 							n_runs 			= 1,
-							n_epi_crit		= 0,
+							n_epi_crit		= 20,
 							n_epi_fine 		= 0,
-							n_epi_dopa		= 20,				
+							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
 							t				= 1.0,#0.1,#
 							A 				= 1.2,
@@ -43,14 +43,14 @@ net = hebbian_net.Network(	dHigh 			= 1.0,#1.6,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 16,#49,#
-							init_file		= 'gabor_pretrained',
+							init_file		= '',
 							lim_weights		= False,
 							epsilon_xplr 	= 1.0,#1.0,#
-							noise_xplr_hid	= 0.3,
+							noise_xplr_hid	= 0.3,#0.2#
 							noise_xplr_out	= 2e4,
 							exploration		= True,
-							compare_output 	= False,
-							noise_activ		= 1.0,
+							compare_output 	= True,
+							noise_activ		= 1.00,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
@@ -71,10 +71,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
-																						'renew_trainset'	: True,
+																						'renew_trainset'	: False,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
-																						'noise'				: 0.0,
+																						'noise_pixel'		: 0.2,
 																						'im_size'			: 50#28,
 																						}
 																	)
