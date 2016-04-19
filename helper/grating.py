@@ -19,7 +19,7 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise_pixel=0):
 		lambda_freq (int or float): Spatial frequency (pixels per cycle) 
 		theta (int, float, list or numpy array): Grating orientation in degrees (if list or array, a patch is created for each value)
 		sigma (int or float): gaussian standard deviation (in pixels)
-		phase (float, list or numpy array): phase of the filter; range: [0, 1]
+		phase (float, list or numpy array): phase of the filter; range: [0, 1)
 		noise_pixel (int): noise level to add to the pixel values of Gabor patches; represents the standard deviation of the Gaussian distribution from which noise_pixel is drawn; range: (0, inf
 
 	Returns:

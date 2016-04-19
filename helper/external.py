@@ -37,6 +37,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 				target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 				excentricity (float): degree range within wich to test the network (on each side of target orientation)
 				noise_pixel (float): noise injected in the pixels of gabor filter
+				rnd_phase (bool): whether to use random phase (True) or use set phase
 				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 			load_test (bool, optional): whether to load test images (True) or not (False). Default: True
 
@@ -87,18 +88,22 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 		if verbose: print 'creating gabor training images...'
 		gabor_params['target_ori'] %= 180.
 
-		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
-		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A)
+		orientations = np.random.random(gabor_params['n_train']) + gabor_params['target_ori']-0.5 #orientations of gratings (in degrees)
+		# orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
+		phase = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase)
 
 		if not gabor_params['renew_trainset']:
 			orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
-			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A)
+			phase_task = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
+			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_task)
 		else:
 			orientations_task, images_task, labels_task = None, None, None
 
 		if load_test:
 			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
-			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A)
+			phase_test = np.random.random(gabor_params['n_test']) if gabor_params['rnd_phase'] else 0.25
+			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_test)
 		else:
 			orientations_test, images_test, labels_test = None, None, None
 
@@ -226,7 +231,7 @@ def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=
 		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 		A (float): input normalization constant
 		noise_pixel (int,optional): noise level to add to the pixels of Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
-		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1]
+		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1)
 
 	returns:
 		numpy array: gabor filters of size: (len(orientations), im_size*im_size)
@@ -234,6 +239,12 @@ def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=
 	"""
 
 	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise_pixel=noise_pixel)
+	import matplotlib.pyplot as plt
+	for f in [0,10,20,100]:
+		plt.figure()
+		plt.imshow(np.reshape(images[f,:], (50,50)))
+	plt.show(block=False)
+	import pdb; pdb.set_trace()
 
 	orientations = relative_orientations(orientations, target_ori)
 
@@ -504,7 +515,6 @@ def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
 	# diff_std = np.sqrt( best_avg*(1-best_avg)/best_num + alte_avg*(1-alte_avg)/alte_num )
 
 	t = np.abs( (best_avg-alte_avg-diff_tol) / diff_std )
-	# import pdb; pdb.set_trace()
 
 	return t > z_value 
 
