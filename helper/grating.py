@@ -9,15 +9,15 @@ from scipy import stats
 
 ex = reload(ex)
 
-def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise_pixel=0):
+def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0., noise_pixel=0.):
 	"""
 	Creates a Gabor patch
 
 	Args:
 
-		size (int): Image side
-		lambda_freq (int or float): Spatial frequency (pixels per cycle) 
-		theta (int, float, list or numpy array): Grating orientation in degrees (if list or array, a patch is created for each value)
+		size (int): image side
+		freq (int or float): spatial frequency (cycles per image) 
+		theta (int, float, list or numpy array): grating orientation in degrees (if list or array, a patch is created for each value)
 		sigma (int or float): gaussian standard deviation (in pixels)
 		phase (float, list or numpy array): phase of the filter; range: [0, 1)
 		noise_pixel (int): noise level to add to the pixel values of Gabor patches; represents the standard deviation of the Gaussian distribution from which noise_pixel is drawn; range: (0, inf
@@ -30,13 +30,14 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise_pixel=0):
 	if type(theta) == int or type(theta) == float: theta = np.array([theta])
 	elif type(theta) == list: theta = np.array(theta)
 	if type(phase)==float or type(phase)==int: phase = np.array([phase])
-	n_gratings = len(theta)
+	if type(freq)==float or type(freq)==int: freq = np.array([freq])
+	n_gratings = np.max([len(freq), len(theta), len(phase)])
 
 	# make linear ramp
 	X0 = (np.linspace(1, size, size) / size) - .5
 
 	# Set wavelength and phase
-	freq = size / float(lambda_freq)
+	# freq = size / float(freq) #relative to image size
 	phaseRad = phase * 2 * np.pi
 
 	# Make 2D grating
@@ -50,9 +51,10 @@ def gabor(size=28, lambda_freq=5, theta=0, sigma=5, phase=0, noise_pixel=0):
 	Yt = Ym * np.sin(thetaRad)[:,np.newaxis,np.newaxis]
 
 	# 2D Gaussian distribution
-	gauss = np.exp(-((Xm ** 2) + (Ym ** 2)) / (2 * (sigma / float(size)) ** 2))
+	gauss = np.exp(-((Xm ** 2) + (Ym ** 2)) / (2 * sigma ** 2)) #independent of image size
+	# gauss = np.exp(-((Xm ** 2) + (Ym ** 2)) / (2 * (sigma / float(size)) ** 2)) #relative to image size
 
-	gratings = np.sin(((Xt + Yt) * freq * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
+	gratings = np.sin(((Xt + Yt) * freq[:,np.newaxis,np.newaxis] * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
 	gratings += np.random.normal(0.0, noise_pixel, size=np.shape(gratings)) #add Gaussian noise_pixel
 	gratings -= np.min(gratings)
@@ -100,11 +102,11 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 	orientations = np.arange(-90.+images_params['target_ori'], 90.+images_params['target_ori'], ori_step)
 	SM = False if curve_method=='no_softmax' else True
 	if curve_method != 'with_noise':
-		test_input = [gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise_pixel=0.0)]
+		test_input = [gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=0.0)]
 	else:
 		test_input = []
 		for _ in range(noise_trial):
-			test_input.append(gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=0.25, noise_pixel=noise_pixel))
+			test_input.append(gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=noise_pixel))
 
 	curves = np.zeros((n_runs, n_input, n_neurons))
 	pref_ori = np.zeros((n_runs, n_neurons))

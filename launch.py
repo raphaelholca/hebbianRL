@@ -30,15 +30,15 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
 							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_test_rndPhase_True_t_0-01_rnd_Ori_False',
+							name 			= 'gabor_lr=5e-4',
 							n_runs 			= 1,
-							n_epi_crit		= 10,
+							n_epi_crit		= 50,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
-							t				= 0.01,#1.0,#0.1,#
+							t				= 1.0,#0.1,#
 							A 				= 1.2,
-							lr_hid			= 5e-3,
+							lr_hid			= 5e-4,#5e-3,
 							lr_out			= 5e-7,
 							batch_size 		= 50,
 							block_feedback 	= False,
@@ -50,7 +50,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							noise_xplr_out	= 2e4,
 							exploration		= True,
 							compare_output 	= True,
-							noise_activ		= 1.00,
+							noise_activ		= 0.,
 							pdf_method 		= 'fit',
 							classifier		= 'neural',
 							test_each_epi	= True,
@@ -75,8 +75,9 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
 																						'noise_pixel'		: 0.0,
-																						'rnd_phase' 		: True,
-																						'im_size'			: 50#28,
+																						'rnd_phase' 		: False,
+																						'rnd_freq' 			: False,
+																						'im_size'			: 50#28
 																						}
 																	)
 

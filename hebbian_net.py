@@ -239,6 +239,11 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
+				if e%10==0:
+					import matplotlib.pyplot as plt
+					fig = an.plot_single_RF(self.hid_W)
+					plt.show(block=False)
+
 			#save data
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)

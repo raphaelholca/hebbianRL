@@ -88,22 +88,25 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 		if verbose: print 'creating gabor training images...'
 		gabor_params['target_ori'] %= 180.
 
-		orientations = np.random.random(gabor_params['n_train']) + gabor_params['target_ori']-0.5 #orientations of gratings (in degrees)
-		# orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
+		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		phase = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
-		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase)
+		# freq = np.random.random(gabor_params['n_train'])*5.+2. if gabor_params['rnd_freq'] else 5.
+		freq = np.random.random(gabor_params['n_train'])*0.1+5. if gabor_params['rnd_freq'] else 5.
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase, freq=freq)
 
 		if not gabor_params['renew_trainset']:
 			orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
 			phase_task = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
-			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_task)
+			freq_task = np.random.random(gabor_params['n_train'])*5.+2. if gabor_params['rnd_freq'] else 5.
+			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_task, freq=freq_task)
 		else:
 			orientations_task, images_task, labels_task = None, None, None
 
 		if load_test:
 			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
 			phase_test = np.random.random(gabor_params['n_test']) if gabor_params['rnd_phase'] else 0.25
-			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_test)
+			freq_test = np.random.random(gabor_params['n_test'])*5.+2. if gabor_params['rnd_freq'] else 5.
+			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_test, freq=freq_test)
 		else:
 			orientations_test, images_test, labels_test = None, None, None
 
@@ -221,7 +224,7 @@ def shuffle(arrays):
 
 	return shuffled_arrays
 
-def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=0.25):
+def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=0.25, freq=5.):
 	"""
 	Calling function to generate gabor filters
 
@@ -238,13 +241,7 @@ def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=
 		numpy array: labels (clock-wise / counter clock-wise) of each gabor filter
 	"""
 
-	images = gr.gabor(size=im_size, lambda_freq=im_size/5., theta=orientations, sigma=im_size/5., phase=phase, noise_pixel=noise_pixel)
-	import matplotlib.pyplot as plt
-	for f in [0,10,20,100]:
-		plt.figure()
-		plt.imshow(np.reshape(images[f,:], (50,50)))
-	plt.show(block=False)
-	import pdb; pdb.set_trace()
+	images = gr.gabor(size=im_size, freq=freq, theta=orientations, sigma=0.2, phase=phase, noise_pixel=noise_pixel)
 
 	orientations = relative_orientations(orientations, target_ori)
 

@@ -86,6 +86,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,
 																						'noise_pixel'		: 0.0,
+																						'rnd_phase' 		: False,
+																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
 																						}
 																	)
