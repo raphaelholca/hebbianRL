@@ -18,12 +18,12 @@ from array import array
 
 gr = reload(gr)
 
-def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, load_test=True):
+def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy2D_params={}, load_test=True):
 	""" 
 	Load images training and testing images 
 
 		Args:
-			protocol (str): experimental protocol, maybe 'digit' or 'gabor'
+			protocol (str): experimental protocol, maybe 'digit', 'gabor' or 'toy'
 			A (float): normalization constant for the images
 			verbose (bool, optional): whether to print comments to console
 			digit_params (dict): parameters for loading the MNIST dataset. These are:
@@ -111,6 +111,25 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, loa
 			orientations_test, images_test, labels_test = None, None, None
 
 		images_params = gabor_params
+
+	elif protocol == 'toy2D':
+		if verbose: print 'creating toy training images...'
+		images = np.random.random((toy2D_params['n_points'], 2))
+		images_test = np.random.random((toy2D_params['n_points'], 2))
+		images_task = None
+
+		labels = toy_labeling(images, toy2D_params)
+		labels_test = toy_labeling(images_test, toy2D_params)
+		labels_task = None
+
+		# images = normalize(images, A*np.size(images,1))
+		# images_test = normalize(images_test, A*np.size(images_test,1))
+
+		orientations = None
+		orientations_test = None
+		orientations_task = None
+
+		images_params = toy2D_params
 
 	return {'train':images, 'test':images_test, 'task':images_task}, {'train':labels, 'test':labels_test, 'task':labels_task}, {'train':orientations, 'test':orientations_test, 'task':orientations_task}, images_params
 
@@ -525,7 +544,21 @@ def exploration(epsilon_xplr, batch_size):
 
 	return explorative_trials
 
+def toy_labeling(images, params):
+	""" labels toy data """
 
+	labels = np.zeros(np.size(images,0), dtype=int)
+
+	if params['separability'] == '1D':
+		labels[images[:,0] >= 0.5] = 1
+	elif params['separability'] == '2D':
+		labels[images[:,0] >= images[:,1]] = 1
+	elif params['separability'] == 'non_linear':
+		labels[images[:,0] >= 0.5*np.cos(images[:,1]/0.2)+(images[:,1]**2)/1.5+0.5 ] = 1
+	else:
+		raise ValueError('invalid separability method')
+
+	return labels
 
 
 

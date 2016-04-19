@@ -29,8 +29,8 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dMid_out		= 0.0,#0.2,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
-							protocol		= 'gabor',#'digit',#
-							name 			= 'gabor_lr=5e-4',
+							protocol		= 'toy2D',#'digit',#
+							name 			= 'toy_test',
 							n_runs 			= 1,
 							n_epi_crit		= 50,
 							n_epi_fine 		= 0,
@@ -78,6 +78,9 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_phase' 		: False,
 																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
+																						}
+																	toy_params		= {	'n_points'			: 1000,
+																						'separability' 		: '1D' #'2D'#'non_linear'
 																						}
 																	)
 
