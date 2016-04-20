@@ -40,35 +40,36 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot and save confusion matrices """
 	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
 
-	""" plot RF properties """
-	plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
+	if net.protocol!='toy2D':
+		""" plot RF properties """
+		plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
 
-	""" compute correct weight assignment in the ouput layer """
-	if net._train_class_layer:
-		net.correct_out_W = np.zeros(net.n_runs)
-		not_same = {}
-		for r in range(net.n_runs):
-			same = np.argmax(RFproba[r],1) == net.classes[np.argmax(net.out_W_trained[r],1)]
-			not_same[r] = np.argwhere(~same)
-			net.correct_out_W[r] = np.sum(same)
+		""" compute correct weight assignment in the ouput layer """
+		if net._train_class_layer:
+			net.correct_out_W = np.zeros(net.n_runs)
+			not_same = {}
+			for r in range(net.n_runs):
+				same = np.argmax(RFproba[r],1) == net.classes[np.argmax(net.out_W_trained[r],1)]
+				not_same[r] = np.argwhere(~same)
+				net.correct_out_W[r] = np.sum(same)
 
-		if net.verbose: 
-			print 'correct out weight assignment:\n' + str(np.mean(net.correct_out_W)) + ' of ' + str(net.n_hid_neurons)
-	else:
-		not_same = None
-		correct_out_W = 0.
+			if net.verbose: 
+				print 'correct out weight assignment:\n' + str(np.mean(net.correct_out_W)) + ' of ' + str(net.n_hid_neurons)
+		else:
+			not_same = None
+			correct_out_W = 0.
 
-	""" plot weights """
-	if plot_RFs:
-		if show_W_act: W_act_pass=net.out_W_trained
-		else: W_act_pass=None
-		plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
-	
-	""" plot performance progression """
-	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
+		""" plot weights """
+		if plot_RFs:
+			if show_W_act: W_act_pass=net.out_W_trained
+			else: W_act_pass=None
+			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+		
+		""" plot performance progression """
+		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
-	""" plot performance at various orientations """
-	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
+		""" plot performance at various orientations """
+		if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
 	"""
@@ -480,6 +481,13 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.savefig(os.path.join(save_path, name+'_progress.pdf'))
 	plt.close(fig)	
 
+def assess_toy2D(net, images, labels, save_name):
+	color = np.array(['r', 'b', 'g'])
+	plt.figure()
+	plt.scatter(images[:,0], images[:,1], c=color[labels])
+	plt.scatter(net.hid_W[0,:], net.hid_W[1,:], marker='x', s=100, c='k')
+	plt.savefig(save_name)
+	plt.close()
 
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
