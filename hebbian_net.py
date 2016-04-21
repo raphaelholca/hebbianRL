@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=1.2, lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -46,7 +46,7 @@ class Network:
 				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
 				n_epi_post (int, optional): number of episodes after the dopa period to train output layer without learning in the hidden layer. Default: 5
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
-				A (float, optional): input normalization constant. Will be used as: (input size)*A. Default: 1.2
+				A (float, optional): input normalization constant. Default: 940.
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
 				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
@@ -104,6 +104,7 @@ class Network:
 
 		np.random.seed(self.seed)
 		self._check_parameters()
+		self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
 
 	def train(self, images_dict, labels_dict, images_params={}):
 		""" 
@@ -160,6 +161,9 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
+			an.assess_toy2D(self, images_dict['train'], labels_dict['train'], os.path.join('.', 'output', self.name, 'result_init'))
+
+
 			""" train network """
 			for e in range(self.n_epi_tot):
 				self._e = e
@@ -188,7 +192,7 @@ class Network:
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
-					rnd_images = ex.normalize(rnd_images, self.A*np.size(rnd_images,1))
+					rnd_images = ex.normalize(rnd_images, self.A)
 
 				#train network with mini-batches
 				correct = 0.
@@ -240,7 +244,6 @@ class Network:
 				if self._assess_early_stop(): break
 
 				if e%10==0:
-
 				# 	import matplotlib.pyplot as plt
 				# 	fig = an.plot_single_RF(self.hid_W)
 				# 	plt.show(block=False)
@@ -275,7 +278,7 @@ class Network:
 				images_test += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_test)) #add Gaussian noise
 				if self.classifier=='bayesian':
 					images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
-			images_test = ex.normalize(images_test, self.A*np.size(images_test,1))
+			images_test = ex.normalize(images_test, self.A)
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
@@ -379,6 +382,11 @@ class Network:
 		""" initialize weights of the network randomly or by loading saved weights from file """
 		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
 		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+
+		###
+		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
+		###
 	
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """

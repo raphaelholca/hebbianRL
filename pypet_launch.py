@@ -37,7 +37,7 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
-					'A' 				: 1.2,
+					'A' 				: 940.,
 					'lr_hid'			: 5e-3,
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,

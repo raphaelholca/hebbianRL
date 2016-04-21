@@ -114,15 +114,31 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 	elif protocol == 'toy2D':
 		if verbose: print 'creating toy training images...'
-		images = np.random.random((toy2D_params['n_points'], 2))
-		images_test = np.random.random((toy2D_params['n_points'], 2))
+
+		if toy2D_params['data_distrib']=='uniform':
+			images = np.abs(np.random.random((toy2D_params['n_points'], 2)))
+			images_test = np.abs(np.random.random((toy2D_params['n_points'], 2)))
+		elif toy2D_params['data_distrib']=='normal':
+			images = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy2D_params['n_points'], 2)))
+			images_test = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy2D_params['n_points'], 2)))
+		elif toy2D_params['data_distrib']=='bimodal':
+			b1 = np.random.normal(loc=1, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+			b2 = np.random.normal(loc=0, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+			b1 = np.concatenate((b1,1.-b1), axis=1)
+			b2 = np.concatenate((b2,1.-b2), axis=1)
+			images = np.clip(np.concatenate((b1, b2), axis=0), 0, 1)
+			b1 = np.random.normal(loc=1, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+			b2 = np.random.normal(loc=0, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+			b1 = np.concatenate((b1,1.-b1), axis=1)
+			b2 = np.concatenate((b2,1.-b2), axis=1)
+			images_test = np.clip(np.concatenate((b1, b2), axis=0), 0 ,1)
 		images_task = None
 
-		images = normalize(images, A*np.size(images,1))
-		images_test = normalize(images_test, A*np.size(images_test,1))
+		images = normalize(images, A)
+		images_test = normalize(images_test, A)
 
-		labels = toy_labeling(images, toy2D_params)
-		labels_test = toy_labeling(images_test, toy2D_params)
+		labels = toy_labeling(images, toy2D_params, A)
+		labels_test = toy_labeling(images_test, toy2D_params, A)
 		labels_task = None
 
 		orientations = None
@@ -281,9 +297,7 @@ def relative_orientations(orientations, target_ori):
 
 def save_net(net):
 	""" Print parameters of Network object to human-readable file and save Network to disk """
-	
-	# net.name = checkdir(net.name, net.protocol, overwrite=True)
-	
+		
 	""" save network to file """
 	n_file = open(os.path.join('output', net.name, 'Network'), 'w')
 	pickle.dump(net, n_file)
@@ -544,13 +558,13 @@ def exploration(epsilon_xplr, batch_size):
 
 	return explorative_trials
 
-def toy_labeling(images, params):
+def toy_labeling(images, params, A):
 	""" labels toy data """
 
 	labels = np.zeros(np.size(images,0), dtype=int)
 
 	if params['separability'] == '1D':
-		labels[images[:,0] >= 1.2] = 1
+		labels[images[:,0] >= (np.size(images,1)*(A-1.))/2.+1.] = 1
 	elif params['separability'] == '2D':
 		labels[images[:,0] >= images[:,1]] = 1
 	elif params['separability'] == 'non_linear':

@@ -484,7 +484,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 def assess_toy2D(net, images, labels, save_name):
 	color = np.array(['r', 'b', 'g'])
 	plt.figure()
-	plt.scatter(images[:,0], images[:,1], c=color[labels])
+	plt.scatter(images[:,0], images[:,1], c=color[labels], alpha=0.25, edgecolors=list(color[labels]))
 	plt.scatter(net.hid_W[0,:], net.hid_W[1,:], marker='x', s=100, c='k')
 	plt.savefig(save_name)
 	plt.close()
