@@ -411,12 +411,12 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def propagate_layerwise(input, W, SM=True, t=1.):
+def propagate_layerwise(X, W, SM=True, t=1.):
 	"""
 	One propagation step
 
 	Args:
-		input (numpy array): input vector to the neurons of layer 1
+		X (numpy array): input vector to the neurons of layer 1
 		W (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
 		SM (bool, optional): whether to pass the activation throught the Softmax function
 		t (float): temperature parameter for the softmax function (only passed to the function, not used here)
@@ -425,7 +425,7 @@ def propagate_layerwise(input, W, SM=True, t=1.):
 		numpy array: the activation of the hidden neurons
 	"""
 
-	activ = np.dot(input, np.log(W))
+	activ = np.dot(X, np.log(W))
 	if SM: activ = softmax(activ, t=t)
 	return activ
 
@@ -564,12 +564,12 @@ def toy_labeling(images, params, A):
 	labels = np.zeros(np.size(images,0), dtype=int)
 
 	if params['separability'] == '1D':
-		labels[images[:,0] >= (np.size(images,1)*(A-1.))/2.+1.] = 1
+		labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
 	elif params['separability'] == '2D':
 		labels[images[:,0] >= images[:,1]] = 1
 	elif params['separability'] == 'non_linear':
-		labels[images[:,0] >= 1.3] = 1
-		labels[images[:,0] <  1.1] = 1
+		labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1. ] = 1
+		labels[images[:,0] <  (A-np.size(images,1)) * 1./3. + 1. ] = 1
 		# labels[images[:,0] >= 0.5*np.cos(images[:,1]/0.2)+(images[:,1]**2)/1.5+0.5 ] = 1
 	else:
 		raise ValueError('invalid separability method')

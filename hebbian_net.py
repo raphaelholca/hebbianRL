@@ -161,7 +161,7 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
-			an.assess_toy2D(self, images_dict['train'], labels_dict['train'], os.path.join('.', 'output', self.name, 'result_init'))
+			an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
 
 
 			""" train network """
@@ -248,7 +248,7 @@ class Network:
 				# 	fig = an.plot_single_RF(self.hid_W)
 				# 	plt.show(block=False)
 
-					an.assess_toy2D(self, images_dict['train'], labels_dict['train'], os.path.join('.', 'output', self.name, 'results_'+str(e)))
+					an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
@@ -380,12 +380,16 @@ class Network:
 
 	def _init_weights_random(self):
 		""" initialize weights of the network randomly or by loading saved weights from file """
-		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
+		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
 		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 
 		###
-		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
+		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
+		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+
+		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
+		# self.out_W = ex.normalize(self.out_W.T, 3).T
 		###
 	
 	def _check_parameters(self):

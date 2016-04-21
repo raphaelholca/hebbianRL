@@ -481,11 +481,34 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.savefig(os.path.join(save_path, name+'_progress.pdf'))
 	plt.close(fig)	
 
+def toy2D_rotate(x,y):
+	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
+
 def assess_toy2D(net, images, labels, save_name):
 	color = np.array(['r', 'b', 'g'])
-	plt.figure()
-	plt.scatter(images[:,0], images[:,1], c=color[labels], alpha=0.25, edgecolors=list(color[labels]))
-	plt.scatter(net.hid_W[0,:], net.hid_W[1,:], marker='x', s=100, c='k')
+	max_y = toy2D_rotate(net.A*1.1,0)[1]*1.1
+	min_y = toy2D_rotate(net.A*0.9,0)[1]
+
+	x_images, y_images = toy2D_rotate(images[:,0], images[:,1])
+	x_hid, y_hid = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
+
+	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t)
+	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False)
+	import pdb;pdb.set_trace()
+	sorter = x_images.argsort()
+	x_out = x_images[sorter]
+	y_out = out_n[sorter,:]
+
+	fig, ax = plt.subplots(2,1)
+
+	for n in range(np.size(out_n, 1)):
+		ax[0].plot(x_out, y_out[:,n], c=color[n])
+
+	ax[1].scatter(x_images, y_images, c=color[labels], alpha=0.25, edgecolors=list(color[labels]))
+	ax[1].scatter(x_hid, y_hid, marker='x', s=100, c='k')
+	
+	ax[1].set_ylim(min_y, max_y)
+
 	plt.savefig(save_name)
 	plt.close()
 

@@ -29,15 +29,15 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dMid_out		= 0.0,#0.2,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
-							protocol		= 'gabor',#'toy2D',#'digit',#
-							name 			= 'toy2D_n_2_t_0-1_A_1-2_bimodal',
+							protocol		= 'toy2D',#'digit',#
+							name 			= 'toy2D_learning',
 							n_runs 			= 1,
-							n_epi_crit		= 20,
+							n_epi_crit		= 150,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
-							t				= 0.1,#1.0,#0.1,#
-							A 				= 940.,
+							t				= 0.00001,#1.0,#0.1,#
+							A 				= 3.,
 							lr_hid			= 5e-4,#5e-3,
 							lr_out			= 5e-7,
 							batch_size 		= 50,
@@ -81,7 +81,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	toy2D_params	= {	'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
-																						'data_distrib' 		: 'bimodal' #'uniform' #'normal' #'bimodal'
+																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
 																						}
 																	)
 
