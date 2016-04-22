@@ -32,7 +32,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							protocol		= 'toy2D',#'digit',#
 							name 			= 'toy2D_lrOut_5e-10_2',
 							n_runs 			= 1,
-							n_epi_crit		= 500,
+							n_epi_crit		= 150,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
