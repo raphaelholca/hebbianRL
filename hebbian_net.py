@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A_hid=940., A_out=5., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A_hid=940., A_out=5., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False):
 
 		"""
 		Sets network parameters 
@@ -67,6 +67,7 @@ class Network:
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
+				pypet (bool, optional): whether the network simulation is part of pypet exploration
 		"""
 		
 		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
@@ -102,11 +103,13 @@ class Network:
 		self.early_stop 		= early_stop
 		self.verbose 			= verbose
 		self.seed 				= seed
+		self.pypet 				= pypet
 		self._early_stop_cond 	= []
 
 		np.random.seed(self.seed)
 		self._check_parameters()
-		self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
+		if not self.pypet:
+			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
 
 	def train(self, images_dict, labels_dict, images_params={}):
 		""" 
@@ -163,8 +166,8 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
-			an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
-
+			if self.protocol=='toy2D' and not self.pypet:
+				an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -245,11 +248,11 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
-				if self.protocol=='toy2D' and e%50==0:
+				if self.protocol=='toy2D' and not self.pypet and e%50==0:
 					an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
-			an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_final'))
+			if self.protocol=='toy2D' and not self.pypet: an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_final'))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 

@@ -19,31 +19,31 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 			: 1.0,
-					'dMid' 				: 0.01,
-					'dNeut' 			: -0.1,
-					'dLow' 				: -3.0,
+parameter_dict = {	'dHigh' 			: 2.0,
+					'dMid' 				: 0.0,
+					'dNeut' 			: -0.0,
+					'dLow' 				: -2.0,
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'protocol'			: 'gabor',#'digit',#
-					'name' 				: 'pypet_gabor_exploration_True_classLayer_2',
-					'n_runs' 			: 3,
-					'n_epi_crit'		: 40,	
+					'protocol'			: 'toy2D',#'gabor',#'digit',#
+					'name' 				: 'pypet_toy2D_classLayer',
+					'n_runs' 			: 1,
+					'n_epi_crit'		: 500,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
 					't'					: 1.0,#0.1,#
-					'A_hid' 			: 940.,
-					'A_out' 			: 5.,
-					'lr_hid'			: 5e-3,
-					'lr_out'			: 5e-7,
+					'A_hid' 			: 1500.,
+					'A_out' 			: 940.,
+					'lr_hid'			: 5e-4,#5e-3,
+					'lr_out'			: 5e-4,#5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'n_hid_neurons'		: 16,#49,#
+					'n_hid_neurons'		: 2,#16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
 					'epsilon_xplr'		: 1.0,#1.0,#
@@ -51,7 +51,7 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
-					'noise_activ'		: 1.0,
+					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural',
 					'test_each_epi'		: True,
@@ -61,8 +61,8 @@ parameter_dict = {	'dHigh' 			: 1.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+3.000, +4.000, +5.000],
-					'dNeut'			: [-1.000, -0.500, -0.100], 
+explore_dict = {	'dHigh'			: [+2.000, +4.000, +5.000],
+					'dNeut'			: [-0.000, -0.500, -0.100], 
 					
 					'dMid'			: [+0.010, +0.100, +0.500],
 					'dLow'			: [-5.000, -4.000, -3.000]
@@ -90,6 +90,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_phase' 		: False,
 																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
+																						},
+																	toy2D_params	= {	'n_points'			: 2000,
+																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
+																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
 																						}
 																	)
 
@@ -128,7 +132,8 @@ ex.print_params(print_dict, save_file, runtime=toc-tic)
 """ plot results """
 name_best = pp.plot_results(folder_path=save_path)
 pp.launch_assess(save_path, parameter_dict['name']+name_best, images_dict['train'], labels_dict['train'], curve_method='with_noise', slope_binned=False)
-pp.faceting(save_path)
+if 'dHigh' in explore_dict.keys() and 'dMid' in explore_dict.keys() and 'dNeut' in explore_dict.keys() and 'dLow' in explore_dict.keys():
+	pp.faceting(save_path)
 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
