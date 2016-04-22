@@ -493,6 +493,7 @@ def assess_toy2D(net, images, labels, save_name):
 	x_hid, y_hid = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
 	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t)
+	hid_n = ex.normalize(hid_n, net.A_out)
 	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False)
 	sorter = x_images.argsort()
 	x_out = x_images[sorter]

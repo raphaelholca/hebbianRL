@@ -71,10 +71,10 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			labels_test = labels_rdn[n_images_train:]
 		
 		images, labels = even_labels(images, labels, digit_params['classes'])
-		images = normalize(images, A*np.size(images,1))
+		images = normalize(images, A)
 
 		images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
-		images_test = normalize(images_test, A*np.size(images_test,1))
+		images_test = normalize(images_test, A)
 
 		images_task = None
 		labels_task = None

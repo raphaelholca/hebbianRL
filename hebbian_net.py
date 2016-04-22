@@ -234,7 +234,7 @@ class Network:
 					
 					#update weights
 					hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
-					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
+					out_W = self._learning_step(self.hid_neurons_greedy_norm, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
 
 					correct += np.sum(greedy==b_labels)
 
@@ -307,6 +307,7 @@ class Network:
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False) 
 				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t)
+				hidNeurons = ex.normalize(hidNeurons, self.A_hid)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W)
 				classIdx = np.argmax(actNeurons, 1)
@@ -385,15 +386,15 @@ class Network:
 	def _init_weights_random(self):
 		""" initialize weights of the network randomly or by loading saved weights from file """
 		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
-		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+		# self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 
 		###
 		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A_hid).T
 		self.hid_W = ex.normalize(self.hid_W.T, self.A_hid*1.1).T
 
-		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
-		# self.out_W = ex.normalize(self.out_W.T, 3).T
+		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
+		self.out_W = ex.normalize(self.out_W.T, self.A_out*1.1).T
 		###
 	
 	def _check_parameters(self):
@@ -427,6 +428,8 @@ class Network:
 		#reset activity (important for cases in which no noise is added)
 		self.hid_neurons_greedy = None
 		self.hid_neurons_explore = None
+		self.hid_neurons_greedy_norm = None
+		self.hid_neurons_explore_norm = None
 		self.out_neurons_greedy = None
 		self.out_neurons_explore_hid = None
 		self.out_neurons_explore_out = None
@@ -443,13 +446,15 @@ class Network:
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
 			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
-			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t)
+			self.hid_neurons_explore_norm = ex.normalize(hid_neurons_explore, self.A_out)
+			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore_norm, self.out_W, SM=True, t=self.t)
 
-		#softmax hidden neurons
+		#softmax and normalize hidden neurons
 		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
+		self.hid_neurons_greedy_norm = ex.normalize(self.hid_neurons_greedy, self.A_out)
 
 		#compute activation of class neurons in greedy case
-		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False)
+		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy_norm, self.out_W, SM=False)
 
 		#adds noise in out_W neurons
 		if self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa:
@@ -461,6 +466,7 @@ class Network:
 		
 		#set activation values for neurons when no exploration
 		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
+		if self.hid_neurons_explore_norm is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy_norm)
 		if self.out_neurons_explore_hid is None: self.out_neurons_explore_hid = np.copy(self.out_neurons_greedy)
 		if self.out_neurons_explore_out is None: self.out_neurons_explore_out = np.copy(self.out_neurons_greedy)
 
