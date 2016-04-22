@@ -486,15 +486,14 @@ def toy2D_rotate(x,y):
 
 def assess_toy2D(net, images, labels, save_name):
 	color = np.array(['r', 'b', 'g'])
-	max_y = toy2D_rotate(net.A*1.1,0)[1]*1.1
-	min_y = toy2D_rotate(net.A*0.9,0)[1]
+	max_y = toy2D_rotate(net.A_hid*1.1,0)[1]*1.1
+	min_y = toy2D_rotate(net.A_hid*0.9,0)[1]
 
 	x_images, y_images = toy2D_rotate(images[:,0], images[:,1])
 	x_hid, y_hid = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
 	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t)
 	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False)
-	import pdb;pdb.set_trace()
 	sorter = x_images.argsort()
 	x_out = x_images[sorter]
 	y_out = out_n[sorter,:]
@@ -575,7 +574,7 @@ def perf_all_ori(net, save_path=''):
 			
 			np.random.seed(0)
 			images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																				A 				= net.A,
+																				A_hid			= net.A_hid,
 																				verbose 		= net.verbose,
 																				gabor_params 	= gabor_params
 																				)

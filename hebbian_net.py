@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A_hid=940., A_out=5., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None):
 
 		"""
 		Sets network parameters 
@@ -46,7 +46,8 @@ class Network:
 				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
 				n_epi_post (int, optional): number of episodes after the dopa period to train output layer without learning in the hidden layer. Default: 5
 				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
-				A (float, optional): input normalization constant. Default: 940.
+				A_hid (float, optional): input normalization constant for the hidden layer. Default: 940.
+				A_out (float, optional): input normalization constant for the output layer. Default: 5.
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
 				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
@@ -80,7 +81,8 @@ class Network:
 		self.n_epi_dopa			= n_epi_dopa				
 		self.n_epi_post 		= n_epi_post			
 		self.t					= t 						
-		self.A 					= A
+		self.A_hid 				= A_hid
+		self.A_out 				= A_out
 		self.lr_hid				= lr_hid
 		self.lr_out				= lr_out
 		self.batch_size 		= batch_size
@@ -153,7 +155,7 @@ class Network:
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
-					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
+					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A_hid, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
 					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
 				if self.images_params['noise_pixel'] > 0.0:
@@ -184,7 +186,7 @@ class Network:
 				elif self.protocol=='gabor' and e >= self.n_epi_crit + self.n_epi_fine and e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa: ##
 					if self.images_params['renew_trainset']: #create new training images
 						rnd_orientations= np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A_hid)
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 
@@ -192,7 +194,7 @@ class Network:
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
-					rnd_images = ex.normalize(rnd_images, self.A)
+					rnd_images = ex.normalize(rnd_images, self.A_hid)
 
 				#train network with mini-batches
 				correct = 0.
@@ -243,14 +245,16 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
-				if e%10==0:
+				if e%50==0 and e<=200:
 				# 	import matplotlib.pyplot as plt
 				# 	fig = an.plot_single_RF(self.hid_W)
 				# 	plt.show(block=False)
-
 					an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
+				if e==200:
+					self.lr_hid=0.
 
 			#save data
+			an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_final'))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
@@ -278,7 +282,7 @@ class Network:
 				images_test += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_test)) #add Gaussian noise
 				if self.classifier=='bayesian':
 					images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
-			images_test = ex.normalize(images_test, self.A)
+			images_test = ex.normalize(images_test, self.A_hid)
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
@@ -385,8 +389,8 @@ class Network:
 
 		###
 		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
-		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
-		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A_hid).T
+		self.hid_W = ex.normalize(self.hid_W.T, self.A_hid*1.1).T
 
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W = ex.normalize(self.out_W.T, 3).T

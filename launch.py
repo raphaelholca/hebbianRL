@@ -25,21 +25,22 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dLow 			= -4.0,#-0.4,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
-							dHigh_out		= 2.0,#0.0,#
-							dMid_out		= 0.0,#0.2,#
-							dNeut_out		= -0.0,#-0.3,#
-							dLow_out		= -2.0,#-0.5,#
+							dHigh_out		= 3.0,#0.0,#
+							dMid_out		= 0.01,#0.2,#
+							dNeut_out		= -0.01,#-0.3,#
+							dLow_out		= -3.0,#-0.5,#
 							protocol		= 'toy2D',#'digit',#
-							name 			= 'toy2D_learning',
+							name 			= 'toy2D_lrOut_5e-10_2',
 							n_runs 			= 1,
-							n_epi_crit		= 150,
+							n_epi_crit		= 500,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,				
 							n_epi_post 		= 0,				
 							t				= 0.00001,#1.0,#0.1,#
-							A 				= 3.,
+							A_hid			= 3.,
+							A_out			= 3.,
 							lr_hid			= 5e-4,#5e-3,
-							lr_out			= 5e-7,
+							lr_out			= 5e-10,
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 2,#49,#
@@ -61,7 +62,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																	A 				= net.A,
+																	A				= net.A_hid,
 																	verbose 		= net.verbose,
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
