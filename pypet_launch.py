@@ -30,8 +30,8 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'toy2D',#'gabor',#'digit',#
-					'name' 				: 'pypet_toy2D_classLayer',
-					'n_runs' 			: 1,
+					'name' 				: 'pypet_toy2D_noiseXplrOut',
+					'n_runs' 			: 3,
 					'n_epi_crit'		: 500,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_dopa'		: 0,
@@ -61,14 +61,15 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					}
 
 """ explored parameters """
-explore_dict = {	'dHigh'			: [+2.000, +4.000, +5.000],
-					'dNeut'			: [-0.000, -0.500, -0.100], 
+explore_dict = {	
+					# 'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +5.000],
+					# 'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500], 
 					
-					'dMid'			: [+0.010, +0.100, +0.500],
-					'dLow'			: [-5.000, -4.000, -3.000]
+					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500],
+					# 'dLow'			: [-5.000, -3.000, -2.000, -1.000, -0.000]
 
 					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
-					# 'noise_xplr_hid' 	: [0.1, 0.2, 0.3]
+					'noise_xplr_out' 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
 				}
 
 """ load and pre-process images """
