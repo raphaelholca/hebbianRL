@@ -411,21 +411,25 @@ def softmax_numba(activ, activ_SM, t=1.):
 
 	return activ_SM
 
-def propagate_layerwise(X, W, SM=True, t=1.):
+def propagate_layerwise(X, W, SM=True, t=1., log_weights=False):
 	"""
 	One propagation step
 
 	Args:
 		X (numpy array): input vector to the neurons of layer 1
 		W (numpy matrix): weight matrix; shape: (input neurons x hidden neurons)
-		SM (bool, optional): whether to pass the activation throught the Softmax function
-		t (float): temperature parameter for the softmax function (only passed to the function, not used here)
+		SM (bool, optional): whether to pass the activation throught the Softmax function. Default: True
+		t (float, optional): temperature parameter for the softmax function (only passed to the function, not used here). Default: 1.0
+		log_weights (bool, optional): whether to take the logarithm of the weight. Default: False
 
 	returns:
 		numpy array: the activation of the hidden neurons
 	"""
 
-	activ = np.dot(X, np.log(W))
+	if log_weights:
+		activ = np.dot(X, np.log(W))
+	else:
+		activ = np.dot(X, W)
 	if SM: activ = softmax(activ, t=t)
 	return activ
 

@@ -46,6 +46,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'n_hid_neurons'		: 2,#16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
+					'log_weights' 		: False,
 					'epsilon_xplr'		: 1.0,#1.0,#
 					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
