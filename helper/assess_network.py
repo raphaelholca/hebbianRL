@@ -31,8 +31,9 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
 	if not os.path.exists(save_path):
 		os.makedirs(save_path)
-	if not os.path.exists(os.path.join(save_path, 'RFs')):
-		os.makedirs(os.path.join(save_path, 'RFs'))
+	if net.protocol=='gabor' or net.protocol=='digit':
+		if not os.path.exists(os.path.join(save_path, 'RFs')):
+			os.makedirs(os.path.join(save_path, 'RFs'))
 	if net.protocol=='gabor' and not os.path.exists(os.path.join(save_path, 'TCs')):
 		os.makedirs(os.path.join(save_path, 'TCs'))
 	RFproba = net.RF_info['RFproba']
@@ -65,11 +66,11 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			else: W_act_pass=None
 			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
 		
-		""" plot performance progression """
-		plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
+	""" plot performance progression """
+	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
-		""" plot performance at various orientations """
-		if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
+	""" plot performance at various orientations """
+	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
 
 def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
 	"""
