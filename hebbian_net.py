@@ -453,7 +453,7 @@ class Network:
 		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy_norm, self.out_W, SM=False)
 
 		#adds noise in out_W neurons
-		if self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa:
+		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa) and self.exploration:
 			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))*self.batch_explorative[:,np.newaxis]
 			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t)
 
