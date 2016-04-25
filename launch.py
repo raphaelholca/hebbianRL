@@ -30,9 +30,9 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dNeut_out		= -0.0,#-0.3,#
 							dLow_out		= -1.0,#-0.5,#
 							protocol		= 'toy_data', #'toy_data',#'gabor',#'digit',#
-							name 			= 'toy_data_DA',
+							name 			= 'toy_data_3D',
 							n_runs 			= 1,
-							n_epi_crit		= 1000,
+							n_epi_crit		= 250,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,
 							n_epi_post 		= 0,
@@ -44,7 +44,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							lr_out			= 5e-5,
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 2,#16,#49,#
+							n_hid_neurons	= 3,#16,#49,#
 							init_file		= '',
 							lim_weights		= False,
 							log_weights 	= False,
@@ -59,7 +59,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 975 #np.random.randint(1000)Ï
+							seed 			= 975 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -82,10 +82,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 28
 																						},
-																	toy_data_params	= {	'dimension' 		: '2D',
+																	toy_data_params	= {	'dimension' 		: '3D', #'2D' #'3D'
 																						'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
-																						'data_distrib' 		: 'bimodal' #'uniform' #'normal' #'bimodal'
+																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'multimodal'
 																						}
 																	)
 

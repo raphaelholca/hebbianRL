@@ -115,37 +115,9 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 	elif protocol == 'toy_data':
 		if verbose: print 'creating toy training images...'
 
-		if toy_data_params['data_distrib']=='uniform':
-			images = np.abs(np.random.random((toy_data_params['n_points'], 2)))
-			images_test = np.abs(np.random.random((toy_data_params['n_points'], 2)))
-		elif toy_data_params['data_distrib']=='normal':
-			images = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
-			images_test = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
-		elif toy_data_params['data_distrib']=='bimodal':
-			b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
-			b2 = np.random.normal(loc=0.3, scale=0.10, size=(toy_data_params['n_points']/2, 1))
-			b1 = np.concatenate((b1,1.-b1), axis=1)
-			b2 = np.concatenate((b2,1.-b2), axis=1)
-			images = np.clip(np.concatenate((b1, b2), axis=0), 0, 1)
-			labels = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
-			labels[:toy_data_params['n_points']/2]=1
-
-			b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
-			b2 = np.random.normal(loc=0.2, scale=0.10, size=(toy_data_params['n_points']/2, 1))
-			b1 = np.concatenate((b1,1.-b1), axis=1)
-			b2 = np.concatenate((b2,1.-b2), axis=1)
-			images_test = np.clip(np.concatenate((b1, b2), axis=0), 0 ,1)
-			labels_test = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
-			labels_test[:toy_data_params['n_points']/2]=1
+		images, images_test, labels, labels_test = generate_toy_data(protocol, A, toy_data_params)
 		
 		images_task = None
-
-		images = normalize(images, A)
-		images_test = normalize(images_test, A)
-
-		if toy_data_params['data_distrib']!='bimodal':
-			labels = toy_labeling(images, toy_data_params, A)
-			labels_test = toy_labeling(images_test, toy_data_params, A)
 		labels_task = None
 
 		orientations = None
@@ -569,23 +541,109 @@ def exploration(epsilon_xplr, batch_size):
 
 	return explorative_trials
 
-def toy_labeling(images, params, A):
+def generate_toy_data(protocol, A, toy_data_params):
+	""" generate 2D and 3D toy data to test model """
+
+	if toy_data_params['data_distrib']=='multimodal':
+		return multimodal_toy_data(protocol, A, toy_data_params)
+
+	if toy_data_params['dimension'] == '2D':
+		if toy_data_params['data_distrib']=='uniform':
+			images = np.abs(np.random.random((toy_data_params['n_points'], 2)))
+			images_test = np.abs(np.random.random((toy_data_params['n_points'], 2)))
+		elif toy_data_params['data_distrib']=='normal':
+			images = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
+			images_test = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
+	if toy_data_params['dimension'] == '3D':
+		if toy_data_params['data_distrib']=='uniform':
+			images_tmp = np.random.random((toy_data_params['n_points']*2, 2))
+			images_tmp = images_tmp[images_tmp[:,0]+images_tmp[:,1]<=1.0]
+			images = np.zeros((len(images_tmp), 3))
+			images[:,:2] = images_tmp
+			images[:,2] = 1.0 - np.sum(images,1)
+
+			images_tmp = np.random.random((toy_data_params['n_points']*2, 2))
+			images_tmp = images_tmp[images_tmp[:,0]+images_tmp[:,1]<=1.0]
+			images_test = np.zeros((len(images_tmp), 3))
+			images_test[:,:2] = images_tmp
+			images_test[:,2] = 1.0 - np.sum(images_test,1)
+
+		elif toy_data_params['data_distrib']=='normal':
+			raise NotImplementedError ("normal distribution not implemented for 3D data")
+	
+	images = normalize(images, A)
+	images_test = normalize(images_test, A)
+
+	labels = toy_labeling(images, toy_data_params, A)
+	labels_test = toy_labeling(images_test, toy_data_params, A)
+
+	images, labels = even_labels(images, labels, np.unique(labels))
+	images_test, labels_test = even_labels(images_test, labels_test, np.unique(labels))
+
+	return images, images_test, labels, labels_test
+
+def toy_labeling(images, toy_data_params, A):
 	""" labels toy data """
 
 	labels = np.zeros(np.size(images,0), dtype=int)
 
-	if params['separability'] == '1D':
-		labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
-	elif params['separability'] == '2D':
-		labels[images[:,0] >= images[:,1]] = 1
-	elif params['separability'] == 'non_linear':
-		labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1. ] = 1
-		labels[images[:,0] <  (A-np.size(images,1)) * 1./3. + 1. ] = 1
-		# labels[images[:,0] >= 0.5*np.cos(images[:,1]/0.2)+(images[:,1]**2)/1.5+0.5 ] = 1
-	else:
-		raise ValueError('invalid separability method')
+	if toy_data_params['dimension'] == '2D':
+		if toy_data_params['separability'] == '1D':
+			labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
+		elif toy_data_params['separability'] == '2D':
+			labels[images[:,0] >= images[:,1]] = 1
+		elif toy_data_params['separability'] == 'non_linear':
+			labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1. ] = 1
+			labels[images[:,0] <  (A-np.size(images,1)) * 1./3. + 1. ] = 1
+			# labels[images[:,0] >= 0.5*np.cos(images[:,1]/0.2)+(images[:,1]**2)/1.5+0.5 ] = 1
+		else:
+			raise ValueError('invalid separability method')
+
+	if toy_data_params['dimension'] == '3D':
+		if toy_data_params['separability'] == '1D':
+			labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
+		elif toy_data_params['separability'] == '2D':
+			labels[images[:,0] - images[:,1] > 0] = 1
+		# elif toy_data_params['separability'] == 'non_linear':
+		# 	labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1. ] = 1
+		# 	labels[images[:,0] <  (A-np.size(images,1)) * 1./3. + 1. ] = 1
+		# 	# labels[images[:,0] >= 0.5*np.cos(images[:,1]/0.2)+(images[:,1]**2)/1.5+0.5 ] = 1
+		else:
+			raise ValueError('invalid separability method')
 
 	return labels
+
+def multimodal_toy_data(protocol, A, toy_data_params):
+	""" generate multimodal toy data """
+
+	if toy_data_params['dimension'] == '2D':
+		b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
+		b2 = np.random.normal(loc=0.3, scale=0.10, size=(toy_data_params['n_points']/2, 1))
+		b1 = np.concatenate((b1,1.-b1), axis=1)
+		b2 = np.concatenate((b2,1.-b2), axis=1)
+		images = np.clip(np.concatenate((b1, b2), axis=0), 0, 1)
+		labels = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
+		labels[:toy_data_params['n_points']/2]=1
+
+		b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
+		b2 = np.random.normal(loc=0.2, scale=0.10, size=(toy_data_params['n_points']/2, 1))
+		b1 = np.concatenate((b1,1.-b1), axis=1)
+		b2 = np.concatenate((b2,1.-b2), axis=1)
+		images_test = np.clip(np.concatenate((b1, b2), axis=0), 0 ,1)
+		labels_test = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
+		labels_test[:toy_data_params['n_points']/2]=1
+	elif toy_data_params['dimension'] == '3D':
+		raise NotImplementedError ("multimodal distribution not implemented for 3D data")
+
+
+	images = normalize(images, A)
+	images_test = normalize(images_test, A)
+
+	images, labels = even_labels(images, labels, np.unique(labels))
+	images_test, labels_test = even_labels(images_test, labels_test, np.unique(labels))
+
+	return images, images_test, labels, labels_test
+
 
 
 

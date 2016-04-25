@@ -7,6 +7,7 @@ import grating as gr
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D
 import pickle
 
 ex = reload(ex)
@@ -486,6 +487,12 @@ def toy_data_rotate(x,y):
 	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
 
 def assess_toy_data(net, images, labels, save_name):
+	if net.images_params['dimension'] == '2D':
+		plot_toy_data_2D(net, images, labels, save_name)
+	elif net.images_params['dimension'] == '3D':
+		plot_toy_data_3D(net, images, labels, save_name)
+
+def plot_toy_data_2D(net, images, labels, save_name):
 	color = np.array(['r', 'b', 'g'])
 	max_y = toy_data_rotate(net.A_hid*1.1,0)[1]*1.1
 	min_y = toy_data_rotate(net.A_hid*0.9,0)[1]
@@ -518,6 +525,52 @@ def assess_toy_data(net, images, labels, save_name):
 
 	plt.savefig(save_name)
 	plt.close()
+
+def plot_toy_data_3D(net, images, labels, save_name=None):
+	color = np.array(['r', 'b', 'g'])
+
+	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
+	hid_n = ex.normalize(hid_n, net.A_out)
+	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
+	classif = np.argmax(out_n,1)
+
+	x_hid_activ, y_hid_activ = toy_data_rotate(hid_n[:,0], hid_n[:,1])
+	x_out_W, y_out_W = toy_data_rotate(net.out_W[0,:], net.out_W[1,:])
+
+	fig = plt.figure()
+
+	ax = fig.add_subplot(311, projection='3d')
+	scatter_classif = ax.scatter(images[:,0], images[:,1], images[:,2], c=color[classif], alpha=0.10)
+	# scatter_W = ax.scatter(net.hid_W[0,:], net.hid_W[1,:], net.hid_W[2,:], marker='x', s=100, c='k')
+	
+	ax.view_init(45,45)
+	scatter_classif.set_edgecolors = scatter_classif.set_facecolors = lambda *args:None
+
+	if net.n_hid_neurons==2:
+		ax = fig.add_subplot(312)
+		ax.scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
+		ax.scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
+	elif net.n_hid_neurons==3:
+		ax = fig.add_subplot(312, projection='3d')
+		scatter_activ = ax.scatter(hid_n[:,0], hid_n[:,1], hid_n[:,2], c=color[labels], alpha=0.10)
+		scatter_W_out = ax.scatter(net.out_W[0,:], net.out_W[1,:], net.out_W[2,:], marker='x', s=100, c=color[:2])
+
+		ax.view_init(45,45)
+		scatter_activ.set_edgecolors = scatter_activ.set_facecolors = lambda *args:None
+		scatter_W_out.set_edgecolors = scatter_W_out.set_facecolors = lambda *args:None
+
+	ax = fig.add_subplot(313, projection='3d')
+	scatter_data = ax.scatter(images[:,0], images[:,1], images[:,2], c=color[labels], alpha=0.10)
+	scatter_W_hid = ax.scatter(net.hid_W[0,:], net.hid_W[1,:], net.hid_W[2,:], marker='x', s=100, c='k')
+
+	ax.view_init(45,45)
+	scatter_data.set_edgecolors = scatter_data.set_facecolors = lambda *args:None
+	scatter_W_hid.set_edgecolors = scatter_W_hid.set_facecolors = lambda *args:None
+
+	plt.show(block=False)
+	if save_name is not None:
+		plt.savefig(save_name)
+		plt.close()
 
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
