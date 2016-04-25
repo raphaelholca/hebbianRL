@@ -164,7 +164,7 @@ def plot_one_slope_diff(net, save_path):
 		name = net.name
 		hid_W_naive = net.hid_W_naive
 		hid_W_trained = net.hid_W_trained
-		t = net.t
+		t = net.t_hid
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
@@ -195,7 +195,7 @@ def plot_all_slope_diffs(save_path):
 		name = net.name
 		hid_W_naive = net.hid_W_naive
 		hid_W_trained = net.hid_W_trained
-		t = net.t
+		t = net.t_hid
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network

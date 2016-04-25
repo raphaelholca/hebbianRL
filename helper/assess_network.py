@@ -132,7 +132,7 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method, log_weights=net.log_weights)
+		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.images_params, True, True, save_path=save_path, curve_method=curve_method, log_weights=net.log_weights)
 		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned, bin_width=4)
 	
 		nbins = 180	
@@ -493,7 +493,7 @@ def assess_toy2D(net, images, labels, save_name):
 	x_images, y_images = toy2D_rotate(images[:,0], images[:,1])
 	x_hid_W, y_hid_W = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
-	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t, log_weights=net.log_weights)
+	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
 	hid_n = ex.normalize(hid_n, net.A_out)
 	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
 	sorter = x_images.argsort()
@@ -505,11 +505,11 @@ def assess_toy2D(net, images, labels, save_name):
 
 	fig, ax = plt.subplots(3,1)
 
-	ax[0].scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
-	ax[0].scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
-
 	for n in range(np.size(out_n, 1)):
-		ax[1].plot(x_out, y_out[:,n], c=color[n])
+		ax[0].plot(x_out, y_out[:,n], c=color[n])
+
+	ax[1].scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
+	ax[1].scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
 
 	ax[2].scatter(x_images, y_images, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
 	ax[2].scatter(x_hid_W, y_hid_W, marker='x', s=100, c='k')
