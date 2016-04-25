@@ -26,19 +26,19 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
-							dMid_out		= 1.0,#0.2,#
+							dMid_out		= 0.1,#0.2,#
 							dNeut_out		= -0.0,#-0.3,#
-							dLow_out		= -0.5,#-0.5,#
-							protocol		= 'toy2D', #'toy2D',#'gabor',#'digit',#
-							name 			= 'toy2D_DA_2',
+							dLow_out		= -1.0,#-0.5,#
+							protocol		= 'toy_data', #'toy_data',#'gabor',#'digit',#
+							name 			= 'toy_data_DA',
 							n_runs 			= 1,
-							n_epi_crit		= 500,
+							n_epi_crit		= 1000,
 							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,
 							n_epi_post 		= 0,
-							t_hid			= 1e9,#1.0,#0.1,#
-							t_out			= 1e9,#1.0,#0.1,#
-							A_hid			= 5e5,
+							t_hid			= 1e2,#1.0,#0.1,#
+							t_out			= 1e2,#1.0,#0.1,#
+							A_hid			= 5e1,
 							A_out			= 1e4,
 							lr_hid			= 5e-4,#5e-3,
 							lr_out			= 5e-5,
@@ -59,7 +59,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 975 #np.random.randint(1000)
+							seed 			= 975 #np.random.randint(1000)Ï
 							)
 
 """ load and pre-process training and testing images """
@@ -82,9 +82,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 28
 																						},
-																	toy2D_params	= {	'n_points'			: 2000,
+																	toy_data_params	= {	'dimension' 		: '2D',
+																						'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
-																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
+																						'data_distrib' 		: 'bimodal' #'uniform' #'normal' #'bimodal'
 																						}
 																	)
 

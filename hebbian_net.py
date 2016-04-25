@@ -170,8 +170,8 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
-			if self.protocol=='toy2D' and not self.pypet:
-				an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
+			if self.protocol=='toy_data' and not self.pypet:
+				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -188,7 +188,7 @@ class Network:
 					print '----------end dopa-----------'
 
 				#shuffle input images
-				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit + self.n_epi_fine or  e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa)) or self.protocol=='toy2D':
+				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit + self.n_epi_fine or  e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa)) or self.protocol=='toy_data':
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit + self.n_epi_fine and e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa: ##
 					if self.images_params['renew_trainset']: #create new training images
@@ -252,11 +252,11 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
-				if ((self.protocol=='toy2D' and e%50==0) or (self.protocol=='gabor' and e%5==0)) and not self.pypet :
-					an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
+				if ((self.protocol=='toy_data' and e%50==0) or (self.protocol=='gabor' and e%5==0)) and not self.pypet :
+					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
-			an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
+			an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
@@ -346,7 +346,7 @@ class Network:
 				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
 			elif self.protocol=='gabor':
 				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
-			elif self.protocol=='toy2D':
+			elif self.protocol=='toy_data':
 				self.RF_info = {'RFproba':None}
 
 			return self.perf_dict
@@ -394,14 +394,15 @@ class Network:
 		self.hid_W = ex.normalize(self.hid_W.T, self.A_hid*1.1).T
 
 		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
-		self.out_W = ex.normalize(self.out_W.T, self.A_out*1.1).T
+		self.out_W = ex.normalize(self.out_W.T, self.A_out).T
+		# self.out_W = ex.normalize(self.out_W.T, self.A_out*1.1).T
 		###
 	
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
 		if self.classifier not in ['neural', 'bayesian']:
 			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural\' and \'bayesian\'.')
-		if self.protocol not in ['digit', 'gabor', 'toy2D']:
+		if self.protocol not in ['digit', 'gabor', 'toy_data']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
@@ -660,7 +661,7 @@ class Network:
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]
-			elif self.protocol=='toy2D':
+			elif self.protocol=='toy_data':
 				RFproba=np.zeros((1,self.n_hid_neurons,3)) ##temporary fix
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.

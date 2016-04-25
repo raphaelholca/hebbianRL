@@ -29,8 +29,8 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'protocol'			: 'toy2D',#'gabor',#'digit',#
-					'name' 				: 'pypet_toy2D_classLayer',
+					'protocol'			: 'toy_data',#'gabor',#'digit',#
+					'name' 				: 'pypet_toy_data_classLayer',
 					'n_runs' 			: 1,
 					'n_epi_crit'		: 500,	
 					'n_epi_fine' 		: 0,			
@@ -93,7 +93,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
 																						},
-																	toy2D_params	= {	'n_points'			: 2000,
+																	toy_data_params	= {	'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
 																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
 																						}

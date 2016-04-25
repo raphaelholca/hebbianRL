@@ -41,7 +41,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot and save confusion matrices """
 	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
 
-	if net.protocol!='toy2D':
+	if net.protocol!='toy_data':
 		""" plot RF properties """
 		plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
 
@@ -482,16 +482,16 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.savefig(os.path.join(save_path, name+'_progress.pdf'))
 	plt.close(fig)	
 
-def toy2D_rotate(x,y):
+def toy_data_rotate(x,y):
 	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
 
-def assess_toy2D(net, images, labels, save_name):
+def assess_toy_data(net, images, labels, save_name):
 	color = np.array(['r', 'b', 'g'])
-	max_y = toy2D_rotate(net.A_hid*1.1,0)[1]*1.1
-	min_y = toy2D_rotate(net.A_hid*0.9,0)[1]
+	max_y = toy_data_rotate(net.A_hid*1.1,0)[1]*1.1
+	min_y = toy_data_rotate(net.A_hid*0.9,0)[1]
 
-	x_images, y_images = toy2D_rotate(images[:,0], images[:,1])
-	x_hid_W, y_hid_W = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
+	x_images, y_images = toy_data_rotate(images[:,0], images[:,1])
+	x_hid_W, y_hid_W = toy_data_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
 	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
 	hid_n = ex.normalize(hid_n, net.A_out)
@@ -500,8 +500,8 @@ def assess_toy2D(net, images, labels, save_name):
 	x_out = x_images[sorter]
 	y_out = out_n[sorter,:]
 
-	x_hid_activ, y_hid_activ = toy2D_rotate(hid_n[:,0], hid_n[:,1])
-	x_out_W, y_out_W = toy2D_rotate(net.out_W[0,:], net.out_W[1,:])
+	x_hid_activ, y_hid_activ = toy_data_rotate(hid_n[:,0], hid_n[:,1])
+	x_out_W, y_out_W = toy_data_rotate(net.out_W[0,:], net.out_W[1,:])
 
 	fig, ax = plt.subplots(3,1)
 

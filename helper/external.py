@@ -18,7 +18,7 @@ from array import array
 
 gr = reload(gr)
 
-def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy2D_params={}, load_test=True):
+def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy_data_params={}, load_test=True):
 	""" 
 	Load images training and testing images 
 
@@ -112,40 +112,47 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 		images_params = gabor_params
 
-	elif protocol == 'toy2D':
+	elif protocol == 'toy_data':
 		if verbose: print 'creating toy training images...'
 
-		if toy2D_params['data_distrib']=='uniform':
-			images = np.abs(np.random.random((toy2D_params['n_points'], 2)))
-			images_test = np.abs(np.random.random((toy2D_params['n_points'], 2)))
-		elif toy2D_params['data_distrib']=='normal':
-			images = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy2D_params['n_points'], 2)))
-			images_test = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy2D_params['n_points'], 2)))
-		elif toy2D_params['data_distrib']=='bimodal':
-			b1 = np.random.normal(loc=1, scale=0.05, size=(toy2D_params['n_points']/2, 1))
-			b2 = np.random.normal(loc=0, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+		if toy_data_params['data_distrib']=='uniform':
+			images = np.abs(np.random.random((toy_data_params['n_points'], 2)))
+			images_test = np.abs(np.random.random((toy_data_params['n_points'], 2)))
+		elif toy_data_params['data_distrib']=='normal':
+			images = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
+			images_test = np.abs(np.random.normal(loc=0.5, scale=0.15, size=(toy_data_params['n_points'], 2)))
+		elif toy_data_params['data_distrib']=='bimodal':
+			b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
+			b2 = np.random.normal(loc=0.3, scale=0.10, size=(toy_data_params['n_points']/2, 1))
 			b1 = np.concatenate((b1,1.-b1), axis=1)
 			b2 = np.concatenate((b2,1.-b2), axis=1)
 			images = np.clip(np.concatenate((b1, b2), axis=0), 0, 1)
-			b1 = np.random.normal(loc=1, scale=0.05, size=(toy2D_params['n_points']/2, 1))
-			b2 = np.random.normal(loc=0, scale=0.05, size=(toy2D_params['n_points']/2, 1))
+			labels = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
+			labels[:toy_data_params['n_points']/2]=1
+
+			b1 = np.random.normal(loc=0.6, scale=0.01, size=(toy_data_params['n_points']/2, 1))
+			b2 = np.random.normal(loc=0.2, scale=0.10, size=(toy_data_params['n_points']/2, 1))
 			b1 = np.concatenate((b1,1.-b1), axis=1)
 			b2 = np.concatenate((b2,1.-b2), axis=1)
 			images_test = np.clip(np.concatenate((b1, b2), axis=0), 0 ,1)
+			labels_test = np.zeros(2*(toy_data_params['n_points']/2), dtype=int)
+			labels_test[:toy_data_params['n_points']/2]=1
+		
 		images_task = None
 
 		images = normalize(images, A)
 		images_test = normalize(images_test, A)
 
-		labels = toy_labeling(images, toy2D_params, A)
-		labels_test = toy_labeling(images_test, toy2D_params, A)
+		if toy_data_params['data_distrib']!='bimodal':
+			labels = toy_labeling(images, toy_data_params, A)
+			labels_test = toy_labeling(images_test, toy_data_params, A)
 		labels_task = None
 
 		orientations = None
 		orientations_test = None
 		orientations_task = None
 
-		images_params = toy2D_params
+		images_params = toy_data_params
 
 	return {'train':images, 'test':images_test, 'task':images_task}, {'train':labels, 'test':labels_test, 'task':labels_task}, {'train':orientations, 'test':orientations_test, 'task':orientations_task}, images_params
 
@@ -568,7 +575,7 @@ def toy_labeling(images, params, A):
 	labels = np.zeros(np.size(images,0), dtype=int)
 
 	if params['separability'] == '1D':
-		labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1.] = 1
+		labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
 	elif params['separability'] == '2D':
 		labels[images[:,0] >= images[:,1]] = 1
 	elif params['separability'] == 'non_linear':
