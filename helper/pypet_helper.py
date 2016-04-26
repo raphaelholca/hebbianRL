@@ -164,15 +164,15 @@ def plot_one_slope_diff(net, save_path):
 		name = net.name
 		hid_W_naive = net.hid_W_naive
 		hid_W_trained = net.hid_W_trained
-		t = net.t
+		t = net.t_hid
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path, log_weights=net.log_weights)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, net.images_params, name, curve_method='no_softmax', plot=False, save_path=plot_path, log_weights=net.log_weights)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		stat_diff = gr.slope_difference(slopes_naive['all_dist_from_target'], slopes_naive['all_slope_at_target'], slopes['all_dist_from_target'], slopes['all_slope_at_target'], name, plot=True, slope_binned=True, save_path=plot_path)
@@ -195,15 +195,15 @@ def plot_all_slope_diffs(save_path):
 		name = net.name
 		hid_W_naive = net.hid_W_naive
 		hid_W_trained = net.hid_W_trained
-		t = net.t
+		t = net.t_hid
 		target_ori = net.images_params['target_ori']
 
 		#compute RFs info for the naive network
-		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path, log_weights=net.log_weights)
 		slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, target_ori, name, plot=False, save_path=plot_path)
 
 		#compute RFs info for the trained network
-		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path)
+		curves, pref_ori = gr.tuning_curves(hid_W_trained, t, target_ori, name, method='no_softmax', plot=False, save_path=plot_path, log_weights=net.log_weights)
 		slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, target_ori, name, plot=False, save_path=plot_path)
 		
 		print n

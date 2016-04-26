@@ -7,6 +7,7 @@ import grating as gr
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D
 import pickle
 
 ex = reload(ex)
@@ -41,7 +42,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot and save confusion matrices """
 	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
 
-	if net.protocol!='toy2D':
+	if net.protocol!='toy_data':
 		""" plot RF properties """
 		plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
 
@@ -72,7 +73,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot performance at various orientations """
 	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
 
-def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None):
+def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=True, save_path='', W_naive=None, log_weights=False):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -101,9 +102,9 @@ def hist(name, W, classes, images, labels, n_bins=10, save_data=True, verbose=Tr
 	RFselec = np.zeros((n_runs,n_bins))
 	for r in range(n_runs):
 		if verbose: print 'run: ' + str(r+1)
-		mostActiv = np.argmax(ex.propagate_layerwise(images, W[r]),1)
+		mostActiv = np.argmax(ex.propagate_layerwise(images, W[r], log_weights=log_weights),1)
 		if W_naive is not None: 
-			mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r]),1)
+			mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r], log_weights=log_weights),1)
 		for n in range(n_neurons):
 			RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 			RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
@@ -132,7 +133,7 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t, net.images_params, True, True, save_path=save_path, curve_method=curve_method)
+		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.images_params, True, True, save_path=save_path, curve_method=curve_method, log_weights=net.log_weights)
 		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned, bin_width=4)
 	
 		nbins = 180	
@@ -147,15 +148,15 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, images_params, save_data, verbose, save_path='', curve_method='basic'):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, images_params, save_data, verbose, save_path='', curve_method='basic', log_weights=False):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, images_params, name, curve_method=curve_method, plot=False, save_path=save_path)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, images_params, name, curve_method=curve_method, plot=False, save_path=save_path, log_weights=log_weights)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, images_params, name, curve_method=curve_method, plot=save_data, save_path=save_path)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, images_params, name, curve_method=curve_method, plot=save_data, save_path=save_path, log_weights=log_weights)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)
@@ -175,7 +176,7 @@ def gabor_RFproba(W, pref_ori):
 
 	return RFproba
 
-def selectivity(W, RFproba, images, labels, classes):
+def selectivity(W, RFproba, images, labels, classes, log_weights=False):
 	"""
 	computes the selectivity of a neuron, using the already computed RFproba. This RFproba must have been computed using hist()
 
@@ -183,7 +184,7 @@ def selectivity(W, RFproba, images, labels, classes):
 		W (numpy array) : weights from input to hidden neurons
 		RFproba (numpy array) : 
 	"""
-	acti = ex.propagate_layerwise(images, W, SM=False)
+	acti = ex.propagate_layerwise(images, W, SM=False, log_weights=log_weights)
 	n_neurons = np.size(acti,1)
 	n_classes = len(classes)
 	best_neuron = np.argmax(acti, 1)
@@ -482,36 +483,109 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.savefig(os.path.join(save_path, name+'_progress.pdf'))
 	plt.close(fig)	
 
-def toy2D_rotate(x,y):
+def toy_data_rotate(x,y):
+	# return x, y
 	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
 
-def assess_toy2D(net, images, labels, save_name):
+def assess_toy_data(net, images, labels, save_name=None):
+	if net.images_params['dimension'] == '2D':
+		plot_toy_data_2D(net, images, labels, save_name)
+	elif net.images_params['dimension'] == '3D':
+		plot_toy_data_3D(net, images, labels, save_name)
+
+def plot_toy_data_2D(net, images, labels, save_name=None):
 	color = np.array(['r', 'b', 'g'])
-	max_y = toy2D_rotate(net.A_hid*1.1,0)[1]*1.1
-	min_y = toy2D_rotate(net.A_hid*0.9,0)[1]
+	max_y = toy_data_rotate(net.A*1.1,0)[1]*1.1
+	min_y = toy_data_rotate(net.A*0.9,0)[1]
 
-	x_images, y_images = toy2D_rotate(images[:,0], images[:,1])
-	x_hid, y_hid = toy2D_rotate(net.hid_W[0,:], net.hid_W[1,:])
+	x_images, y_images = toy_data_rotate(images[:,0], images[:,1])
+	x_hid_W, y_hid_W = toy_data_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
-	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t)
-	hid_n = ex.normalize(hid_n, net.A_out)
-	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False)
+	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
+	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
 	sorter = x_images.argsort()
 	x_out = x_images[sorter]
 	y_out = out_n[sorter,:]
 
-	fig, ax = plt.subplots(2,1)
+	x_hid_activ, y_hid_activ = toy_data_rotate(hid_n[:,0], hid_n[:,1])
+	x_out_W, y_out_W = toy_data_rotate(net.out_W[0,:], net.out_W[1,:])
+
+	fig = plt.figure()
 
 	for n in range(np.size(out_n, 1)):
-		ax[0].plot(x_out, y_out[:,n], c=color[n])
+		ax = fig.add_subplot(311)
+		ax.plot(x_out, y_out[:,n], c=color[n])
 
-	ax[1].scatter(x_images, y_images, c=color[labels], alpha=0.25, edgecolors=list(color[labels]))
-	ax[1].scatter(x_hid, y_hid, marker='x', s=100, c='k')
+	if net.n_hid_neurons==2:
+		ax = fig.add_subplot(312)
+		ax.scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
+		ax.scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
+	elif net.n_hid_neurons==3:
+		ax = fig.add_subplot(312, projection='3d')
+		scatter_activ = ax.scatter(hid_n[:,0], hid_n[:,1], hid_n[:,2], c=color[labels], alpha=0.10)
+		scatter_W_out = ax.scatter(net.out_W[0,:], net.out_W[1,:], net.out_W[2,:], marker='x', s=100, c=color[:2])
+
+		ax.view_init(45,45)
+		scatter_activ.set_edgecolors = scatter_activ.set_facecolors = lambda *args:None
+		scatter_W_out.set_edgecolors = scatter_W_out.set_facecolors = lambda *args:None
+
+	ax = fig.add_subplot(313)
+	ax.scatter(x_images, y_images, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
+	ax.scatter(x_hid_W, y_hid_W, marker='x', s=100, c='k')
 	
-	ax[1].set_ylim(min_y, max_y)
+	# ax.set_ylim(min_y, max_y)
 
-	plt.savefig(save_name)
-	plt.close()
+	if save_name is not None:
+		plt.savefig(save_name)
+		plt.close()
+	else:
+		plt.show(block=False)
+
+def plot_toy_data_3D(net, images, labels, save_name=None):
+	color = np.array(['r', 'b', 'g'])
+
+	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
+	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
+	classif = np.argmax(out_n,1)
+
+	x_hid_activ, y_hid_activ = toy_data_rotate(hid_n[:,0], hid_n[:,1])
+	x_out_W, y_out_W = toy_data_rotate(net.out_W[0,:], net.out_W[1,:])
+
+	fig = plt.figure()
+
+	ax = fig.add_subplot(311, projection='3d')
+	scatter_classif = ax.scatter(images[:,0], images[:,1], images[:,2], c=color[classif], alpha=0.10)
+	# scatter_W = ax.scatter(net.hid_W[0,:], net.hid_W[1,:], net.hid_W[2,:], marker='x', s=100, c='k')
+	
+	ax.view_init(45,45)
+	scatter_classif.set_edgecolors = scatter_classif.set_facecolors = lambda *args:None
+
+	if net.n_hid_neurons==2:
+		ax = fig.add_subplot(312)
+		ax.scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
+		ax.scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
+	elif net.n_hid_neurons==3:
+		ax = fig.add_subplot(312, projection='3d')
+		scatter_activ = ax.scatter(hid_n[:,0], hid_n[:,1], hid_n[:,2], c=color[labels], alpha=0.10)
+		scatter_W_out = ax.scatter(net.out_W[0,:], net.out_W[1,:], net.out_W[2,:], marker='x', s=100, c=color[:2])
+
+		ax.view_init(45,45)
+		scatter_activ.set_edgecolors = scatter_activ.set_facecolors = lambda *args:None
+		scatter_W_out.set_edgecolors = scatter_W_out.set_facecolors = lambda *args:None
+
+	ax = fig.add_subplot(313, projection='3d')
+	scatter_data = ax.scatter(images[:,0], images[:,1], images[:,2], c=color[labels], alpha=0.10)
+	scatter_W_hid = ax.scatter(net.hid_W[0,:], net.hid_W[1,:], net.hid_W[2,:], marker='x', s=100, c='k')
+
+	ax.view_init(45,45)
+	scatter_data.set_edgecolors = scatter_data.set_facecolors = lambda *args:None
+	scatter_W_hid.set_edgecolors = scatter_W_hid.set_facecolors = lambda *args:None
+
+	if save_name is not None:
+		plt.savefig(save_name)
+		plt.close()
+	else:
+		plt.show(block=False)
 
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
@@ -576,7 +650,7 @@ def perf_all_ori(net, save_path=''):
 			
 			np.random.seed(0)
 			images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																				A_hid			= net.A_hid,
+																				A				= net.A,
 																				verbose 		= net.verbose,
 																				gabor_params 	= gabor_params
 																				)

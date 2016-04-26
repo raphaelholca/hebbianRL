@@ -29,16 +29,16 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'protocol'			: 'toy2D',#'gabor',#'digit',#
-					'name' 				: 'pypet_toy2D_noiseXplrOut',
-					'n_runs' 			: 3,
+					'protocol'			: 'toy_data',#'gabor',#'digit',#
+					'name' 				: 'pypet_toy_data_classLayer',
+					'n_runs' 			: 1,
 					'n_epi_crit'		: 500,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
-					't'					: 1.0,#0.1,#
-					'A_hid' 			: 1500.,
-					'A_out' 			: 940.,
+					't_hid'				: 1.0,#0.1,#
+					't_out'				: 1.0,#0.1,#
+					'A' 				: 1500.,
 					'lr_hid'			: 5e-4,#5e-3,
 					'lr_out'			: 5e-4,#5e-7,
 					'batch_size' 		: 50,
@@ -46,6 +46,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'n_hid_neurons'		: 2,#16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
+					'log_weights' 		: False,
 					'epsilon_xplr'		: 1.0,#1.0,#
 					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
@@ -74,7 +75,7 @@ explore_dict = {
 
 """ load and pre-process images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
-																	A 				= parameter_dict['A_hid'],
+																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
@@ -92,7 +93,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
 																						},
-																	toy2D_params	= {	'n_points'			: 2000,
+																	toy_data_params	= {	'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
 																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
 																						}

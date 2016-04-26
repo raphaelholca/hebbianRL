@@ -63,7 +63,7 @@ def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0., noise_pixel=0.):
 
 	return gratings
 
-def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, save_path=''):
+def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, save_path='', log_weights=False):
 	"""
 	compute the tuning curve of the neurons
 
@@ -115,7 +115,7 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 			fig, ax = plt.subplots()
 			plt.gca().set_color_cycle(cm.Paired(i) for i in np.linspace(0,0.8,10))
 		for i in range(len(test_input)):
-			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t)/len(test_input)
+			curves[r,:,:] += ex.propagate_layerwise(test_input[i], W[r], SM=SM, t=t, log_weights=log_weights)/len(test_input)
 			pref_ori[r, :] = orientations[np.argmax(curves[r,:,:],0)]
 			pref_ori[r, :] = ex.relative_orientations(pref_ori[r, :], images_params['target_ori'])
 

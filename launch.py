@@ -26,30 +26,31 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
-							dMid_out		= 0.0,#0.2,#
-							dNeut_out		= -0.0,#-0.3,#
+							dMid_out		= 0.01,#0.2,#
+							dNeut_out		= -0.01,#-0.3,#
 							dLow_out		= -2.0,#-0.5,#
-							protocol		= 'toy2D',#'gabor',#'digit',#
-							name 			= 'toy2D_noExplr',
+							protocol		= 'toy_data', #'toy_data',#'gabor',#'digit',#
+							name 			= 'toy_data_2D_2n',
 							n_runs 			= 1,
-							n_epi_crit		= 200,
+							n_epi_crit		= 5000,
 							n_epi_fine 		= 0,
-							n_epi_dopa		= 0,				
-							n_epi_post 		= 0,				
-							t				= 1.0,#1.0,#0.1,#
-							A_hid			= 1500.,
-							A_out			= 940.,
+							n_epi_dopa		= 0,
+							n_epi_post 		= 0,
+							t_hid			= 1e2,#1.0,#0.1,#
+							t_out			= 1e-1,#1.0,#0.1,#
+							A				= 5e1,
 							lr_hid			= 5e-4,#5e-3,
-							lr_out			= 5e-4,
+							lr_out			= 5e-5,
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 2,#16,#49,#
 							init_file		= '',
 							lim_weights		= False,
-							epsilon_xplr 	= 1.0,#1.0,#
+							log_weights 	= False,
+							epsilon_xplr 	= 1.0,#
 							noise_xplr_hid	= 0.3,#0.2#
 							noise_xplr_out	= 2e2,
-							exploration		= False,
+							exploration		= True,
 							compare_output 	= True,
 							noise_activ		= 0.0,
 							pdf_method 		= 'fit',
@@ -62,7 +63,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																	A				= net.A_hid,
+																	A				= net.A,
 																	verbose 		= net.verbose,
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
@@ -80,9 +81,10 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 28
 																						},
-																	toy2D_params	= {	'n_points'			: 2000,
+																	toy_data_params	= {	'dimension' 		: '2D', #'2D' #'3D'
+																						'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
-																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
+																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'multimodal'
 																						}
 																	)
 

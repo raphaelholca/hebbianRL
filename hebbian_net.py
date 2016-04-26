@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t=0.1, A_hid=940., A_out=5., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False):
 
 		"""
 		Sets network parameters 
@@ -45,9 +45,9 @@ class Network:
 				n_epi_fine (int, optional): number of episodes after the critical period to train output layer without learning in the hidden layer (similar to post). Default: 5
 				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
 				n_epi_post (int, optional): number of episodes after the dopa period to train output layer without learning in the hidden layer. Default: 5
-				t (float, optional): temperature of the softmax function (t<<1: strong competition; t>=1: weak competition). Default: 0.1
-				A_hid (float, optional): input normalization constant for the hidden layer. Default: 940.
-				A_out (float, optional): input normalization constant for the output layer. Default: 5.
+				t_hid (float, optional): temperature of the softmax function in the hidden layer (t<<1: strong competition; t>=1: weak competition). Default: 1.0
+				t_out (float, optional): temperature of the softmax function in the output layer (t<<1: strong competition; t>=1: weak competition). Default: 1.0
+				A (float, optional): input normalization constant for the hidden layer. Default: 940.
 				lr_hid (float, optional): learning rate for the hidden layer. Default: 5e-3
 				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
@@ -55,6 +55,7 @@ class Network:
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
+				log_weights (bool, optional): whether to take the logarithm of the weight. Default: False
 				epsilon_xplr (float, optional): probability of taking an exploratory decision (proba of noise injection). Default: 0.5
 				noise_xplr_hid (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn, for exploration in the hidden layer. Default: 0.2
 				noise_xplr_out (float, optional): parameter of the standard deviation of the normal distribution from which noise is drawn, for exploration in the output layer. Default: 2e4
@@ -79,11 +80,11 @@ class Network:
 		self.n_runs 			= n_runs
 		self.n_epi_crit			= n_epi_crit
 		self.n_epi_fine 		= n_epi_fine
-		self.n_epi_dopa			= n_epi_dopa				
-		self.n_epi_post 		= n_epi_post			
-		self.t					= t 						
-		self.A_hid 				= A_hid
-		self.A_out 				= A_out
+		self.n_epi_dopa			= n_epi_dopa
+		self.n_epi_post 		= n_epi_post
+		self.t_hid				= t_hid
+		self.t_out				= t_out
+		self.A 					= A
 		self.lr_hid				= lr_hid
 		self.lr_out				= lr_out
 		self.batch_size 		= batch_size
@@ -91,6 +92,7 @@ class Network:
 		self.n_hid_neurons 		= n_hid_neurons
 		self.init_file			= init_file
 		self.lim_weights		= lim_weights
+		self.log_weights 		= log_weights
 		self.epsilon_xplr 		= epsilon_xplr
 		self.noise_xplr_hid		= np.clip(noise_xplr_hid, 1e-20, np.inf)
 		self.noise_xplr_out 	= np.clip(noise_xplr_out, 1e-20, np.inf)
@@ -158,7 +160,7 @@ class Network:
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
-					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A_hid, self.verbose, gabor_params=self.images_params)
+					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
 					images, images_task = images_dict_new['train'], images_dict_new['task']
 					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
 				if self.images_params['noise_pixel'] > 0.0:
@@ -166,8 +168,8 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images))
 
-			if self.protocol=='toy2D' and not self.pypet:
-				an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
+			if self.protocol=='toy_data' and not self.pypet:
+				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -184,12 +186,12 @@ class Network:
 					print '----------end dopa-----------'
 
 				#shuffle input images
-				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit + self.n_epi_fine or  e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa)) or self.protocol=='toy2D':
+				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit + self.n_epi_fine or  e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa)) or self.protocol=='toy_data':
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
 				elif self.protocol=='gabor' and e >= self.n_epi_crit + self.n_epi_fine and e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa: ##
 					if self.images_params['renew_trainset']: #create new training images
 						rnd_orientations= np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A_hid)
+						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
 
@@ -197,7 +199,7 @@ class Network:
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
 					rnd_images += gaussian_noise
-					rnd_images = ex.normalize(rnd_images, self.A_hid)
+					rnd_images = ex.normalize(rnd_images, self.A)
 
 				#train network with mini-batches
 				correct = 0.
@@ -208,7 +210,7 @@ class Network:
 				
 					#select training images for the current batch
 					batch_images = rnd_images[b*self.batch_size:(b+1)*self.batch_size,:]
-					b_labels = rnd_labels[b*self.batch_size:(b+1)*self.batch_size]
+					batch_labels = rnd_labels[b*self.batch_size:(b+1)*self.batch_size]
 					
 					#propagate images through the network
 					greedy, explore_hid, explore_out, posterior, explorative = self._propagate(batch_images)
@@ -218,8 +220,8 @@ class Network:
 					predicted_reward_out = ex.reward_prediction(explorative, self.compare_output, greedy, explore_out) if self._train_class_layer else None
 
 					#compute reward
-					reward_hid = ex.reward_delivery(b_labels, explore_hid)
-					reward_out = ex.reward_delivery(b_labels, explore_out) if self._train_class_layer else None
+					reward_hid = ex.reward_delivery(batch_labels, explore_hid)
+					reward_out = ex.reward_delivery(batch_labels, explore_out) if self._train_class_layer else None
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
@@ -234,12 +236,12 @@ class Network:
 					else: 
 						lr_hid = self.lr_hid 
 						lr_out = self.lr_out
-					
+
 					#update weights
 					hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
-					out_W = self._learning_step(self.hid_neurons_greedy_norm, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
+					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
 
-					correct += np.sum(greedy==b_labels)
+					correct += np.sum(greedy==batch_labels)
 
 
 				#assess performance
@@ -248,11 +250,11 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
-				if self.protocol=='toy2D' and not self.pypet and e%50==0:
-					an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
+				if ((self.protocol=='toy_data' and e%50==0) or (self.protocol=='gabor' and e%5==0)) and not self.pypet :
+					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
-			if self.protocol=='toy2D' and not self.pypet: an.assess_toy2D(self, images, labels, os.path.join('.', 'output', self.name, 'results_final'))
+			an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 
@@ -280,7 +282,7 @@ class Network:
 				images_test += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_test)) #add Gaussian noise
 				if self.classifier=='bayesian':
 					images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
-			images_test = ex.normalize(images_test, self.A_hid)
+			images_test = ex.normalize(images_test, self.A)
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
@@ -301,17 +303,17 @@ class Network:
 
 			""" testing of the classifier """
 			if self.classifier=='neural':
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False) 
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
 				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
-				hidNeurons = ex.softmax(hidNeurons, t=self.t)
-				hidNeurons = ex.normalize(hidNeurons, self.A_hid)
+				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
+				hidNeurons = ex.normalize(hidNeurons, self.A)
 
-				actNeurons = ex.propagate_layerwise(hidNeurons, out_W)
+				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='bayesian':
-				pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images_train, labels_train, hid_W, self.pdf_method, self.t)
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t)
+				pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images_train, labels_train, hid_W, self.pdf_method, self.t_hid)
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t_hid, log_weights=self.log_weights)
 				posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
 				classIdx = np.argmax(posterior, 1)
 				classResults = self.classes[classIdx]
@@ -339,10 +341,10 @@ class Network:
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
-				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive)
+				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
 			elif self.protocol=='gabor':
-				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t, self.images_params, save_data=False, verbose=self.verbose)
-			elif self.protocol=='toy2D':
+				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
+			elif self.protocol=='toy_data':
 				self.RF_info = {'RFproba':None}
 
 			return self.perf_dict
@@ -387,17 +389,17 @@ class Network:
 
 		###
 		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
-		self.hid_W = ex.normalize(self.hid_W.T, self.A_hid*1.1).T
+		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
 
 		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
-		self.out_W = ex.normalize(self.out_W.T, self.A_out*1.1).T
+		self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
 		if self.classifier not in ['neural', 'bayesian']:
 			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural\' and \'bayesian\'.')
-		if self.protocol not in ['digit', 'gabor', 'toy2D']:
+		if self.protocol not in ['digit', 'gabor', 'toy_data']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
@@ -408,7 +410,7 @@ class Network:
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
 			if (W_mschange/940 > threshold).any() or (self._e==0 and self._b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
-				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t)
+				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t_hid)
 
 	def _propagate(self, batch_images):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
@@ -424,8 +426,6 @@ class Network:
 		#reset activity (important for cases in which no noise is added)
 		self.hid_neurons_greedy = None
 		self.hid_neurons_explore = None
-		self.hid_neurons_greedy_norm = None
-		self.hid_neurons_explore_norm = None
 		self.out_neurons_greedy = None
 		self.out_neurons_explore_hid = None
 		self.out_neurons_explore_out = None
@@ -434,35 +434,32 @@ class Network:
 		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
 
 		#compute activation of hidden neurons
-		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False) 
+		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
 		hid_activ_std = np.std(hid_activ)
 		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
 			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
-			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
-			self.hid_neurons_explore_norm = ex.normalize(hid_neurons_explore, self.A_out)
-			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore_norm, self.out_W, SM=True, t=self.t)
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
+			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t, log_weights=self.log_weights)
 
 		#softmax and normalize hidden neurons
-		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
-		self.hid_neurons_greedy_norm = ex.normalize(self.hid_neurons_greedy, self.A_out)
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
 
 		#compute activation of class neurons in greedy case
-		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy_norm, self.out_W, SM=False)
+		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False, log_weights=self.log_weights)
 
 		#adds noise in out_W neurons
 		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa) and self.exploration:
 			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))*self.batch_explorative[:,np.newaxis]
-			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t)
+			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t_out)
 
 		#softmax output neurons
-		self.out_neurons_greedy = ex.softmax(out_activ, t=self.t)
+		self.out_neurons_greedy = ex.softmax(out_activ, t=self.t_out)
 		
 		#set activation values for neurons when no exploration
 		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
-		if self.hid_neurons_explore_norm is None: self.hid_neurons_explore_norm = np.copy(self.hid_neurons_greedy_norm)
 		if self.out_neurons_explore_hid is None: self.out_neurons_explore_hid = np.copy(self.out_neurons_greedy)
 		if self.out_neurons_explore_out is None: self.out_neurons_explore_out = np.copy(self.out_neurons_greedy)
 
@@ -481,15 +478,15 @@ class Network:
 		# self.hid_neurons_explore = None
 
 		# #compute activation of hidden neurons
-		# hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False)
+		# hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights)
 		
 		# #add noise to activation of hidden neurons (exploration)
 		# if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine:
 		# 	self.hid_neurons_explore = hid_activ + np.random.normal(0, np.std(hid_activ)*self.noise_xplr_hid, np.shape(hid_activ))
-		# 	self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t)
+		# 	self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
 
 		# #softmax hidden neurons
-		# self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t)
+		# self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
 		
 		# #set activation values for neurons when no exploration
 		# if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
@@ -650,13 +647,13 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False)['RFproba']
+				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False, log_weights=self.log_weights)['RFproba']
 			elif self.protocol=='gabor':
-				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t, self.images_params, self.name, curve_method='no_softmax', plot=False)
+				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t_hid, self.images_params, self.name, curve_method='no_softmax', plot=False, log_weights=self.log_weights)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]
-			elif self.protocol=='toy2D':
+			elif self.protocol=='toy_data':
 				RFproba=np.zeros((1,self.n_hid_neurons,3)) ##temporary fix
 		same = np.argmax(RFproba[0],1) == self.classes[np.argmax(self.out_W,1)]
 		correct_out_W = 0.
