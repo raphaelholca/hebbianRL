@@ -392,8 +392,7 @@ class Network:
 		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
 
 		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
-		# self.out_W = ex.normalize(self.out_W.T, self.A_out).T ## normalize??
-		# self.out_W = ex.normalize(self.out_W.T, self.A_out*1.1).T
+		self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
 	def _check_parameters(self):
@@ -555,7 +554,7 @@ class Network:
 			mask = np.ones(np.size(W,1), dtype=bool)
 
 		W[:,mask] += dW[:,mask]
-		# W = np.clip(W, 1e-10, np.inf)##
+		W = np.clip(W, 1e-10, np.inf)
 		
 		return W
 

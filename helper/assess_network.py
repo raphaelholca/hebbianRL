@@ -484,6 +484,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	plt.close(fig)	
 
 def toy_data_rotate(x,y):
+	# return x, y
 	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
 
 def assess_toy_data(net, images, labels, save_name=None):
@@ -532,7 +533,7 @@ def plot_toy_data_2D(net, images, labels, save_name=None):
 	ax.scatter(x_images, y_images, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
 	ax.scatter(x_hid_W, y_hid_W, marker='x', s=100, c='k')
 	
-	ax.set_ylim(min_y, max_y)
+	# ax.set_ylim(min_y, max_y)
 
 	if save_name is not None:
 		plt.savefig(save_name)
