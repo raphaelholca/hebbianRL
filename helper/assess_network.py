@@ -486,22 +486,21 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 def toy_data_rotate(x,y):
 	return (x-y)/np.sqrt(2), (x+y-1)/np.sqrt(2)
 
-def assess_toy_data(net, images, labels, save_name):
+def assess_toy_data(net, images, labels, save_name=None):
 	if net.images_params['dimension'] == '2D':
 		plot_toy_data_2D(net, images, labels, save_name)
 	elif net.images_params['dimension'] == '3D':
 		plot_toy_data_3D(net, images, labels, save_name)
 
-def plot_toy_data_2D(net, images, labels, save_name):
+def plot_toy_data_2D(net, images, labels, save_name=None):
 	color = np.array(['r', 'b', 'g'])
-	max_y = toy_data_rotate(net.A_hid*1.1,0)[1]*1.1
-	min_y = toy_data_rotate(net.A_hid*0.9,0)[1]
+	max_y = toy_data_rotate(net.A*1.1,0)[1]*1.1
+	min_y = toy_data_rotate(net.A*0.9,0)[1]
 
 	x_images, y_images = toy_data_rotate(images[:,0], images[:,1])
 	x_hid_W, y_hid_W = toy_data_rotate(net.hid_W[0,:], net.hid_W[1,:])
 
 	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
-	hid_n = ex.normalize(hid_n, net.A_out)
 	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
 	sorter = x_images.argsort()
 	x_out = x_images[sorter]
@@ -510,27 +509,41 @@ def plot_toy_data_2D(net, images, labels, save_name):
 	x_hid_activ, y_hid_activ = toy_data_rotate(hid_n[:,0], hid_n[:,1])
 	x_out_W, y_out_W = toy_data_rotate(net.out_W[0,:], net.out_W[1,:])
 
-	fig, ax = plt.subplots(3,1)
+	fig = plt.figure()
 
 	for n in range(np.size(out_n, 1)):
-		ax[0].plot(x_out, y_out[:,n], c=color[n])
+		ax = fig.add_subplot(311)
+		ax.plot(x_out, y_out[:,n], c=color[n])
 
-	ax[1].scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
-	ax[1].scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
+	if net.n_hid_neurons==2:
+		ax = fig.add_subplot(312)
+		ax.scatter(x_hid_activ, y_hid_activ, c=color[labels], edgecolors=list(color[labels]), alpha=0.1)
+		ax.scatter(x_out_W, y_out_W, marker='x', s=100, c=color[:2])
+	elif net.n_hid_neurons==3:
+		ax = fig.add_subplot(312, projection='3d')
+		scatter_activ = ax.scatter(hid_n[:,0], hid_n[:,1], hid_n[:,2], c=color[labels], alpha=0.10)
+		scatter_W_out = ax.scatter(net.out_W[0,:], net.out_W[1,:], net.out_W[2,:], marker='x', s=100, c=color[:2])
 
-	ax[2].scatter(x_images, y_images, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
-	ax[2].scatter(x_hid_W, y_hid_W, marker='x', s=100, c='k')
+		ax.view_init(45,45)
+		scatter_activ.set_edgecolors = scatter_activ.set_facecolors = lambda *args:None
+		scatter_W_out.set_edgecolors = scatter_W_out.set_facecolors = lambda *args:None
+
+	ax = fig.add_subplot(313)
+	ax.scatter(x_images, y_images, c=color[labels], edgecolors=list(color[labels]), alpha=0.25)
+	ax.scatter(x_hid_W, y_hid_W, marker='x', s=100, c='k')
 	
-	ax[2].set_ylim(min_y, max_y)
+	ax.set_ylim(min_y, max_y)
 
-	plt.savefig(save_name)
-	plt.close()
+	if save_name is not None:
+		plt.savefig(save_name)
+		plt.close()
+	else:
+		plt.show(block=False)
 
 def plot_toy_data_3D(net, images, labels, save_name=None):
 	color = np.array(['r', 'b', 'g'])
 
 	hid_n = ex.propagate_layerwise(images, net.hid_W, SM=True, t=net.t_hid, log_weights=net.log_weights)
-	hid_n = ex.normalize(hid_n, net.A_out)
 	out_n = ex.propagate_layerwise(hid_n, net.out_W, SM=False, log_weights=net.log_weights)
 	classif = np.argmax(out_n,1)
 
@@ -567,10 +580,11 @@ def plot_toy_data_3D(net, images, labels, save_name=None):
 	scatter_data.set_edgecolors = scatter_data.set_facecolors = lambda *args:None
 	scatter_W_hid.set_edgecolors = scatter_W_hid.set_facecolors = lambda *args:None
 
-	plt.show(block=False)
 	if save_name is not None:
 		plt.savefig(save_name)
 		plt.close()
+	else:
+		plt.show(block=False)
 
 def perf_all_ori(net, save_path=''):
 	""" assess performance of network at various orientations """
@@ -635,7 +649,7 @@ def perf_all_ori(net, save_path=''):
 			
 			np.random.seed(0)
 			images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
-																				A_hid			= net.A_hid,
+																				A				= net.A,
 																				verbose 		= net.verbose,
 																				gabor_params 	= gabor_params
 																				)

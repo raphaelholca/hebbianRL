@@ -289,7 +289,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_dopa', 'n_epi_post', 't_hid', 't_out', 'A_hid', 'A_out', 'lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_dopa', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -589,7 +589,7 @@ def toy_labeling(images, toy_data_params, A):
 
 	if toy_data_params['dimension'] == '2D':
 		if toy_data_params['separability'] == '1D':
-			labels[images[:,0] >= (A-np.size(images,1)) * 1./2. + 1.] = 1
+			labels[images[:,0] >= (A-np.size(images,1)) * 2./3. + 1.] = 1
 		elif toy_data_params['separability'] == '2D':
 			labels[images[:,0] >= images[:,1]] = 1
 		elif toy_data_params['separability'] == 'non_linear':

@@ -38,8 +38,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 1.0,#0.1,#
-					'A_hid' 			: 1500.,
-					'A_out' 			: 940.,
+					'A' 				: 1500.,
 					'lr_hid'			: 5e-4,#5e-3,
 					'lr_out'			: 5e-4,#5e-7,
 					'batch_size' 		: 50,
@@ -75,7 +74,7 @@ explore_dict = {	'dHigh'			: [+2.000, +4.000, +5.000],
 
 """ load and pre-process images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
-																	A 				= parameter_dict['A_hid'],
+																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
