@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -69,6 +69,7 @@ class Network:
 				verbose	(bool, optional): whether to create text output. Default: True
 				seed (int, optional): seed of the random number generator. Default: None
 				pypet (bool, optional): whether the network simulation is part of pypet exploration
+				pypet_name (str, optional): name of the directory in which data is saved when doing pypet exploration. Default: ''
 		"""
 		
 		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
@@ -106,6 +107,7 @@ class Network:
 		self.verbose 			= verbose
 		self.seed 				= seed
 		self.pypet 				= pypet
+		self.pypet_name 		= pypet_name if pypet_name != '' else name
 		self._early_stop_cond 	= []
 
 		np.random.seed(self.seed)
@@ -254,7 +256,10 @@ class Network:
 					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
-			an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
+			if self.pypet:
+				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.pypet_name, 'results_final_'+self.name+'_run_'+str(r)))
+			else:
+				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 

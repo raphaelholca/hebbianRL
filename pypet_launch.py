@@ -31,26 +31,26 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'toy_data',#'gabor',#'digit',#
 					'name' 				: 'pypet_toy_data_classLayer',
-					'n_runs' 			: 1,
-					'n_epi_crit'		: 500,	
+					'n_runs' 			: 3,
+					'n_epi_crit'		: 5000,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_dopa'		: 0,
 					'n_epi_post' 		: 0,				
-					't_hid'				: 1.0,#0.1,#
-					't_out'				: 1.0,#0.1,#
-					'A' 				: 1500.,
+					't_hid'				: 1e2,#0.1,#
+					't_out'				: 1e-1,#0.1,#
+					'A' 				: 5e1,
 					'lr_hid'			: 5e-4,#5e-3,
-					'lr_out'			: 5e-4,#5e-7,
+					'lr_out'			: 5e-5,#5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 2,#16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
 					'log_weights' 		: False,
-					'epsilon_xplr'		: 1.0,#1.0,#
+					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3,
-					'noise_xplr_out'	: 2e4,
-					'exploration'		: True,
+					'noise_xplr_out'	: 2e2,
+					'exploration'		: False,
 					'compare_output' 	: True,
 					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
@@ -58,7 +58,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 978 #np.random.randint(1000)
+					'seed' 				: 975 #np.random.randint(1000)
 					}
 
 """ explored parameters """
@@ -66,11 +66,11 @@ explore_dict = {
 					# 'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +5.000],
 					# 'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500], 
 					
-					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500],
-					# 'dLow'			: [-5.000, -3.000, -2.000, -1.000, -0.000]
+					'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
+					'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
 					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
-					'noise_xplr_out' 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
+					# 'noise_xplr_out' 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
 				}
 
 """ load and pre-process images """
@@ -93,13 +93,15 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'rnd_freq' 			: False,
 																						'im_size'			: 50#28
 																						},
-																	toy_data_params	= {	'n_points'			: 2000,
+																	toy_data_params	= {	'dimension' 		: '2D', #'2D' #'3D'
+																						'n_points'			: 2000,
 																						'separability' 		: '1D', #'1D'#'2D'#'non_linear'
 																						'data_distrib' 		: 'uniform' #'uniform' #'normal' #'bimodal'
 																						}
 																	)
 
 """ create directory to save data """
+parameter_dict['pypet_name'] = parameter_dict['name']
 save_path = os.path.join('output', parameter_dict['name'])
 pp.check_dir(save_path, overwrite=False)
 print_dict = parameter_dict.copy()
@@ -119,6 +121,7 @@ traj = env.v_trajectory
 pp.add_parameters(traj, parameter_dict)
 
 explore_dict = pypet.cartesian_product(explore_dict, tuple(explore_dict.keys())) #if not all entry of dict need be explored through cartesian product replace tuple(.) only with relevant dict keys in tuple
+
 explore_dict['name'] = pp.set_run_names(explore_dict, parameter_dict['name'])
 traj.f_explore(explore_dict)
 

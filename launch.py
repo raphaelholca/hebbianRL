@@ -47,10 +47,10 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							init_file		= '',
 							lim_weights		= False,
 							log_weights 	= False,
-							epsilon_xplr 	= 1.0,#
-							noise_xplr_hid	= 0.3,#0.2#
+							epsilon_xplr 	= 1.0,
+							noise_xplr_hid	= 0.3,#0.2
 							noise_xplr_out	= 2e2,
-							exploration		= True,
+							exploration		= False,
 							compare_output 	= True,
 							noise_activ		= 0.0,
 							pdf_method 		= 'fit',

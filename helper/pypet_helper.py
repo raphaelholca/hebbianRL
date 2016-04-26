@@ -28,6 +28,7 @@ def launch_exploration(traj, images_dict, labels_dict, images_params, save_path)
 
 def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_params, save_path):
 	""" launch one instance of the network """
+
 	net = hebbian_net.Network(pypet=True, **parameter_dict)
 
 	net.train(images_dict, labels_dict, images_params)
