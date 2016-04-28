@@ -26,31 +26,31 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
-							dMid_out		= 0.01,#0.2,#
-							dNeut_out		= -0.01,#-0.3,#
-							dLow_out		= -2.0,#-0.5,#
-							protocol		= 'toy_data', #'toy_data',#'gabor',#'digit',#
-							name 			= 'toy_data_2D_2n',
+							dMid_out		= 0.,#0.2,#
+							dNeut_out		= -0.0,#-0.3,#
+							dLow_out		= -0.2,#-0.5,#
+							protocol		= 'gabor', #'toy_data',#'gabor',#'digit',#
+							name 			= 'gabor_test_A_1-0e3_t_3e0_imSize_50_fine_2',
 							n_runs 			= 1,
-							n_epi_crit		= 5000,
-							n_epi_fine 		= 0,
+							n_epi_crit		= 0,
+							n_epi_fine 		= 20,
 							n_epi_dopa		= 0,
 							n_epi_post 		= 0,
-							t_hid			= 1e2,#1.0,#0.1,#
-							t_out			= 1e-1,#1.0,#0.1,#
-							A				= 5e1,
+							t_hid			= 3e0,#1.0,#0.1,#
+							t_out			= 1e0,#1.0,#0.1,#
+							A				= 1.0e3,
 							lr_hid			= 5e-4,#5e-3,
 							lr_out			= 5e-5,
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 2,#16,#49,#
-							init_file		= '',
+							n_hid_neurons	= 16,#16,#49,#
+							init_file		= 'gabor_test_A_1-0e3_t_3e0_imSize_50',
 							lim_weights		= False,
 							log_weights 	= False,
 							epsilon_xplr 	= 1.0,
 							noise_xplr_hid	= 0.3,#0.2
 							noise_xplr_out	= 2e2,
-							exploration		= False,
+							exploration		= True,
 							compare_output 	= True,
 							noise_activ		= 0.0,
 							pdf_method 		= 'fit',
@@ -73,13 +73,13 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
-																						'renew_trainset'	: False,
+																						'renew_trainset'	: True,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
 																						'noise_pixel'		: 0.0,
 																						'rnd_phase' 		: False,
 																						'rnd_freq' 			: False,
-																						'im_size'			: 28
+																						'im_size'			: 50
 																						},
 																	toy_data_params	= {	'dimension' 		: '2D', #'2D' #'3D'
 																						'n_points'			: 2000,

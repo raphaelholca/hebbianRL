@@ -133,7 +133,7 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.close(fig)
 
 	elif net.protocol=='gabor':
-		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.images_params, True, True, save_path=save_path, curve_method=curve_method, log_weights=net.log_weights)
+		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.A, net.images_params, True, True, save_path=save_path, curve_method=curve_method, log_weights=net.log_weights)
 		_ = gr.slope_difference(net.RF_info['slopes_naive']['all_dist_from_target'], net.RF_info['slopes_naive']['all_slope_at_target'], net.RF_info['slopes']['all_dist_from_target'], net.RF_info['slopes']['all_slope_at_target'], net.name, plot=True, save_path=save_path, slope_binned=slope_binned, bin_width=4)
 	
 		nbins = 180	
@@ -148,15 +148,15 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
 		plt.close(fig)
 
-def hist_gabor(name, hid_W_naive, hid_W_trained, t, images_params, save_data, verbose, save_path='', curve_method='basic', log_weights=False):
+def hist_gabor(name, hid_W_naive, hid_W_trained, t, A, images_params, save_data, verbose, save_path='', curve_method='basic', log_weights=False):
 	""" Computes the distribution of orientation preference of neurons in the network. """
 	
 	#compute RFs info for the naive network
-	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, images_params, name, curve_method=curve_method, plot=False, save_path=save_path, log_weights=log_weights)#no_softmax
+	curves_naive, pref_ori_naive = gr.tuning_curves(hid_W_naive, t, A, images_params, name, curve_method=curve_method, plot=False, save_path=save_path, log_weights=log_weights)#no_softmax
 	slopes_naive = gr.slopes(hid_W_naive, curves_naive, pref_ori_naive, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	#compute RFs info for the trained network
-	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, images_params, name, curve_method=curve_method, plot=save_data, save_path=save_path, log_weights=log_weights)
+	curves, pref_ori = gr.tuning_curves(hid_W_trained, t, A, images_params, name, curve_method=curve_method, plot=save_data, save_path=save_path, log_weights=log_weights)
 	slopes = gr.slopes(hid_W_trained, curves, pref_ori, t, images_params['target_ori'], name, plot=False, save_path=save_path)
 
 	RFproba = gabor_RFproba(hid_W_trained, pref_ori)

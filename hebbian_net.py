@@ -187,15 +187,15 @@ class Network:
 				if e == self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa and self.verbose: 
 					print '----------end dopa-----------'
 
-				#shuffle input images
-				if self.protocol=='digit' or (self.protocol=='gabor' and (e < self.n_epi_crit + self.n_epi_fine or  e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa)) or self.protocol=='toy_data':
-					rnd_images, rnd_labels = ex.shuffle([images, labels])
-				elif self.protocol=='gabor' and e >= self.n_epi_crit + self.n_epi_fine and e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa: ##
+				#shuffle or create new input images
+				if self.protocol=='gabor' and e >= self.n_epi_crit:
 					if self.images_params['renew_trainset']: #create new training images
 						rnd_orientations= np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'], self.A)
+						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'])
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+				else:
+					rnd_images, rnd_labels = ex.shuffle([images, labels])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -234,7 +234,7 @@ class Network:
 					#set lr_hid=0 during the 'post' period ##
 					if (e >= self.n_epi_crit and e < self.n_epi_crit + self.n_epi_fine) or e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
 						lr_hid = 0.0
-						lr_out = 5e-9
+						lr_out = 5e-7
 					else: 
 						lr_hid = self.lr_hid 
 						lr_out = self.lr_out
@@ -252,13 +252,13 @@ class Network:
 				#assess early stop
 				if self._assess_early_stop(): break
 
-				if ((self.protocol=='toy_data' and e%50==0) or (self.protocol=='gabor' and e%5==0)) and not self.pypet :
+				if (self.protocol=='toy_data' and e%50==0) and not self.pypet:
 					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
-			if self.pypet:
+			if self.protocol=='toy_data' and self.pypet:
 				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.pypet_name, 'results_final_'+self.name+'_run_'+str(r)))
-			else:
+			elif self.protocol=='toy_data':
 				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
@@ -311,7 +311,6 @@ class Network:
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
 				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
-				hidNeurons = ex.normalize(hidNeurons, self.A)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
 				classIdx = np.argmax(actNeurons, 1)
@@ -348,7 +347,7 @@ class Network:
 			if self.protocol=='digit':
 				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
 			elif self.protocol=='gabor':
-				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
+				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.A, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
 			elif self.protocol=='toy_data':
 				self.RF_info = {'RFproba':None}
 
@@ -394,7 +393,9 @@ class Network:
 
 		###
 		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
-		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.0).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.5*self.A/1e3).T
 
 		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		self.out_W *= 1./np.sum(self.out_W,0) * 2.0
@@ -457,7 +458,7 @@ class Network:
 
 		#adds noise in out_W neurons
 		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa) and self.exploration:
-			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.std(out_activ)*self.noise_xplr_out, np.shape(out_activ))*self.batch_explorative[:,np.newaxis]
+			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.clip(np.std(out_activ)*self.noise_xplr_out, 1e-10, np.inf), np.shape(out_activ))*self.batch_explorative[:,np.newaxis]
 			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t_out)
 
 		#softmax output neurons
@@ -654,7 +655,7 @@ class Network:
 			if self.protocol=='digit':
 				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False, log_weights=self.log_weights)['RFproba']
 			elif self.protocol=='gabor':
-				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t_hid, self.images_params, self.name, curve_method='no_softmax', plot=False, log_weights=self.log_weights)
+				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t_hid, self.A, self.images_params, self.name, curve_method='no_softmax', plot=False, log_weights=self.log_weights)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
 				RFproba[0,:,:][pref_ori[0,:] <= 0] = [1,0]
 				RFproba[0,:,:][pref_ori[0,:] > 0] = [0,1]

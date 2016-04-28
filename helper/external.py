@@ -90,15 +90,14 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 		orientations = np.random.random(gabor_params['n_train'])*180 #orientations of gratings (in degrees)
 		phase = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
-		# freq = np.random.random(gabor_params['n_train'])*5.+2. if gabor_params['rnd_freq'] else 5.
 		freq = np.random.random(gabor_params['n_train'])*0.1+5. if gabor_params['rnd_freq'] else 5.
-		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase, freq=freq)
+		images, labels = generate_gabors(orientations, gabor_params['target_ori'], gabor_params['im_size'], phase=phase, freq=freq)
 
 		if not gabor_params['renew_trainset']:
 			orientations_task = np.random.random(gabor_params['n_train'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity'] 
 			phase_task = np.random.random(gabor_params['n_train']) if gabor_params['rnd_phase'] else 0.25
 			freq_task = np.random.random(gabor_params['n_train'])*5.+2. if gabor_params['rnd_freq'] else 5.
-			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_task, freq=freq_task)
+			images_task, labels_task = generate_gabors(orientations_task, gabor_params['target_ori'], gabor_params['im_size'], phase=phase_task, freq=freq_task)
 		else:
 			orientations_task, images_task, labels_task = None, None, None
 
@@ -106,7 +105,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			orientations_test = np.random.random(gabor_params['n_test'])*gabor_params['excentricity']*2 + gabor_params['target_ori'] - gabor_params['excentricity']
 			phase_test = np.random.random(gabor_params['n_test']) if gabor_params['rnd_phase'] else 0.25
 			freq_test = np.random.random(gabor_params['n_test'])*5.+2. if gabor_params['rnd_freq'] else 5.
-			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], A, phase=phase_test, freq=freq_test)
+			images_test, labels_test = generate_gabors(orientations_test, gabor_params['target_ori'], gabor_params['im_size'], phase=phase_test, freq=freq_test)
 		else:
 			orientations_test, images_test, labels_test = None, None, None
 
@@ -238,7 +237,7 @@ def shuffle(arrays):
 
 	return shuffled_arrays
 
-def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=0.25, freq=5.):
+def generate_gabors(orientations, target_ori, im_size, noise_pixel=0., phase=0.25, freq=5.):
 	"""
 	Calling function to generate gabor filters
 
@@ -246,7 +245,6 @@ def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=
 		orientations (numpy array): 1-D array of orientations of gratings (in degrees) (one grating is created for each orientation provided)
 		target_ori (float): target orientation around which to discriminate clock-wise vs. counter clock-wise
 		im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
-		A (float): input normalization constant
 		noise_pixel (int,optional): noise level to add to the pixels of Gabor patch; represents the standard deviation of the Gaussian distribution from which noise is drawn; range: (0, inf
 		phase (float, list or numpy array, optional): phase of the filter; range: [0, 1)
 
@@ -256,6 +254,9 @@ def generate_gabors(orientations, target_ori, im_size, A, noise_pixel=0., phase=
 	"""
 
 	images = gr.gabor(size=im_size, freq=freq, theta=orientations, sigma=0.2, phase=phase, noise_pixel=noise_pixel)
+
+	if type(orientations) is not np.ndarray and type(orientations) is not list:
+		orientations = np.array([orientations])		
 
 	orientations = relative_orientations(orientations, target_ori)
 
