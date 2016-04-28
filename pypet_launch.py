@@ -30,7 +30,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'toy_data',#'gabor',#'digit',#
-					'name' 				: 'pypet_toy_data_classLayer',
+					'name' 				: 'pypet_toy_data_classLayer_3D_explora',
 					'n_runs' 			: 3,
 					'n_epi_crit'		: 5000,	
 					'n_epi_fine' 		: 0,			
@@ -43,7 +43,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'lr_out'			: 5e-5,#5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'n_hid_neurons'		: 2,#16,#49,#
+					'n_hid_neurons'		: 3,#16,#49,#
 					'init_file'			: '',
 					'lim_weights'		: False,
 					'log_weights' 		: False,
@@ -58,16 +58,16 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 975 #np.random.randint(1000)
+					'seed' 				: 976 #np.random.randint(1000)
 					}
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+0.000, +1.000, +2.000, +3.000, +5.000],
-					# 'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500], 
+					'dHigh'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
+					'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500], 
 					
-					'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
-					'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
+					'dMid'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
+					'dLow'			: [-2.000, -0.500, -0.100, -0.010, -0.000]
 
 					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
 					# 'noise_xplr_out' 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
