@@ -9,7 +9,7 @@ from scipy import stats
 
 ex = reload(ex)
 
-def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0., noise_pixel=0.):
+def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0.25, noise_pixel=0.):
 	"""
 	Creates a Gabor patch
 
@@ -26,7 +26,6 @@ def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0., noise_pixel=0.):
 		(1D or 2D numpy array): 1D or 2D Gabor patch (n images * n pixels)
 	"""
 	#normalize input parameters
-	noise_pixel = np.clip(noise_pixel, 1e-10, np.inf)
 	if type(theta) == int or type(theta) == float: theta = np.array([theta])
 	elif type(theta) == list: theta = np.array(theta)
 	if type(phase)==float or type(phase)==int: phase = np.array([phase])
@@ -56,14 +55,15 @@ def gabor(size=28, freq=5., theta=0., sigma=0.2, phase=0., noise_pixel=0.):
 
 	gratings = np.sin(((Xt + Yt) * freq[:,np.newaxis,np.newaxis] * 2 * np.pi) + phaseRad[:,np.newaxis,np.newaxis])
 	gratings *= gauss #add Gaussian
-	gratings += np.random.normal(0.0, noise_pixel, size=np.shape(gratings)) #add Gaussian noise_pixel
+	if noise_pixel!=0.0:
+		gratings += np.random.normal(0.0, noise_pixel, size=np.shape(gratings)) #add Gaussian noise_pixel
 	gratings -= np.min(gratings)
 
 	gratings = np.reshape(gratings, (n_gratings, size**2))
 
 	return gratings
 
-def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, save_path='', log_weights=False):
+def tuning_curves(W, t, A, images_params, name, curve_method='basic', plot=True, save_path='', log_weights=False):
 	"""
 	compute the tuning curve of the neurons
 
@@ -96,17 +96,21 @@ def tuning_curves(W, t, images_params, name, curve_method='basic', plot=True, sa
 	ori_step = 0.1
 	n_input = int(180/ori_step)
 	n_runs = np.size(W,0)
-	im_size = int(np.sqrt(np.size(W,1)))
+	im_size = images_params['im_size']
 	n_neurons = np.size(W,2)
 
 	orientations = np.arange(-90.+images_params['target_ori'], 90.+images_params['target_ori'], ori_step)
 	SM = False if curve_method=='no_softmax' else True
+	test_input = []
 	if curve_method != 'with_noise':
-		test_input = [gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=0.0)]
+		gratings = gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=0.0)
+		gratings = ex.normalize(gratings, A)
+		test_input.append(gratings)
 	else:
-		test_input = []
 		for _ in range(noise_trial):
-			test_input.append(gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=noise_pixel))
+			gratings = gabor(size=im_size, freq=5., theta=orientations, sigma=0.2, phase=0.25, noise_pixel=noise_pixel)
+			gratings = ex.normalize(gratings, A)
+			test_input.append(gratings)
 
 	curves = np.zeros((n_runs, n_input, n_neurons))
 	pref_ori = np.zeros((n_runs, n_neurons))
