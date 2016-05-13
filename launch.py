@@ -49,7 +49,7 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
 							noise_xplr_hid	= 0.2,#0.3,#
-							noise_xplr_out	= 2e2,
+							noise_xplr_out	= 2e4,#2e2,#
 							exploration		= True,
 							compare_output 	= True,
 							noise_activ		= 0.0,
