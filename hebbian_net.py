@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -63,7 +63,7 @@ class Network:
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				compare_output (bool, optional): whether to compare the value of greedy and taken action to determine if the trial is exploratory. Default: False
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
-				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
+				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_DA', 'bayesian'. Default: 'neural_prob'
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
@@ -143,7 +143,7 @@ class Network:
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
-		self._train_class_layer = False if self.classifier=='bayesian' else True
+		self._train_class_layer = True if self.classifier=='neural_DA'  else False
 		self._n_images = np.size(images,0)
 		self._n_batches = self._n_images/self.batch_size
 
@@ -240,11 +240,14 @@ class Network:
 						lr_out = self.lr_out
 
 					#update weights
-					hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
-					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
+					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
+					if self._train_class_layer:
+						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 
 					correct += np.sum(greedy==batch_labels)
 
+				if self.classifier=='neural_prob':
+					self.out_W = self._learn_out_proba(rnd_images, rnd_labels)
 
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
@@ -307,12 +310,21 @@ class Network:
 				out_W = np.copy(self.out_W)
 
 			""" testing of the classifier """
-			if self.classifier=='neural':
+			if self.classifier=='neural_DA':
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
 				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
+				classIdx = np.argmax(actNeurons, 1)
+				classResults = self.classes[classIdx]
+			elif self.classifier=='neural_prob':
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
+				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
+
+				out_W_normed = self.out_W/np.sum(self.out_W, 1)[:,np.newaxis]
+				actNeurons = np.dot(hidNeurons, out_W_normed)
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='bayesian':
@@ -375,7 +387,7 @@ class Network:
 		#randomly choose weights from one of the saved runs
 		run_to_load = self._r % saved_net.n_runs 
 		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
-		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
+		saved_out_W = np.copy(saved_net.out_W_trained[run_to_load, :, :])
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -403,8 +415,8 @@ class Network:
 	
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
-		if self.classifier not in ['neural', 'bayesian']:
-			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural\' and \'bayesian\'.')
+		if self.classifier not in ['neural_prob', 'neural_DA', 'bayesian']:
+			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural_DA\', \'neural_prob\' and \'bayesian\'.')
 		if self.protocol not in ['digit', 'gabor', 'toy_data']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
@@ -422,12 +434,14 @@ class Network:
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
 			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_bayesian(batch_images)
-		else:
-			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural(batch_images)
+		elif self.classifier == 'neural_DA':
+			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_DA(batch_images)
+		elif self.classifier == 'neural_prob':
+			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_prob(batch_images)
 
 		return greedy, explore_hid, explore_out, posterior, explorative
 
-	def _propagate_neural(self, batch_images):
+	def _propagate_neural_DA(self, batch_images):
 		""" propagate input images through the network with a layer of neurons on top """
 		#reset activity (important for cases in which no noise is added)
 		self.hid_neurons_greedy = None
@@ -448,7 +462,7 @@ class Network:
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
 			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
-			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t, log_weights=self.log_weights)
+			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t_hid, log_weights=self.log_weights)
 
 		#softmax and normalize hidden neurons
 		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
@@ -475,6 +489,49 @@ class Network:
 		explore_out = self.classes[np.argmax(self.out_neurons_explore_out,1)]
 
 		return greedy, explore_hid, explore_out, None, self.batch_explorative
+
+	def _propagate_neural_prob(self, batch_images):
+		""" propagate input images through the network, with statistical inference performed at the top layer """
+		self.hid_neurons_explore = None
+
+		#determine which trial will be explorative (e-greedy)
+		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
+
+		#compute activation of hidden neurons
+		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
+		hid_activ_std = np.std(hid_activ)
+		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+
+		#add noise to activation of hidden neurons for exploration
+		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
+
+		#softmax and normalize hidden neurons
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
+
+		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
+
+		#compute activation of output neurons
+		out_W_normed = self.out_W/np.sum(self.out_W, 1)[:,np.newaxis]
+		self.out_neurons_explore = np.dot(self.hid_neurons_explore, out_W_normed)
+		self.out_neurons_greedy = np.dot(self.hid_neurons_greedy, out_W_normed)
+
+		#set return variables
+		greedy = self.classes[np.argmax(self.out_neurons_greedy,1)]
+		explore = self.classes[np.argmax(self.out_neurons_explore,1)]
+
+		return greedy, explore, None, None, self.batch_explorative
+
+	def _learn_out_proba(self, images, labels):
+		""" learn output weights """
+
+		hid_activ = ex.propagate_layerwise(images, self.hid_W, SM=True, t=self.t_hid, log_weights=self.log_weights)
+		for ic, c in enumerate(self.classes):
+			self.out_W[:,ic] = np.mean(hid_activ[labels==c,:],0)
+
+		# import pdb; pdb.set_trace()
+		return self.out_W
 
 	def _propagate_bayesian(self, batch_images):
 		""" propagate input images through the network with a bayesian decoder on top """
@@ -629,10 +686,10 @@ class Network:
 		""" assesses progression of performance of network as it is being trained """
 		
 		print_perf = 'epi ' + str(self._e) + ': '
-		if self._train_class_layer:
+		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
-		if self.classifier=='neural' or self._e>=self.n_epi_crit + self.n_epi_fine:
+		if self.classifier=='neural_DA' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
 			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
 			print_perf += 'train performance: ' + '-N/A-'

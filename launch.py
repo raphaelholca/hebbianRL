@@ -25,40 +25,40 @@ net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
 							dLow 			= -4.0,#-0.4,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
-							dHigh_out		= 2.0,#0.0,#
-							dMid_out		= 0.,#0.2,#
-							dNeut_out		= -0.0,#-0.3,#
-							dLow_out		= -0.2,#-0.5,#
-							protocol		= 'gabor', #'toy_data',#'gabor',#'digit',#
-							name 			= 'gabor_test_A_1-0e3_t_3e0_imSize_50_fine_2',
+							dHigh_out		= 0.0,#2.0,#
+							dMid_out		= 0.2,#0.,#
+							dNeut_out		= -0.3,#-0.,#
+							dLow_out		= -0.5,#-0.2,#
+							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
+							name 			= 'digit_test_DA',
 							n_runs 			= 1,
-							n_epi_crit		= 0,
-							n_epi_fine 		= 20,
+							n_epi_crit		= 20,
+							n_epi_fine 		= 0,
 							n_epi_dopa		= 0,
 							n_epi_post 		= 0,
-							t_hid			= 3e0,#1.0,#0.1,#
-							t_out			= 1e0,#1.0,#0.1,#
+							t_hid			= 1.0,#3e0,#1.0,#
+							t_out			= 1.0,#1e0,#1.0,#
 							A				= 1.0e3,
-							lr_hid			= 5e-4,#5e-3,
-							lr_out			= 5e-5,
+							lr_hid			= 5e-3,#5e-4,#
+							lr_out			= 5e-7,#5e-5,#
 							batch_size 		= 50,
 							block_feedback 	= False,
-							n_hid_neurons	= 16,#16,#49,#
-							init_file		= 'gabor_test_A_1-0e3_t_3e0_imSize_50',
+							n_hid_neurons	= 49,#16,#16,#
+							init_file		= '',
 							lim_weights		= False,
-							log_weights 	= False,
+							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
-							noise_xplr_hid	= 0.3,#0.2
+							noise_xplr_hid	= 0.2,#0.3,#
 							noise_xplr_out	= 2e2,
 							exploration		= True,
 							compare_output 	= True,
 							noise_activ		= 0.0,
 							pdf_method 		= 'fit',
-							classifier		= 'neural',
+							classifier		= 'neural_DA',
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 975 #np.random.randint(1000)
+							seed 			= 976 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -73,7 +73,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
-																						'renew_trainset'	: True,
+																						'renew_trainset'	: False,
 																						'target_ori' 		: 165.,
 																						'excentricity' 		: 90.,#3.0,#1.5,
 																						'noise_pixel'		: 0.0,
