@@ -44,6 +44,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 2,#16,#49,#
+					'weight_init' 		: 'random',
 					'init_file'			: '',
 					'lim_weights'		: False,
 					'log_weights' 		: False,

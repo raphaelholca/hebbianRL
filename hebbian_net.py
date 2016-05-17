@@ -22,7 +22,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -53,6 +53,7 @@ class Network:
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
+				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				log_weights (bool, optional): whether to take the logarithm of the weight. Default: False
@@ -91,6 +92,7 @@ class Network:
 		self.batch_size 		= batch_size
 		self.block_feedback 	= block_feedback
 		self.n_hid_neurons 		= n_hid_neurons
+		self.weight_init 		= weight_init
 		self.init_file			= init_file
 		self.lim_weights		= lim_weights
 		self.log_weights 		= log_weights
@@ -158,7 +160,7 @@ class Network:
 			if self.verbose: print '\nrun: %d' %r
 
 			np.random.seed(self.seed+r)
-			self._init_weights()
+			self._init_weights(images)
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
@@ -231,7 +233,7 @@ class Network:
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
 
-					#set lr_hid=0 during the 'post' period ##
+					#set lr_hid=0 during the 'fine' and 'post' periods ##
 					if (e >= self.n_epi_crit and e < self.n_epi_crit + self.n_epi_fine) or e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
 						lr_hid = 0.0
 						lr_out = 5e-7
@@ -367,14 +369,18 @@ class Network:
 		else:
 			return correct_classif
 
-	def _init_weights(self):
+	def _init_weights(self, images=None):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
 		if self.init_file == 'NO_INIT':
 			pass
-		elif self.init_file != '' and self.init_file != None:
+		if self.weight_init=='file' and self.init_file != '' and self.init_file != None:
 			self._init_weights_file()
-		else:
+		elif self.weight_init == 'random':
 			self._init_weights_random()
+		elif self.weight_init == 'input' and images is not None:
+			self._init_weights_input(images)
+		else:
+			raise ValueError ('wrong weitgh initialization method: %s' % self.weight_init)
 
 	def _init_weights_file(self):
 		""" initialize weights of the network by loading saved weights from file """
@@ -405,14 +411,35 @@ class Network:
 
 		###
 		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
-		# # self.hid_W = ex.normalize(self.hid_W.T, self.A*1.0).T
-		# # self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.5*self.A/1e3).T
 
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
+	def _init_weights_input(self, images):
+		""" initialize weights by using the input statistics """
+		m_d = np.zeros_like(images[0])
+		for i in xrange(images.shape[0]):
+			m_d += images[i]
+		m_d /= images.shape[0]
+    
+		v_d = np.zeros_like(images[0])
+		for i in xrange(images.shape[0]):
+			v_d += (images[i] - m_d) ** 2
+		v_d /= images.shape[0]
+        
+		self.hid_W = np.zeros(shape=(self.n_inp_neurons, self.n_hid_neurons), dtype=float)
+		for i in xrange(self.n_hid_neurons):
+			self.hid_W[:,i] = m_d + 2.*v_d*np.random.random_sample(self.n_inp_neurons)
+
+		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+		
+		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
+		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
+
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
 		if self.classifier not in ['neural_prob', 'neural_DA', 'bayesian']:
