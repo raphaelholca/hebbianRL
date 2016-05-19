@@ -12,6 +12,7 @@ import helper.bayesian_decoder as bc
 import helper.assess_network as an
 import time
 import pickle
+import scipy.special
 import os
 
 ex = reload(ex)
@@ -436,7 +437,7 @@ class Network:
 			self.hid_W[:,i] = m_d + 2.*v_d*np.random.random_sample(self.n_inp_neurons)
 
 		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
-		
+
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 
@@ -715,7 +716,10 @@ class Network:
 		print_perf = 'epi ' + str(self._e) + ': '
 		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
-			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
+			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
+		if self.test_each_epi:
+			log_likelihood = self._assess_loglikelihood(images_dict['train'][::100,:], labels_dict['train'][::100])
+			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
 		if self.classifier=='neural_DA' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
 			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
@@ -732,6 +736,39 @@ class Network:
 		if self._e==self.n_epi_crit+self.n_epi_fine-1:
 			self.hid_W_naive[self._r,:,:] = np.copy(self.hid_W)
 			self.out_W_naive[self._r,:,:] = np.copy(self.out_W)
+
+	def _assess_loglikelihood(self, images, labels):
+		""" assesses log-likelihood of the data under the model """
+
+		W_1 = self.hid_W
+		W_2 = self.out_W
+		N = images.shape[0]
+		C = self.n_hid_neurons
+		D = self.n_inp_neurons
+		K = self.n_out_neurons if W_2 is not None else None
+
+		if W_2 is None:
+			ones = np.ones(shape=(D,C), dtype=float)
+			log_likelihood = 0.
+			for npicture in xrange(N):
+				log_poisson = -W_1 + ones*images[npicture,:][:, np.newaxis] * np.log(W_1) - np.log(scipy.special.gamma(ones*images[npicture,:][:, np.newaxis]+1))
+				sum_log_poisson = np.sum(log_poisson,axis=0)
+				a = np.min(sum_log_poisson)
+				log_likelihood += -np.log(C) + a + np.log(np.sum(np.exp(sum_log_poisson - a)))
+		
+		elif W_2 is not None and labels is not None:
+			ones = np.ones(shape=(D,C), dtype=float)
+			log_likelihood = 0.
+			for npicture in xrange(N):
+				log_poisson = -W_1 + ones*images[npicture,:][:, np.newaxis] * np.log(W_1) - np.log(scipy.special.gamma(ones*images[npicture,:][:, np.newaxis]+1))
+				sum_log_poisson = np.sum(log_poisson,axis=0)
+				a = np.min(sum_log_poisson)
+				if (labels[npicture] is None):
+					log_likelihood += a + np.log(np.sum(np.exp(sum_log_poisson - a)*np.sum(W_2,axis=1)/float(K)))
+				else:
+					log_likelihood += a + np.log(np.sum(np.exp(sum_log_poisson - a)*np.sum(W_2[:,labels[npicture]])/float(K)))
+
+		return log_likelihood
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """
