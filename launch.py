@@ -19,20 +19,25 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 			= 0.0,#1.6,#
-							dMid 			= 0.01,#0.0,#
-							dNeut 			= -0.5,#-0.08,#
-							dLow 			= -4.0,#-0.4,#
+net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
+							dMid 			= 0.0,#0.01,#
+							dNeut 			= -0.08,#-0.5,#
+							dLow 			= -0.4,#-4.0,#
 							dopa_out_same 	= False,
 							train_out_dopa 	= False,
 							dHigh_out		= 2.0,#0.0,#
 							dMid_out		= 0.,#0.2,#
 							dNeut_out		= -0.,#-0.3,#
 							dLow_out		= -0.2,#-0.5,#
+							ach_1 			= -3.0,
+							ach_2 			= 0.0,
+							ach_3 			= 0.0,
+							ach_4 			= 0.0,
+							ach_func 		= ex.ach_exponential, #ex.ach_linear, ex.ach_exponential, ex.ach_polynomial
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'digit_test_log_likelihood',
-							dopa_release 	= True, 
-							ach_release		= False, 
+							name 			= 'digit_test_ach_1',
+							dopa_release 	= False, 
+							ach_release		= True, 
 							n_runs 			= 1,
 							n_epi_crit		= 20,
 							n_epi_fine 		= 0,
@@ -69,8 +74,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	A				= net.A,
 																	verbose 		= net.verbose,
 																	digit_params 	= {	'dataset_train'		: 'train',
-																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
-																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'shuffle'			: False
 																						},

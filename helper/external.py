@@ -290,7 +290,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -645,6 +645,36 @@ def multimodal_toy_data(protocol, A, toy_data_params):
 
 	return images, images_test, labels, labels_test
 
+def ach_linear(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
+	""" linear relation between relative perfomance and ACh release """
+	#exploration range: ach_1: [-4.0, -3.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0]
+	#					ach_2: [-0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.5]
+	#results:			ach_1 = XX
+	#					ach_2 = XX
+
+	return ach_1 * (rel_perf - 1.0) + ach_2 + 1.0
+
+def ach_exponential(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
+	""" linear relation between relative perfomance and ACh release """
+	#exploration range: ach_1: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0]
+	#					ach_2: [-0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.5]
+	#results:			ach_1 = XX
+	#					ach_2 = XX
+
+	return np.exp(ach_1 * (-rel_perf + 1.0)) + ach_2
+
+def ach_polynomial(rel_perf, ach_1, ach_2, ach_3, ach_4):
+	""" linear relation between relative perfomance and ACh release """
+	#exploration range: ach_1: [-0.25, 0.0, 0.25]
+	#					ach_2: [-2.0, -1.0, 0.0, 1.0, 2.0]
+	#					ach_3: [-1.0, -0.5, 0.0, 0.5, 1.0]
+	#					ach_4: [-1.0, -0.5, 0.0, 0.5, 1.0]
+	#results:			ach_1 = XX
+	#					ach_2 = XX
+	#					ach_3 = XX
+	#					ach_4 = XX
+
+	return 1.0+ach_1 + ach_2*(rel_perf-1.0) + ach_3*(rel_perf-1.0)**2 + ach_4*(rel_perf-1.0)**3
 
 
 

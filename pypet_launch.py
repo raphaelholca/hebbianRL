@@ -29,6 +29,11 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
+					'ach_1' 			: 0.0,
+					'ach_2' 			: 0.0,
+					'ach_3' 			: 0.0,
+					'ach_4' 			: 0.0,
+					'ach_func' 			: ex.ach_linear, #ex.ach_linear, ex.ach_exponential, ex.ach_polynomial
 					'protocol'			: 'toy_data',#'gabor',#'digit',#
 					'name' 				: 'pypet_toy_data_classLayer',
 					'dopa_release' 		: True, 
