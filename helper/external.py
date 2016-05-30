@@ -290,7 +290,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'protocol', 'name', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_dopa', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -414,13 +414,13 @@ def propagate_layerwise(X, W, SM=True, t=1., log_weights=False):
 	return activ
 
 @numba.njit
-def disinhibition(post_neurons, lr, dopa, post_neurons_lr):
+def disinhibition(post_neurons, lr, dopa, ach, post_neurons_lr):
 	"""
 	support function for numba implementation of learning_step() 
 	"""
 	for b in range(post_neurons.shape[0]):
 		for pn in range(post_neurons.shape[1]):
-			post_neurons_lr[b, pn] = post_neurons[b, pn] * lr * dopa[b]
+			post_neurons_lr[b, pn] = post_neurons[b, pn] * lr * dopa[b] * ach[b]
 
 	return post_neurons_lr
 

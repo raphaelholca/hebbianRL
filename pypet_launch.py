@@ -31,10 +31,12 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dLow_out'			: -2.0,#-0.5,#
 					'protocol'			: 'toy_data',#'gabor',#'digit',#
 					'name' 				: 'pypet_toy_data_classLayer',
+					'dopa_release' 		: True, 
+					'ACh_release'		: True, 
 					'n_runs' 			: 3,
 					'n_epi_crit'		: 5000,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_dopa'		: 0,
+					'n_epi_perc'		: 0,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1e2,#0.1,#
 					't_out'				: 1e-1,#0.1,#
