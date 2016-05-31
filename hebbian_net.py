@@ -147,8 +147,9 @@ class Network:
 			print "***** training using block feedback *****"
 
 		self.images_params = images_params
-		self._n_images = np.size(images,0)
+		self.n_images = np.size(images,0)
 		self.classes = np.sort(np.unique(labels))
+		self.n_classes = len(self.classes)
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_fine + self.n_epi_perc + self.n_epi_post
@@ -158,8 +159,10 @@ class Network:
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
+		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_DA'  else False
-		self._n_batches = int(np.ceil(float(self._n_images)/self.batch_size))
+		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
+		self._saved_perf_size = self.n_classes #self.n_images #
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -208,9 +211,11 @@ class Network:
 						rnd_orientations= np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
 						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'])
 					else: 
-						rnd_images, rnd_labels, self._stim_perf_avg = ex.shuffle([images_task, labels_task, self._stim_perf_avg])
+						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+						# rnd_images, rnd_labels = np.copy(images_task), np.copy(labels_task)
 				else:
-					rnd_images, rnd_labels, self._stim_perf_avg = ex.shuffle([images, labels, self._stim_perf_avg])
+					rnd_images, rnd_labels = ex.shuffle([images, labels])
+					# rnd_images, rnd_labels = np.copy(images), np.copy(labels)
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -247,7 +252,7 @@ class Network:
 					#compute ACh signal
 					if self.ach_release:
 						stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-						self.ach_hid = self._ach_release_func()
+						self.ach_hid = self._ach_release_func(batch_labels)
 					else:
 						self.ach_hid = np.ones(self.batch_size)
 						
@@ -273,14 +278,11 @@ class Network:
 				if self.classifier=='neural_prob':
 					self.out_W = self._learn_out_proba(rnd_images, rnd_labels)
 
-				#update tracking of performance for each stimulus
-				if self.ach_release:
-					self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
-					self._stim_perf[:,0] = stim_perf_epi
-					self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
+				#update tracking of performance for ach release
+				self._update_ach_perf_track(stim_perf_epi, rnd_labels)
 
 				#assess performance
-				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
+				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
 
 				#assess early stop
 				if self._assess_early_stop(): break
@@ -434,7 +436,7 @@ class Network:
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		self._stim_perf_weights = (np.arange(saved_net.n_epi_crit)+1)[::-1]
 		self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
-		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, saved_net.n_epi_crit))
+		self.stim_perf_saved = np.zeros((self.n_runs, self._saved_perf_size, saved_net.n_epi_crit))
 		f_net.close()
 
 	def _init_weights_random(self):
@@ -452,10 +454,10 @@ class Network:
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
-		self._stim_perf = np.zeros((self._n_images, self.n_epi_crit), dtype=int)
+		self._stim_perf = np.zeros((self._saved_perf_size, self.n_epi_crit))
 		self._stim_perf_weights = (np.arange(self.n_epi_crit)+1)[::-1]
-		self._stim_perf_avg = np.zeros(self._n_images)
-		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, self.n_epi_crit))
+		self._stim_perf_avg = np.zeros(self._saved_perf_size)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._saved_perf_size, self.n_epi_crit))
 
 	def _init_weights_input(self, images):
 		""" initialize weights by using the input statistics """
@@ -478,10 +480,10 @@ class Network:
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 
-		self._stim_perf = np.zeros((self._n_images, self.n_epi_crit), dtype=int)
+		self._stim_perf = np.zeros((self._saved_perf_size, self.n_epi_crit))
 		self._stim_perf_weights = (np.arange(self.n_epi_crit)+1)[::-1]
-		self._stim_perf_avg = np.zeros(self._n_images)
-		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, self.n_epi_crit))
+		self._stim_perf_avg = np.zeros(self._saved_perf_size)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._saved_perf_size, self.n_epi_crit))
 
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
@@ -521,7 +523,7 @@ class Network:
 		self.out_neurons_explore_out = None
 
 		#determine which trial will be explorative (e-greedy)
-		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
+		self.batch_explorative = ex.exploration(self.epsilon_xplr, batch_images.shape[0])
 
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
@@ -656,12 +658,19 @@ class Network:
 
 		return dopa_hid, dopa_out
 
-	def _ach_release_func(self):
+	def _ach_release_func(self, labels=None):
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release:
-			perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
-			rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+			#average over stimuli
+			if self._saved_perf_size==self.n_images: 
+				perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
+				rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+			#average over classes
+			elif self._saved_perf_size==self.n_classes:
+				rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
+				rel_perf = rel_perf_classes[self._labels2idx[labels]]
 			ach = self.ach_func(rel_perf, **self.ach_values)
+
 		else:
 			ach = np.ones(self._n_batches)
 		return ach
@@ -701,6 +710,21 @@ class Network:
 		W = np.clip(W, 1e-10, np.inf)
 		
 		return W
+
+	def _update_ach_perf_track(self, stim_perf_epi, labels):
+		""" updates the tracking of performance for ACh release """
+		if self.ach_release:
+			self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
+			#average over stimuli
+			if self._saved_perf_size==self.n_images: 
+				self._stim_perf[:,0] = stim_perf_epi
+			#average over classes
+			elif self._saved_perf_size==self.n_classes: 
+				for c in range(self.n_classes):
+					self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
+			else:
+				raise ValueError('save performance matrix of wrong shape')
+			self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
 
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """

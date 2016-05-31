@@ -645,6 +645,13 @@ def multimodal_toy_data(protocol, A, toy_data_params):
 
 	return images, images_test, labels, labels_test
 
+def set_labels2idx(classes):
+	""" creates a numpy array to convert labels to indexes """
+	labels2idx = np.zeros(10, dtype=int)
+	for ic, c in enumerate(classes):
+		labels2idx[c] = ic
+	return labels2idx
+
 def ach_linear(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 	""" linear relation between relative perfomance and ACh release """
 	#exploration range: ach_1: [-4.0, -3.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0]
