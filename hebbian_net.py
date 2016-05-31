@@ -12,6 +12,7 @@ import helper.bayesian_decoder as bc
 import helper.assess_network as an
 import time
 import pickle
+import scipy.special
 import os
 
 ex = reload(ex)
@@ -22,7 +23,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, protocol='digit', name='net', n_runs=1, n_epi_crit=20, n_epi_fine=20, n_epi_dopa=20, n_epi_post=5, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func=None, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -38,12 +39,19 @@ class Network:
 				dMid_out (float, optional): values of dopamine release for +reward expectation, +reward delivery for output layer. Default: 0.2
 				dNeut_out (float, optional): values of dopamine release for -reward expectation, -reward delivery for output layer. Default: -0.3
 				dLow_out (float, optional): values of dopamine release for +reward expectation, -reward delivery for output layer. Default: -0.5
+				ach_1 (float, optional): value of the first parameter of the release function for acetylcholine. Default: 1.0
+				ach_2 (float, optional): value of the second parameter of the release function for acetylcholine. Default: 0.0
+				ach_3 (float, optional): value of the third parameter of the release function for acetylcholine. Default: 0.0
+				ach_4 (float, optional): value of the fourth parameter of the release function for acetylcholine. Default: 0.0
+				ach_func (function, optional): release function for acetylcholine. Default: None 
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
+				dopa_release (bool, optional): whether DA is release during perceptual learning period
+				ach_release (bool, optional): whether ACh is release during perceptual learning period
 				n_runs (int, optional): number of runs. Default: 1
 				n_epi_crit (int, optional): number of 'critical period' episodes in each run (episodes when reward is not required for learning). Default: 20
 				n_epi_fine (int, optional): number of episodes after the critical period to train output layer without learning in the hidden layer (similar to post). Default: 5
-				n_epi_dopa (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
+				n_epi_perc (int, optional): number of 'adult' episodes in each run (episodes when reward is not required for learning). Default: 20
 				n_epi_post (int, optional): number of episodes after the dopa period to train output layer without learning in the hidden layer. Default: 5
 				t_hid (float, optional): temperature of the softmax function in the hidden layer (t<<1: strong competition; t>=1: weak competition). Default: 1.0
 				t_out (float, optional): temperature of the softmax function in the output layer (t<<1: strong competition; t>=1: weak competition). Default: 1.0
@@ -53,6 +61,7 @@ class Network:
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
+				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				log_weights (bool, optional): whether to take the logarithm of the weight. Default: False
@@ -63,7 +72,7 @@ class Network:
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				compare_output (bool, optional): whether to compare the value of greedy and taken action to determine if the trial is exploratory. Default: False
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
-				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural', 'bayesian'. Default: 'neural'
+				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_DA', 'bayesian'. Default: 'neural_prob'
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
@@ -76,12 +85,16 @@ class Network:
 		self.dopa_out_same 		= dopa_out_same
 		self.train_out_dopa		= train_out_dopa
 		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
+		self.ach_values 		= {'ach_1': ach_1, 'ach_2': ach_2, 'ach_3': ach_3, 'ach_4': ach_4} 
+		self.ach_func 			= ach_func
 		self.protocol			= protocol
 		self.name 				= name
+		self.dopa_release 		= dopa_release
+		self.ach_release 		= ach_release
 		self.n_runs 			= n_runs
 		self.n_epi_crit			= n_epi_crit
 		self.n_epi_fine 		= n_epi_fine
-		self.n_epi_dopa			= n_epi_dopa
+		self.n_epi_perc			= n_epi_perc
 		self.n_epi_post 		= n_epi_post
 		self.t_hid				= t_hid
 		self.t_out				= t_out
@@ -91,6 +104,7 @@ class Network:
 		self.batch_size 		= batch_size
 		self.block_feedback 	= block_feedback
 		self.n_hid_neurons 		= n_hid_neurons
+		self.weight_init 		= weight_init
 		self.init_file			= init_file
 		self.lim_weights		= lim_weights
 		self.log_weights 		= log_weights
@@ -133,19 +147,22 @@ class Network:
 			print "***** training using block feedback *****"
 
 		self.images_params = images_params
+		self.n_images = np.size(images,0)
 		self.classes = np.sort(np.unique(labels))
+		self.n_classes = len(self.classes)
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
-		self.n_epi_tot = self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa + self.n_epi_post
+		self.n_epi_tot = self.n_epi_crit + self.n_epi_fine + self.n_epi_perc + self.n_epi_post
 		self.hid_W_naive = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
-		self._train_class_layer = False if self.classifier=='bayesian' else True
-		self._n_images = np.size(images,0)
-		self._n_batches = self._n_images/self.batch_size
+		self._labels2idx = ex.set_labels2idx(self.classes)
+		self._train_class_layer = True if self.classifier=='neural_DA'  else False
+		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
+		self._saved_perf_size = [self.n_classes, 10] #self.n_images #number of classes/stimuli x number of perf to keep track of
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -158,7 +175,7 @@ class Network:
 			if self.verbose: print '\nrun: %d' %r
 
 			np.random.seed(self.seed+r)
-			self._init_weights()
+			self._init_weights(images)
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
@@ -176,6 +193,7 @@ class Network:
 			""" train network """
 			for e in range(self.n_epi_tot):
 				self._e = e
+				stim_perf_epi = np.empty(0)
 
 				#save weights just after the end of statistical pre-training
 				if e == self.n_epi_crit and self.verbose:
@@ -184,7 +202,7 @@ class Network:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
 					if self.verbose: print '----------end fine-----------'
-				if e == self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa and self.verbose: 
+				if e == self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.verbose: 
 					print '----------end dopa-----------'
 
 				#shuffle or create new input images
@@ -194,8 +212,10 @@ class Network:
 						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'])
 					else: 
 						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+						# rnd_images, rnd_labels = np.copy(images_task), np.copy(labels_task)
 				else:
 					rnd_images, rnd_labels = ex.shuffle([images, labels])
+					# rnd_images, rnd_labels = np.copy(images), np.copy(labels)
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -226,13 +246,21 @@ class Network:
 					reward_out = ex.reward_delivery(batch_labels, explore_out) if self._train_class_layer else None
 
 					#compute dopa signal
-					dopa_hid, dopa_out = self._dopa_release(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
-						
+					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
+					if not self.dopa_release: dopa_hid = np.ones(self.batch_size)
+
+					#compute ACh signal
+					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
+					self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
+					# self.ach_hid = np.ones_like(batch_labels)
+					# self.ach_hid[batch_labels==4]=9
+					# self.ach_hid[batch_labels==9]=4
+
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
 
-					#set lr_hid=0 during the 'post' period ##
-					if (e >= self.n_epi_crit and e < self.n_epi_crit + self.n_epi_fine) or e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
+					#set lr_hid=0 during the 'fine' and 'post' periods ##
+					if (e >= self.n_epi_crit and e < self.n_epi_crit + self.n_epi_fine) or e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_perc:
 						lr_hid = 0.0
 						lr_out = 5e-7
 					else: 
@@ -240,20 +268,30 @@ class Network:
 						lr_out = self.lr_out
 
 					#update weights
-					hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid)
-					out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out) if self._train_class_layer else None
+					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
+					if self._train_class_layer:
+						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 
 					correct += np.sum(greedy==batch_labels)
 
+				#update weights of probabilistic neural classifier
+				if self.classifier=='neural_prob':
+					self.out_W = self._learn_out_proba(rnd_images, rnd_labels)
+
+				#update tracking of performance for ach release
+				self._update_ach_perf_track(stim_perf_epi, rnd_labels)
 
 				#assess performance
-				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
+				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
 
 				#assess early stop
 				if self._assess_early_stop(): break
 
 				if (self.protocol=='toy_data' and e%50==0) and not self.pypet:
 					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
+
+				rel_perf = self._stim_perf_avg/np.mean(self._stim_perf_avg)
+				print ((((rel_perf-1)*-1)+1)**15)*3
 
 			#save data
 			if self.protocol=='toy_data' and self.pypet:
@@ -262,6 +300,7 @@ class Network:
 				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
+			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
@@ -307,12 +346,21 @@ class Network:
 				out_W = np.copy(self.out_W)
 
 			""" testing of the classifier """
-			if self.classifier=='neural':
+			if self.classifier=='neural_DA':
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
 				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
+				classIdx = np.argmax(actNeurons, 1)
+				classResults = self.classes[classIdx]
+			elif self.classifier=='neural_prob':
+				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
+				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
+
+				out_W_normed = self.out_W/np.sum(self.out_W, 1)[:,np.newaxis]
+				actNeurons = np.dot(hidNeurons, out_W_normed)
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='bayesian':
@@ -355,14 +403,18 @@ class Network:
 		else:
 			return correct_classif
 
-	def _init_weights(self):
+	def _init_weights(self, images=None):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
 		if self.init_file == 'NO_INIT':
 			pass
-		elif self.init_file != '' and self.init_file != None:
+		if self.init_file != '' and self.init_file != None:
 			self._init_weights_file()
-		else:
+		elif self.weight_init == 'random':
 			self._init_weights_random()
+		elif self.weight_init == 'input' and images is not None:
+			self._init_weights_input(images)
+		else:
+			raise ValueError ('wrong weitgh initialization method: %s' % self.weight_init)
 
 	def _init_weights_file(self):
 		""" initialize weights of the network by loading saved weights from file """
@@ -375,7 +427,7 @@ class Network:
 		#randomly choose weights from one of the saved runs
 		run_to_load = self._r % saved_net.n_runs 
 		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
-		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
+		saved_out_W = np.copy(saved_net.out_W_trained[run_to_load, :, :])
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -384,27 +436,67 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
+		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		self._stim_perf_weights = (np.arange(saved_net.n_epi_crit, dtype=float)+1)[::-1]
+		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
+		self._stim_perf_avg = np.nansum(self._stim_perf*self._stim_perf_weights, axis=1)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))
 		f_net.close()
 
 	def _init_weights_random(self):
 		""" initialize weights of the network randomly or by loading saved weights from file """
-		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
-		# self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
+		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 
 		###
-		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
-		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.0).T
+		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
-		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.5*self.A/1e3).T
+		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.5*self.A/1e3).T
 
-		self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
-		self.out_W *= 1./np.sum(self.out_W,0) * 2.0
+		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
+		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
+		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
+		self._stim_perf[:,1:] *= np.nan
+		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
+		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
+		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
+		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
+
+	def _init_weights_input(self, images):
+		""" initialize weights by using the input statistics """
+		m_d = np.zeros_like(images[0])
+		for i in xrange(images.shape[0]):
+			m_d += images[i]
+		m_d /= images.shape[0]
+    
+		v_d = np.zeros_like(images[0])
+		for i in xrange(images.shape[0]):
+			v_d += (images[i] - m_d) ** 2
+		v_d /= images.shape[0]
+        
+		self.hid_W = np.zeros(shape=(self.n_inp_neurons, self.n_hid_neurons), dtype=float)
+		for i in xrange(self.n_hid_neurons):
+			self.hid_W[:,i] = m_d + 2.*v_d*np.random.random_sample(self.n_inp_neurons)
+
+		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+
+		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
+		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
+
+		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
+		self._stim_perf[:,1:] *= np.nan
+		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
+		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
+		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
+		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
+
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
-		if self.classifier not in ['neural', 'bayesian']:
-			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural\' and \'bayesian\'.')
+		if self.classifier not in ['neural_prob', 'neural_DA', 'bayesian']:
+			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural_DA\', \'neural_prob\' and \'bayesian\'.')
 		if self.protocol not in ['digit', 'gabor', 'toy_data']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
@@ -422,12 +514,14 @@ class Network:
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
 			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_bayesian(batch_images)
-		else:
-			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural(batch_images)
+		elif self.classifier == 'neural_DA':
+			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_DA(batch_images)
+		elif self.classifier == 'neural_prob':
+			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_prob(batch_images)
 
 		return greedy, explore_hid, explore_out, posterior, explorative
 
-	def _propagate_neural(self, batch_images):
+	def _propagate_neural_DA(self, batch_images):
 		""" propagate input images through the network with a layer of neurons on top """
 		#reset activity (important for cases in which no noise is added)
 		self.hid_neurons_greedy = None
@@ -437,7 +531,7 @@ class Network:
 		self.out_neurons_explore_out = None
 
 		#determine which trial will be explorative (e-greedy)
-		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
+		self.batch_explorative = ex.exploration(self.epsilon_xplr, batch_images.shape[0])
 
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
@@ -445,10 +539,10 @@ class Network:
 		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
-		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa:
+		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
 			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
 			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
-			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t, log_weights=self.log_weights)
+			self.out_neurons_explore_hid = ex.propagate_layerwise(self.hid_neurons_explore, self.out_W, SM=True, t=self.t_hid, log_weights=self.log_weights)
 
 		#softmax and normalize hidden neurons
 		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
@@ -457,7 +551,7 @@ class Network:
 		out_activ = ex.propagate_layerwise(self.hid_neurons_greedy, self.out_W, SM=False, log_weights=self.log_weights)
 
 		#adds noise in out_W neurons
-		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa or self.train_out_dopa) and self.exploration:
+		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_perc or self.train_out_dopa) and self.exploration:
 			self.out_neurons_explore_out = out_activ + np.random.normal(0, np.clip(np.std(out_activ)*self.noise_xplr_out, 1e-10, np.inf), np.shape(out_activ))*self.batch_explorative[:,np.newaxis]
 			self.out_neurons_explore_out = ex.softmax(self.out_neurons_explore_out, t=self.t_out)
 
@@ -475,6 +569,49 @@ class Network:
 		explore_out = self.classes[np.argmax(self.out_neurons_explore_out,1)]
 
 		return greedy, explore_hid, explore_out, None, self.batch_explorative
+
+	def _propagate_neural_prob(self, batch_images):
+		""" propagate input images through the network, with statistical inference performed at the top layer """
+		self.hid_neurons_explore = None
+
+		#determine which trial will be explorative (e-greedy)
+		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
+
+		#compute activation of hidden neurons
+		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
+		hid_activ_std = np.std(hid_activ)
+		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+
+		#add noise to activation of hidden neurons for exploration
+		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
+			self.hid_neurons_explore = hid_activ + np.random.normal(0, hid_activ_std*self.noise_xplr_hid, np.shape(hid_activ))*self.batch_explorative[:,np.newaxis]
+			self.hid_neurons_explore = ex.softmax(self.hid_neurons_explore, t=self.t_hid)
+
+		#softmax and normalize hidden neurons
+		self.hid_neurons_greedy = ex.softmax(hid_activ, t=self.t_hid)
+
+		if self.hid_neurons_explore is None: self.hid_neurons_explore = np.copy(self.hid_neurons_greedy)
+
+		#compute activation of output neurons
+		out_W_normed = self.out_W/np.sum(self.out_W, 1)[:,np.newaxis]
+		self.out_neurons_explore = np.dot(self.hid_neurons_explore, out_W_normed)
+		self.out_neurons_greedy = np.dot(self.hid_neurons_greedy, out_W_normed)
+
+		#set return variables
+		greedy = self.classes[np.argmax(self.out_neurons_greedy,1)]
+		explore = self.classes[np.argmax(self.out_neurons_explore,1)]
+
+		return greedy, explore, None, None, self.batch_explorative
+
+	def _learn_out_proba(self, images, labels):
+		""" learn output weights """
+
+		hid_activ = ex.propagate_layerwise(images, self.hid_W, SM=True, t=self.t_hid, log_weights=self.log_weights)
+		for ic, c in enumerate(self.classes):
+			self.out_W[:,ic] = np.mean(hid_activ[labels==c,:],0)
+
+		# import pdb; pdb.set_trace()
+		return self.out_W
 
 	def _propagate_bayesian(self, batch_images):
 		""" propagate input images through the network with a bayesian decoder on top """
@@ -511,15 +648,15 @@ class Network:
 
 		# return greedy, explore, None, posterior_greedy
 
-	def _dopa_release(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
+	def _dopa_release_func(self, predicted_reward_hid, predicted_reward_out, reward_hid, reward_out):
 		""" compute dopa release based on predicted and delivered reward """
-		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa) and self._train_class_layer:
+		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_perc) and self._train_class_layer:
 			""" Critical and Post period """
 			dopa_hid = np.ones(self.batch_size)
 			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
 	
-		elif self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_dopa: 
-			""" Perceptual learning (Dopa) period """
+		elif self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc: 
+			""" Perceptual learning period """
 			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values)
 			## add parallel out training here
 			dopa_out = np.zeros(self.batch_size)
@@ -529,7 +666,25 @@ class Network:
 
 		return dopa_hid, dopa_out
 
-	def _learning_step(self, pre_neurons, post_neurons, W, lr, dopa=None, numba=True):
+	def _ach_release_func(self, labels=None):
+		""" compute ach realease based on average performance for each stimulus """
+		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
+		# if self.ach_release: #ACh starts at crit
+			#average over stimuli
+			if self._saved_perf_size[0]==self.n_images: 
+				perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
+				rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+			#average over classes
+			elif self._saved_perf_size[0]==self.n_classes:
+				rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
+				rel_perf = rel_perf_classes[self._labels2idx[labels]]
+			ach = self.ach_func(rel_perf, **self.ach_values)
+
+		else:
+			ach = np.ones(self._n_batches)
+		return ach
+
+	def _learning_step(self, pre_neurons, post_neurons, W, lr, dopa=None, ach=None, numba=True):
 		"""
 		One learning step for the hebbian network
 
@@ -544,13 +699,14 @@ class Network:
 			numpy array: change in weight; must be added to the weight matrix W
 		"""
 		if dopa is None or dopa.shape[0]!=post_neurons.shape[0]: dopa=np.ones(post_neurons.shape[0])
+		if ach is None or ach.shape[0]!=post_neurons.shape[0]: ach=np.ones(post_neurons.shape[0])
 
 		if numba:
-			postNeurons_lr = ex.disinhibition(post_neurons, lr, dopa, np.zeros_like(post_neurons))
+			postNeurons_lr = ex.disinhibition(post_neurons, lr, dopa, ach, np.zeros_like(post_neurons))
 			dot = np.dot(pre_neurons.T, postNeurons_lr)
 			dW = ex.regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
 		else:
-			postNeurons_lr = post_neurons * (lr * dopa[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
+			postNeurons_lr = post_neurons * (lr * dopa[:,np.newaxis] * ach[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
 			dW = (np.dot(pre_neurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 		#update weights		
@@ -563,6 +719,20 @@ class Network:
 		W = np.clip(W, 1e-10, np.inf)
 		
 		return W
+
+	def _update_ach_perf_track(self, stim_perf_epi, labels):
+		""" updates the tracking of performance for ACh release """
+		self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
+		#average over stimuli
+		if self._saved_perf_size[0]==self.n_images: 
+			self._stim_perf[:,0] = stim_perf_epi
+		#average over classes
+		elif self._saved_perf_size[0]==self.n_classes: 
+			for c in range(self.n_classes):
+				self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
+		else:
+			raise ValueError('save performance matrix of wrong shape')
+		self._stim_perf_avg = np.nansum(self._stim_perf*self._stim_perf_weights, axis=1)
 
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
@@ -629,10 +799,13 @@ class Network:
 		""" assesses progression of performance of network as it is being trained """
 		
 		print_perf = 'epi ' + str(self._e) + ': '
-		if self._train_class_layer:
+		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
-			print_perf += 'correct out weights: ' + str(int(correct_out_W)) + '/' + str(int(self.n_hid_neurons)) + '; '
-		if self.classifier=='neural' or self._e>=self.n_epi_crit + self.n_epi_fine:
+			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
+		if self.test_each_epi:
+			log_likelihood = self._assess_loglikelihood(images_dict['train'][::100,:], labels_dict['train'][::100])
+			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
+		if self.classifier=='neural_DA' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
 			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
 			print_perf += 'train performance: ' + '-N/A-'
@@ -648,6 +821,39 @@ class Network:
 		if self._e==self.n_epi_crit+self.n_epi_fine-1:
 			self.hid_W_naive[self._r,:,:] = np.copy(self.hid_W)
 			self.out_W_naive[self._r,:,:] = np.copy(self.out_W)
+
+	def _assess_loglikelihood(self, images, labels):
+		""" assesses log-likelihood of the data under the model """
+
+		W_1 = self.hid_W
+		W_2 = self.out_W
+		N = images.shape[0]
+		C = self.n_hid_neurons
+		D = self.n_inp_neurons
+		K = self.n_out_neurons if W_2 is not None else None
+
+		if W_2 is None:
+			ones = np.ones(shape=(D,C), dtype=float)
+			log_likelihood = 0.
+			for npicture in xrange(N):
+				log_poisson = -W_1 + ones*images[npicture,:][:, np.newaxis] * np.log(W_1) - np.log(scipy.special.gamma(ones*images[npicture,:][:, np.newaxis]+1))
+				sum_log_poisson = np.sum(log_poisson,axis=0)
+				a = np.min(sum_log_poisson)
+				log_likelihood += -np.log(C) + a + np.log(np.sum(np.exp(sum_log_poisson - a)))
+		
+		elif W_2 is not None and labels is not None:
+			ones = np.ones(shape=(D,C), dtype=float)
+			log_likelihood = 0.
+			for npicture in xrange(N):
+				log_poisson = -W_1 + ones*images[npicture,:][:, np.newaxis] * np.log(W_1) - np.log(scipy.special.gamma(ones*images[npicture,:][:, np.newaxis]+1))
+				sum_log_poisson = np.sum(log_poisson,axis=0)
+				a = np.min(sum_log_poisson)
+				if (labels[npicture] is None):
+					log_likelihood += a + np.log(np.sum(np.exp(sum_log_poisson - a)*np.sum(W_2,axis=1)/float(K)))
+				else:
+					log_likelihood += a + np.log(np.sum(np.exp(sum_log_poisson - a)*np.sum(W_2[:,np.argwhere(self.classes==labels[npicture])][0][0])/float(K)))
+
+		return log_likelihood
 
 	def _check_out_W(self, images, labels, RFproba=None):
 		""" check out_W assignment after each episode """

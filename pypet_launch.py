@@ -29,24 +29,32 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'protocol'			: 'toy_data',#'gabor',#'digit',#
-					'name' 				: 'pypet_toy_data_classLayer_3D_explora',
-					'n_runs' 			: 3,
-					'n_epi_crit'		: 5000,	
+					'ach_1' 			: 20.0,
+					'ach_2' 			: 1.0,
+					'ach_3' 			: 0.0,
+					'ach_4' 			: 0.0,
+					'ach_func' 			: ex.ach_exponential, #ex.ach_linear, ex.ach_exponential, ex.ach_polynomial
+					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
+					'name' 				: 'pypet_ach_0',
+					'dopa_release' 		: False, 
+					'ACh_release'		: True, 
+					'n_runs' 			: 1,##
+					'n_epi_crit'		: 2,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_dopa'		: 0,
+					'n_epi_perc'		: 20,
 					'n_epi_post' 		: 0,				
-					't_hid'				: 1e2,#0.1,#
-					't_out'				: 1e-1,#0.1,#
-					'A' 				: 5e1,
-					'lr_hid'			: 5e-4,#5e-3,
-					'lr_out'			: 5e-5,#5e-7,
+					't_hid'				: 1.0,#0.1,#
+					't_out'				: 0.1,
+					'A' 				: 1.0e3,
+					'lr_hid'			: 1e-3,#5e-3,
+					'lr_out'			: 5e-7,#5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'n_hid_neurons'		: 3,#16,#49,#
+					'n_hid_neurons'		: 49,#16,#49,#
+					'weight_init' 		: 'input',
 					'init_file'			: '',
 					'lim_weights'		: False,
-					'log_weights' 		: False,
+					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e2,
@@ -54,7 +62,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'compare_output' 	: True,
 					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
-					'classifier'		: 'neural',
+					'classifier'		: 'neural_prob',
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
@@ -63,14 +71,16 @@ parameter_dict = {	'dHigh' 			: 2.0,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
-					'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500], 
-					
-					'dMid'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
-					'dLow'			: [-2.000, -0.500, -0.100, -0.010, -0.000]
+					# 'dHigh'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
+					# 'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500],
+					 
+					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
+					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					# 'epsilon_xplr'		: [0.5, 0.75, 1.0],
-					# 'noise_xplr_out' 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
+					'ach_1'			: [20.0, 50.0],
+					'ach_2'		 	: [0.0, 1.0]
+					# 'ach_3'		 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
+					# 'ach_4'		 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
 				}
 
 """ load and pre-process images """
