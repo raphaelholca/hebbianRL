@@ -250,12 +250,9 @@ class Network:
 					if not self.dopa_release: dopa_hid = np.ones(self.batch_size)
 
 					#compute ACh signal
-					if self.ach_release:
-						stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-						self.ach_hid = self._ach_release_func(batch_labels)
-					else:
-						self.ach_hid = np.ones(self.batch_size)
-						
+					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
+					self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
+
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
 
@@ -269,6 +266,10 @@ class Network:
 
 					#update weights
 					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
+					# tmp_ach = np.ones_like(batch_labels)
+					# tmp_ach[batch_labels==4]=9
+					# tmp_ach[batch_labels==9]=4
+					# self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=tmp_ach)
 					if self._train_class_layer:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 
@@ -713,18 +714,17 @@ class Network:
 
 	def _update_ach_perf_track(self, stim_perf_epi, labels):
 		""" updates the tracking of performance for ACh release """
-		if self.ach_release:
-			self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
-			#average over stimuli
-			if self._saved_perf_size==self.n_images: 
-				self._stim_perf[:,0] = stim_perf_epi
-			#average over classes
-			elif self._saved_perf_size==self.n_classes: 
-				for c in range(self.n_classes):
-					self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
-			else:
-				raise ValueError('save performance matrix of wrong shape')
-			self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
+		self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
+		#average over stimuli
+		if self._saved_perf_size==self.n_images: 
+			self._stim_perf[:,0] = stim_perf_epi
+		#average over classes
+		elif self._saved_perf_size==self.n_classes: 
+			for c in range(self.n_classes):
+				self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
+		else:
+			raise ValueError('save performance matrix of wrong shape')
+		self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
 
 	def _assess_early_stop(self):
 		""" assesses whether to stop training if performance saturates after a given number of episodes; returns True to stop and False otherwise """
