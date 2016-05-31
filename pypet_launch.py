@@ -33,12 +33,12 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'ach_2' 			: 1.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
-					'ach_func' 			: ex.ach_exponential, #ex.ach_linear, ex.ach_exponential, ex.ach_polynomial
+					'ach_func' 			: 'ach_polynomial', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_0',
+					'name' 				: 'pypet_ach_poly_0',
 					'dopa_release' 		: False, 
-					'ACh_release'		: True, 
-					'n_runs' 			: 1,##
+					'ach_release'		: True, 
+					'n_runs' 			: 3,##
 					'n_epi_crit'		: 2,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_perc'		: 20,
@@ -73,14 +73,15 @@ parameter_dict = {	'dHigh' 			: 2.0,
 explore_dict = {	
 					# 'dHigh'			: [+0.000, +0.010, +0.100, +0.500, +2.000],
 					# 'dNeut'			: [-0.000, -0.001, -0.010, -0.100, -0.500],
-					 
+
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [20.0, 50.0],
-					'ach_2'		 	: [0.0, 1.0]
-					# 'ach_3'		 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
-					# 'ach_4'		 	: [0.1, 0.2, 0.3, 2e0, 2e1, 2e2, 2e3, 2e4, 2e5]
+					'ach_1'			: [-0.25, 0.0, 0.5],
+					'ach_2'		 	: [-50.0, -10.0, 0.0, 10.0, 50.0]
+					'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0]
+					'ach_4'		 	: [-10000.0, -1000.0, -100.0, 0.0, 1000.0]
+
 				}
 
 """ load and pre-process images """
@@ -88,8 +89,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
-																						# 'classes' 			: np.array([ 4, 7, 9 ], dtype=int),
-																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'shuffle'			: False
 																						},

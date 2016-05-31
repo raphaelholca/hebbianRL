@@ -43,7 +43,7 @@ class Network:
 				ach_2 (float, optional): value of the second parameter of the release function for acetylcholine. Default: 0.0
 				ach_3 (float, optional): value of the third parameter of the release function for acetylcholine. Default: 0.0
 				ach_4 (float, optional): value of the fourth parameter of the release function for acetylcholine. Default: 0.0
-				ach_func (function, optional): release function for acetylcholine. Default: None 
+				ach_func (str, optional): release function for acetylcholine. Default: None 
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -86,7 +86,6 @@ class Network:
 		self.train_out_dopa		= train_out_dopa
 		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
 		self.ach_values 		= {'ach_1': ach_1, 'ach_2': ach_2, 'ach_3': ach_3, 'ach_4': ach_4} 
-		self.ach_func 			= ach_func
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -123,6 +122,7 @@ class Network:
 		self.pypet 				= pypet
 		self.pypet_name 		= pypet_name if pypet_name != '' else name
 		self._early_stop_cond 	= []
+		self.ach_func 			= {'ach_linear':ex.ach_linear, 'ach_exponential':ex.ach_exponential, 'ach_polynomial':ex.ach_polynomial, 'ach_handmade':ex.ach_handmade}[ach_func]
 
 		np.random.seed(self.seed)
 		self._check_parameters()
@@ -291,7 +291,6 @@ class Network:
 					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 				rel_perf = self._stim_perf_avg/np.mean(self._stim_perf_avg)
-				print ((((rel_perf-1)*-1)+1)**15)*3
 
 			#save data
 			if self.protocol=='toy_data' and self.pypet:
