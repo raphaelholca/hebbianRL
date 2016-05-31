@@ -265,11 +265,11 @@ class Network:
 						lr_out = self.lr_out
 
 					#update weights
-					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
-					# tmp_ach = np.ones_like(batch_labels)
-					# tmp_ach[batch_labels==4]=9
-					# tmp_ach[batch_labels==9]=4
-					# self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=tmp_ach)
+					# self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
+					tmp_ach = np.ones_like(batch_labels)
+					tmp_ach[batch_labels==4]=9
+					tmp_ach[batch_labels==9]=4
+					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=tmp_ach)
 					if self._train_class_layer:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 
