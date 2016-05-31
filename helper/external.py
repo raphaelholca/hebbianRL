@@ -654,8 +654,8 @@ def set_labels2idx(classes):
 
 def ach_linear(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 	""" linear relation between relative perfomance and ACh release """
-	#exploration range: ach_1: [-4.0, -3.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0]
-	#					ach_2: [-0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.5]
+	#exploration range: ach_1: [-100.0, -50.0, -20.0, -10.0, 0.0, 10, 20.0, 50.0]
+	#					ach_2: [-1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 3.0, 5.0]
 	#results:			ach_1 = XX
 	#					ach_2 = XX
 
@@ -663,8 +663,8 @@ def ach_linear(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 
 def ach_exponential(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 	""" linear relation between relative perfomance and ACh release """
-	#exploration range: ach_1: [-10.0, -5.0, -2.0, 0.0, 2.0, 5.0, 10.0, 20.0]
-	#					ach_2: [-0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.5]
+	#exploration range: ach_1: [-10.0, -5.0, -2.0, 0.0, 2.0, 5.0, 10.0, 20.0, 50.0]
+	#					ach_2: [-0.5, -0.1, 0.0, 0.1, 0.5, 1.0, 2.0]
 	#results:			ach_1 = XX
 	#					ach_2 = XX
 
@@ -672,16 +672,19 @@ def ach_exponential(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 
 def ach_polynomial(rel_perf, ach_1, ach_2, ach_3, ach_4):
 	""" linear relation between relative perfomance and ACh release """
-	#exploration range: ach_1: [-0.25, 0.0, 0.25]
-	#					ach_2: [-2.0, -1.0, 0.0, 1.0, 2.0]
-	#					ach_3: [-1.0, -0.5, 0.0, 0.5, 1.0]
-	#					ach_4: [-1.0, -0.5, 0.0, 0.5, 1.0]
+	#exploration range: ach_1: [-0.25, 0.0, 0.5]
+	#					ach_2: [-50.0, -10.0, 0.0, 10.0, 50.0]
+	#					ach_3: [-1000.0, -100.0, 0.0, 100.0, 1000.0]
+	#					ach_4: [-10000.0, -1000.0, -100.0, 0.0, 1000.0]
 	#results:			ach_1 = XX
 	#					ach_2 = XX
 	#					ach_3 = XX
 	#					ach_4 = XX
 
 	return 1.0+ach_1 + ach_2*(rel_perf-1.0) + ach_3*(rel_perf-1.0)**2 + ach_4*(rel_perf-1.0)**3
+
+def ach_handmade(rel_perf, ach_1=None, ach_2=None, ach_3=None, ach_4=None):
+	return ((((rel_perf-1)*-1)+1)**15)*3
 
 
 
