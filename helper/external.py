@@ -656,7 +656,7 @@ def ach_linear(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 
 def ach_exponential(rel_perf, ach_1, ach_2, ach_3=None, ach_4=None):
 	""" linear relation between relative perfomance and ACh release """
-	#exploration range: ach_1: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0]
+	#exploration range: ach_1: [-10.0, -5.0, -2.0, 0.0, 2.0, 5.0, 10.0, 20.0]
 	#					ach_2: [-0.5, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.5]
 	#results:			ach_1 = XX
 	#					ach_2 = XX

@@ -147,6 +147,7 @@ class Network:
 			print "***** training using block feedback *****"
 
 		self.images_params = images_params
+		self._n_images = np.size(images,0)
 		self.classes = np.sort(np.unique(labels))
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images,1)
@@ -158,11 +159,7 @@ class Network:
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self._train_class_layer = True if self.classifier=='neural_DA'  else False
-		self._n_images = np.size(images,0)
 		self._n_batches = int(np.ceil(float(self._n_images)/self.batch_size))
-		self._stim_perf = np.zeros((self._n_images, self.n_epi_crit), dtype=int)
-		self._stim_perf_avg = np.zeros(self._n_images)
-		stim_perf_weights = (np.arange(self.n_epi_crit)+1)[::-1]
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -250,9 +247,9 @@ class Network:
 					#compute ACh signal
 					if self.ach_release:
 						stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-						ach_hid = self._ach_release_func()
+						self.ach_hid = self._ach_release_func()
 					else:
-						ach_hid = np.ones(self.batch_size)
+						self.ach_hid = np.ones(self.batch_size)
 						
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
@@ -266,7 +263,7 @@ class Network:
 						lr_out = self.lr_out
 
 					#update weights
-					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=ach_hid)
+					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
 					if self._train_class_layer:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 
@@ -280,7 +277,7 @@ class Network:
 				if self.ach_release:
 					self._stim_perf = np.roll(self._stim_perf, 1, axis=1)
 					self._stim_perf[:,0] = stim_perf_epi
-					self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=stim_perf_weights)
+					self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
 
 				#assess performance
 				self._assess_perf_progress(correct/self._n_images, images_dict, labels_dict)
@@ -298,6 +295,7 @@ class Network:
 				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
+			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
@@ -404,7 +402,7 @@ class Network:
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
 		if self.init_file == 'NO_INIT':
 			pass
-		if self.weight_init=='file' and self.init_file != '' and self.init_file != None:
+		if self.init_file != '' and self.init_file != None:
 			self._init_weights_file()
 		elif self.weight_init == 'random':
 			self._init_weights_random()
@@ -433,6 +431,10 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
+		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		self._stim_perf_weights = (np.arange(saved_net.n_epi_crit)+1)[::-1]
+		self._stim_perf_avg = np.average(self._stim_perf, axis=1, weights=self._stim_perf_weights)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, saved_net.n_epi_crit))
 		f_net.close()
 
 	def _init_weights_random(self):
@@ -450,6 +452,11 @@ class Network:
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
+		self._stim_perf = np.zeros((self._n_images, self.n_epi_crit), dtype=int)
+		self._stim_perf_weights = (np.arange(self.n_epi_crit)+1)[::-1]
+		self._stim_perf_avg = np.zeros(self._n_images)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, self.n_epi_crit))
+
 	def _init_weights_input(self, images):
 		""" initialize weights by using the input statistics """
 		m_d = np.zeros_like(images[0])
@@ -470,6 +477,11 @@ class Network:
 
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
+
+		self._stim_perf = np.zeros((self._n_images, self.n_epi_crit), dtype=int)
+		self._stim_perf_weights = (np.arange(self.n_epi_crit)+1)[::-1]
+		self._stim_perf_avg = np.zeros(self._n_images)
+		self.stim_perf_saved = np.zeros((self.n_runs, self._n_images, self.n_epi_crit))
 
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """

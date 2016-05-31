@@ -29,7 +29,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							dMid_out		= 0.,#0.2,#
 							dNeut_out		= -0.,#-0.3,#
 							dLow_out		= -0.2,#-0.5,#
-							ach_1 			= -3.0,
+							ach_1 			= 10.0,
 							ach_2 			= 0.0,
 							ach_3 			= 0.0,
 							ach_4 			= 0.0,
@@ -39,7 +39,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							dopa_release 	= False, 
 							ach_release		= True, 
 							n_runs 			= 1,
-							n_epi_crit		= 20,
+							n_epi_crit		= 0,
 							n_epi_fine 		= 0,
 							n_epi_perc		= 20,
 							n_epi_post 		= 0,
@@ -52,7 +52,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= '',
+							init_file		= 'digit_test_ach_control',
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
