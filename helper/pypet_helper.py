@@ -292,17 +292,6 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 			if len(np.unique(xplr_values)) > 1:
 				param[k[11:]] = xplr_values
 
-	# #removes explored trajectories other than the dopamine ones
-	# for k in param.keys():
-	# 	if k not in order_face:
-	# 		print str(k) + ": " + str(np.unique(param[k]))
-	# 		select = np.unique(param[k])[0]	##<-------------change index to change which value of removed parameter to use-------------
-	# 		for n_k in param.keys():
-	# 			if n_k!=k:
-	# 				param[n_k] = param[n_k][param[k]==select]
-	# 		perc_correct = perc_correct[param[k]==select]
-	# 		del param[k]
-
 	return perc_correct, np.array(perc_correct_all), np.array(stat_diff), param
 
 def faceting(folder_path):

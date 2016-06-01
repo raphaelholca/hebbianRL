@@ -33,9 +33,9 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'ach_2' 			: 1.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
-					'ach_func' 			: 'ach_polynomial', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
+					'ach_func' 			: 'ach_exponential', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_poly_0',
+					'name' 				: 'pypet_ach_expo_0',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,##
@@ -77,11 +77,10 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [-0.25, 0.0, 0.5],
-					'ach_2'		 	: [-50.0, -10.0, 0.0, 10.0, 50.0]
-					'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0]
-					'ach_4'		 	: [-10000.0, -1000.0, -100.0, 0.0, 1000.0]
-
+					'ach_1'			: [-10.0, -5.0, -2.0, 0.0, 2.0, 5.0, 10.0, 20.0, 50.0],
+					'ach_2'		 	: [-0.5, -0.1, 0.0, 0.1, 0.5, 1.0, 2.0],
+					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
+					# 'ach_4'		 	: [-10000.0, -1000.0, -100.0, 0.0, 1000.0]
 				}
 
 """ load and pre-process images """
