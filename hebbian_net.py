@@ -145,6 +145,19 @@ class Network:
 
 		images, images_task = images_dict['train'], images_dict['task']
 		labels, labels_task = labels_dict['train'], labels_dict['task']
+
+		###
+		# frac_1 = 8 
+		# frac_4 = 1
+		# frac_9 = 2
+		# images = np.concatenate((images[labels==1][::frac_1,:], images[labels==4][::frac_4,:], images[labels==9][::frac_9,:]), axis=0)
+		# labels = np.concatenate((labels[labels==1][::frac_1], labels[labels==4][::frac_4], labels[labels==9][::frac_9]))
+		# print np.sum(labels==1)
+		# print np.sum(labels==4)
+		# print np.sum(labels==9)
+		# images = images[labels!=4,:]
+		# labels = labels[labels!=4]
+
 		if self.block_feedback:
 			print "***** training using block feedback *****"
 
@@ -202,6 +215,14 @@ class Network:
 					print '----------end crit-----------'
 					###
 					# import pdb;pdb.set_trace()
+					# frac_1 = 8 
+					# frac_4 = 1
+					# frac_9 = 2
+					# images = np.concatenate((images[labels==1][::frac_1,:], images[labels==4][::frac_4,:], images[labels==9][::frac_9,:]), axis=0)
+					# labels = np.concatenate((labels[labels==1][::frac_1], labels[labels==4][::frac_4], labels[labels==9][::frac_9]))
+					# print np.sum(labels==1)
+					# print np.sum(labels==4)
+					# print np.sum(labels==9)
 					# images = images[labels!=4,:]
 					# labels = labels[labels!=4]
 				if e == self.n_epi_crit + self.n_epi_fine:
@@ -255,12 +276,13 @@ class Network:
 
 					#compute ACh signal
 					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-					# self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
+					self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
 					
-					self.ach_hid = np.ones_like(batch_labels)
-					if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release:
-						self.ach_hid[batch_labels==4]=9
-						self.ach_hid[batch_labels==9]=4
+					###
+					# self.ach_hid = np.ones_like(batch_labels)
+					# if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release:
+					# 	self.ach_hid[batch_labels==4]=9
+					# 	self.ach_hid[batch_labels==9]=4
 
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
