@@ -23,7 +23,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func=None, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func=None, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -73,6 +73,7 @@ class Network:
 				compare_output (bool, optional): whether to compare the value of greedy and taken action to determine if the trial is exploratory. Default: False
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_DA', 'bayesian'. Default: 'neural_prob'
+				RF_classifier (str, optional): which classifier to use to classifier RFs. Possible values are: 'data', 'svm'. Default: 'svm'
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
@@ -115,6 +116,7 @@ class Network:
 		self.noise_activ 		= np.clip(noise_activ, 1e-20, np.inf)
 		self.pdf_method 		= pdf_method
 		self.classifier			= classifier
+		self.RF_classifier 		= RF_classifier
 		self.test_each_epi		= test_each_epi
 		self.early_stop 		= early_stop
 		self.verbose 			= verbose
@@ -198,6 +200,10 @@ class Network:
 				#save weights just after the end of statistical pre-training
 				if e == self.n_epi_crit and self.verbose:
 					print '----------end crit-----------'
+					###
+					# import pdb;pdb.set_trace()
+					# images = images[labels!=4,:]
+					# labels = labels[labels!=4]
 				if e == self.n_epi_crit + self.n_epi_fine:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
@@ -249,12 +255,12 @@ class Network:
 
 					#compute ACh signal
 					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-					self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
+					# self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
 					
-					# self.ach_hid = np.ones_like(batch_labels)
-					# if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc:
-					# 	self.ach_hid[batch_labels==4]=9
-					# 	self.ach_hid[batch_labels==9]=4
+					self.ach_hid = np.ones_like(batch_labels)
+					if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release:
+						self.ach_hid[batch_labels==4]=9
+						self.ach_hid[batch_labels==9]=4
 
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
@@ -389,7 +395,7 @@ class Network:
 
 			""" assess receptive fields """
 			if self.protocol=='digit':
-				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
+				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, RF_classifier=self.RF_classifier, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
 			elif self.protocol=='gabor':
 				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.A, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
 			elif self.protocol=='toy_data':
@@ -854,7 +860,7 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, save_data=False, verbose=False, log_weights=self.log_weights)['RFproba']
+				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, RF_classifier=self.RF_classifier, save_data=False, verbose=False, log_weights=self.log_weights)['RFproba']
 			elif self.protocol=='gabor':
 				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t_hid, self.A, self.images_params, self.name, curve_method='no_softmax', plot=False, log_weights=self.log_weights)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)
