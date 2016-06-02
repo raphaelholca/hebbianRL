@@ -571,7 +571,7 @@ class Network:
 		self.hid_neurons_explore = None
 
 		#determine which trial will be explorative (e-greedy)
-		self.batch_explorative = ex.exploration(self.epsilon_xplr, self.batch_size)
+		self.batch_explorative = ex.exploration(self.epsilon_xplr, batch_images.shape[0])
 
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
