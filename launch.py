@@ -35,11 +35,11 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_4 			= 0.0,
 							ach_func 		= 'ach_exponential', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'digit_pretrain_lr_1e-3',
+							name 			= '_',
 							dopa_release 	= False, 
 							ach_release		= True, 
-							n_runs 			= 3,
-							n_epi_crit		= 300,
+							n_runs 			= 1,
+							n_epi_crit		= 1,
 							n_epi_fine 		= 0,
 							n_epi_perc		= 0,
 							n_epi_post 		= 0,

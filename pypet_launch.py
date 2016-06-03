@@ -29,19 +29,19 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'ach_1' 			: 20.0,
-					'ach_2' 			: 1.0,
+					'ach_1' 			: 8.0,
+					'ach_2' 			: 0.1,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
-					'ach_func' 			: 'ach_polynomial', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
+					'ach_func' 			: 'ach_exponential', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_poly_0',
+					'name' 				: 'pypet_ach_expo_1',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
-					'n_epi_crit'		: 1,	
+					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 100,
+					'n_epi_perc'		: 500,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
@@ -52,18 +52,18 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 49,#16,#49,#
 					'weight_init' 		: 'input',
-					'init_file'			: '',
+					'init_file'			: 'digit_pretrain_lr_1e-3',
 					'lim_weights'		: False,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3,
-					'noise_xplr_out'	: 2e2,
+					'noise_xplr_out'	: 2e4,
 					'exploration'		: False,
 					'compare_output' 	: True,
 					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
 					'classifier'		: 'neural_prob',
-					'RF_classifier' 	: 'svm',
+					'RF_classifier' 	: 'data',
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
@@ -78,10 +78,10 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [-0.25, 0.0, 0.5], #[-8.0, -5.0, -2.0, 0.0, 2.0, 5.0, 8.0, 10.0, 12.0, 15.0],
-					'ach_2'		 	: [-20.0, -10.0, 0.0, 10.0, 20.0], #[-0.5, -0.1, 0.0, 0.1, 0.5, 1.0, 2.0],
-					'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
-					'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
+					'ach_1'			: [0.0, 2.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0], #[-0.25, 0.0, 0.5], #
+					'ach_2'		 	: [-0.5, -0.1, 0.0, 0.1, 0.5], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
+					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
+					# 'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
 				}
 
 """ load and pre-process images """
