@@ -30,16 +30,17 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
 					'ach_1' 			: 50.0,
-					'ach_2' 			: 0.5,
+					'ach_2' 			: 0.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
+					'ach_avg' 			: 20,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_sigm_0',
+					'name' 				: 'pypet_ach_sigm_1',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
-					'n_epi_crit'		: 300,	
+					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_perc'		: 700,
 					'n_epi_post' 		: 0,				
@@ -52,7 +53,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 49,#16,#49,#
 					'weight_init' 		: 'input',
-					'init_file'			: '',
+					'init_file'			: 'digit_pretrain_lr_1e-3',
 					'lim_weights'		: False,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -78,8 +79,8 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [-1.0, 0.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0, 70.0, 100.0], #[-0.25, 0.0, 0.5], #
-					'ach_2'		 	: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
+					'ach_1'			: [0.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0], #[-0.25, 0.0, 0.5], #
+					# 'ach_2'		 	: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
 					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
 					# 'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
 				}
