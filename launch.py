@@ -30,7 +30,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							dNeut_out		= -0.3,#-0.,#
 							dLow_out		= -0.5,#-0.2,#
 							ach_1 			= 50.0,
-							ach_2 			= 0.5,
+							ach_2 			= 0.0,
 							ach_3 			= 0.0,
 							ach_4 			= 0.0,
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
@@ -38,7 +38,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							name 			= 'digit_ACh_test_preload',
 							dopa_release 	= False, 
 							ach_release		= True, 
-							n_runs 			= 3,
+							n_runs 			= 1,
 							n_epi_crit		= 0,
 							n_epi_fine 		= 0,
 							n_epi_perc		= 20,
