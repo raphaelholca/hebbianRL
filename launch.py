@@ -36,7 +36,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'test_sigmoidal',
+							name 			= 'test_sigmoidal_2',
 							dopa_release 	= False, 
 							ach_release		= True, 
 							n_runs 			= 3,
@@ -53,7 +53,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= 'digit_pretrain_lr_1e-3',
+							init_file		= 'test_sigmoidal',
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
