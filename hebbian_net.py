@@ -23,7 +23,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func=None, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -43,7 +43,8 @@ class Network:
 				ach_2 (float, optional): value of the second parameter of the release function for acetylcholine. Default: 0.0
 				ach_3 (float, optional): value of the third parameter of the release function for acetylcholine. Default: 0.0
 				ach_4 (float, optional): value of the fourth parameter of the release function for acetylcholine. Default: 0.0
-				ach_func (str, optional): release function for acetylcholine. Default: None 
+				ach_func (str, optional): release function for acetylcholine. Default: 'sigmoidal'
+				ach_avg (int, optional): number of episodes to average over for moving averag of performance. Default: 20 
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -87,6 +88,7 @@ class Network:
 		self.train_out_dopa		= train_out_dopa
 		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
 		self.ach_values 		= {'ach_1': ach_1, 'ach_2': ach_2, 'ach_3': ach_3, 'ach_4': ach_4} 
+		self.ach_avg 			= ach_avg
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -177,7 +179,8 @@ class Network:
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_DA'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
-		self._saved_perf_size = [self.n_classes, 5] #n_images #n_classes #number of classes/stimuli x number of perf to keep track of
+		self._saved_perf_size = [self.n_classes, self.ach_avg]
+		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.ach_tracker = np.empty((self.n_classes,0)) ###
 		self.perf_tracker = np.empty((self.n_classes,0)) ###
 
@@ -216,7 +219,6 @@ class Network:
 				if e == self.n_epi_crit and self.verbose:
 					print '----------end crit-----------'
 					###
-					# import pdb;pdb.set_trace()
 					# frac_1 = 8 
 					# frac_4 = 1
 					# frac_9 = 2
@@ -462,10 +464,9 @@ class Network:
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
-		self._stim_perf_weights = (np.arange(saved_net.n_epi_crit, dtype=float)+1)[::-1]
+		self._stim_perf_weights = (np.arange(saved_net.ach_avg, dtype=float)+1)[::-1]
 		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
 		self._stim_perf_avg = np.nansum(self._stim_perf*self._stim_perf_weights, axis=1)
-		self.stim_perf_saved = np.zeros((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))
 		f_net.close()
 
 	def _init_weights_random(self):
@@ -488,7 +489,6 @@ class Network:
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
 		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
-		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 
 	def _init_weights_input(self, images):
 		""" initialize weights by using the input statistics """
@@ -516,7 +516,6 @@ class Network:
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
 		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
-		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
