@@ -29,19 +29,19 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'ach_1' 			: 8.0,
-					'ach_2' 			: 0.1,
+					'ach_1' 			: 50.0,
+					'ach_2' 			: 0.5,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
-					'ach_func' 			: 'ach_exponential', #'ach_linear', 'ach_exponential', 'ach_polynomial', 'ach_handmade'
+					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_expo_1',
+					'name' 				: 'pypet_ach_sigm_0',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
-					'n_epi_crit'		: 0,	
+					'n_epi_crit'		: 300,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 500,
+					'n_epi_perc'		: 700,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
@@ -52,7 +52,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 49,#16,#49,#
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_lr_1e-3',
+					'init_file'			: '',
 					'lim_weights'		: False,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -78,8 +78,8 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [0.0, 2.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0], #[-0.25, 0.0, 0.5], #
-					'ach_2'		 	: [-0.5, -0.1, 0.0, 0.1, 0.5], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
+					'ach_1'			: [-1.0, 0.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0, 70.0, 100.0], #[-0.25, 0.0, 0.5], #
+					'ach_2'		 	: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
 					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
 					# 'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
 				}

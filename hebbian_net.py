@@ -124,7 +124,7 @@ class Network:
 		self.pypet 				= pypet
 		self.pypet_name 		= pypet_name if pypet_name != '' else name
 		self._early_stop_cond 	= []
-		self.ach_func 			= {'ach_linear':ex.ach_linear, 'ach_exponential':ex.ach_exponential, 'ach_polynomial':ex.ach_polynomial, 'ach_handmade':ex.ach_handmade}[ach_func]
+		self.ach_func 			= {'linear':ex.ach_linear, 'exponential':ex.ach_exponential, 'polynomial':ex.ach_polynomial, 'sigmoidal':ex.ach_sigmoidal, 'handmade':ex.ach_handmade, 'preset':'preset'}[ach_func]
 
 		np.random.seed(self.seed)
 		self._check_parameters()
@@ -177,7 +177,9 @@ class Network:
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_DA'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
-		self._saved_perf_size = [self.n_classes, 1] #n_images #n_classes #number of classes/stimuli x number of perf to keep track of
+		self._saved_perf_size = [self.n_classes, 5] #n_images #n_classes #number of classes/stimuli x number of perf to keep track of
+		self.ach_tracker = np.empty((self.n_classes,0)) ###
+		self.perf_tracker = np.empty((self.n_classes,0)) ###
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -276,13 +278,7 @@ class Network:
 
 					#compute ACh signal
 					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
-					self.ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
-					
-					###
-					# self.ach_hid = np.ones_like(batch_labels)
-					# if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release:
-					# 	self.ach_hid[batch_labels==4]=9
-					# 	self.ach_hid[batch_labels==9]=4
+					ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
 
 					#block feedback
 					if self.block_feedback: dopa_hid = np.ones_like(dopa_hid)*np.mean(dopa_hid)
@@ -296,14 +292,19 @@ class Network:
 						lr_out = self.lr_out
 
 					#update weights
-					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=self.ach_hid)
+					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=ach_hid)
 					if self._train_class_layer:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 					#update weights of probabilistic neural classifier
 					if self.classifier=='neural_prob' and self._b%100==0:
 						self.out_W = self._learn_out_proba(rnd_images, rnd_labels)
 
+					#keep track of training performance
 					correct += np.sum(greedy==batch_labels)
+
+					#keep track of ACh release ###
+					self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
+					self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
@@ -692,19 +693,25 @@ class Network:
 	def _ach_release_func(self, labels=None):
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
-		# if self.ach_release: #ACh starts at crit
-			#average over stimuli
-			if self._saved_perf_size[0]==self.n_images: 
-				perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
-				rel_perf = perf_avg/np.mean(self._stim_perf_avg)
-			#average over classes
-			elif self._saved_perf_size[0]==self.n_classes:
-				rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
-				rel_perf = rel_perf_classes[self._labels2idx[labels]]
-			ach = self.ach_func(rel_perf, **self.ach_values)
+		# if self.ach_release: #ACh starts at crit	
+
+			if self.ach_func=='preset': #uses preset values (only valid of 1-4-9)
+				ach = np.ones_like(labels)
+				ach[labels==4]=9
+				ach[labels==9]=4
+			else:
+				#average over stimuli
+				if self._saved_perf_size[0]==self.n_images: 
+					perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
+					rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+				#average over classes
+				elif self._saved_perf_size[0]==self.n_classes:
+					rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
+					rel_perf = rel_perf_classes[self._labels2idx[labels]]
+				ach = self.ach_func(rel_perf, **self.ach_values)
 
 		else:
-			ach = np.ones(self._n_batches)
+			ach = np.ones_like(labels)
 		return ach
 
 	def _update_ach_perf_track(self, stim_perf_epi, labels):
