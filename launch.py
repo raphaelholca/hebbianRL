@@ -33,27 +33,27 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_2 			= 0.0,
 							ach_3 			= 0.0,
 							ach_4 			= 0.0,
-							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
+							ach_func 		= 'preset', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'test_sigmoidal_2',
+							name 			= '',
 							dopa_release 	= False, 
 							ach_release		= True, 
-							n_runs 			= 1,
+							n_runs 			= 3,
 							n_epi_crit		= 0,
 							n_epi_fine 		= 0,
-							n_epi_perc		= 300,
+							n_epi_perc		= 700,
 							n_epi_post 		= 0,
 							t_hid			= 1.0,#3e0,#
 							t_out			= 0.1,#1.0,#
 							A				= 1.0e3,
-							lr_hid			= 1e-3,#5e-6,#
+							lr_hid			= 1e-4,#5e-6,#
 							lr_out			= 5e-7,#5e-5,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= 'test_sigmoidal',
+							init_file		= 'digit_pretrain_lr_1e-3',
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
@@ -68,7 +68,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 977 #np.random.randint(1000)
+							seed 			= 976 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
