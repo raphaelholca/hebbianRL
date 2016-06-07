@@ -176,6 +176,7 @@ class Network:
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
+		self.log_likelihood_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_DA'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
@@ -696,8 +697,9 @@ class Network:
 
 			if self.ach_func=='preset': #uses preset values (only valid of 1-4-9)
 				ach = np.ones_like(labels)
-				ach[labels==4]=9
-				ach[labels==9]=4
+				ach[labels==1] = 0.17 #1.00 #1.0
+				ach[labels==4] = 1.82 #10.64 #9.0
+				ach[labels==9] = 1.02 #5.98 #4.0
 			else:
 				#average over stimuli
 				if self._saved_perf_size[0]==self.n_images: 
@@ -844,7 +846,9 @@ class Network:
 		if self.verbose: print print_perf
 
 		self.perf_train_prog[self._r, self._e] = perf_train
-		if self.test_each_epi: self.perf_test_prog[self._r, self._e] = perf_test
+		if self.test_each_epi: 
+			self.perf_test_prog[self._r, self._e] = perf_test
+			self.log_likelihood_prog[self._r, self._e] = log_likelihood
 
 		#save weights just after the end of statistical pre-training
 		if self._e==self.n_epi_crit+self.n_epi_fine-1:
