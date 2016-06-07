@@ -36,7 +36,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_sigm_1',
+					'name' 				: 'pypet_ach_sigm_2',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
@@ -68,7 +68,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 976 #np.random.randint(1000)
+					'seed' 				: 970 #np.random.randint(1000)
 					}
 
 """ explored parameters """
@@ -79,7 +79,7 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [0.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0], #[-0.25, 0.0, 0.5], #
+					'ach_1'			: [60.0, 70.0, 80.0, 90.0, 100.0, 120.0], #[-0.25, 0.0, 0.5], #
 					# 'ach_2'		 	: [-1.0, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
 					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
 					# 'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
