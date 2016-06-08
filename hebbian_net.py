@@ -696,10 +696,12 @@ class Network:
 		# if self.ach_release: #ACh starts at crit	
 
 			if self.ach_func=='preset': #uses preset values (only valid of 1-4-9)
-				ach = np.ones_like(labels)
-				ach[labels==1] = 0.17 #1.00 #1.0
-				ach[labels==4] = 1.82 #10.64 #9.0
-				ach[labels==9] = 1.02 #5.98 #4.0
+				ach = np.ones_like(labels, dtype=float)
+				ach[labels==1] = 0.17 #0.17 #1.00 #1.0
+				ach[labels==4] = 1.82 #1.82 #10.64 #9.0
+				ach[labels==9] = 1.02 #1.02 #5.98 #4.0
+				# ach += np.clip((np.random.random(size=ach.shape[0])-0.5)*0.4*10., 0.,16.)
+				# ach += np.clip((np.random.random(size=ach.shape[0])-0.5)*0.4, 0.,2.)
 			else:
 				#average over stimuli
 				if self._saved_perf_size[0]==self.n_images: 

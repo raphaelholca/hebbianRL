@@ -685,9 +685,13 @@ def ach_polynomial(rel_perf, ach_1, ach_2, ach_3, ach_4):
 
 def ach_sigmoidal(rel_perf, ach_1, ach_2=None, ach_3=None, ach_4=None):
 	""" sigmoidal relation between relative perfomance and ACh release """
-	return 2.0/(1.0+np.exp(ach_1*(rel_perf-1.0)))
+	
+	# return 2.0/(1.0+np.exp(ach_1*(rel_perf-1.0)))
+	return ach_2*(2.0/(1.0+np.exp(ach_1*(rel_perf-1.0))))
 
 def ach_handmade(rel_perf, ach_1=None, ach_2=None, ach_3=None, ach_4=None):
+	""" handmade relation between relative perfomance and ACh release """
+
 	# return ((((rel_perf-1)*-1)+1)**15)*3
 	return 3*(np.exp(ach_1 * (-rel_perf + 1.0)) + ach_2)
 
