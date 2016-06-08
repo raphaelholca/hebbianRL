@@ -47,7 +47,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							t_hid			= 1.0,#3e0,#
 							t_out			= 0.1,#1.0,#
 							A				= 1.0e3,
-							lr_hid			= 1e-4,#5e-6,#
+							lr_hid			= 1e-3,#5e-6,#
 							lr_out			= 5e-7,#5e-5,#
 							batch_size 		= 50,
 							block_feedback 	= False,
