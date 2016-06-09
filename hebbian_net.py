@@ -329,6 +329,7 @@ class Network:
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
+			if not self.pypet: ex.save_net(net)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
