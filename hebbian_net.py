@@ -329,7 +329,7 @@ class Network:
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
-			if not self.pypet: ex.save_net(net)
+			if not self.pypet: ex.save_net(self)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
@@ -836,9 +836,10 @@ class Network:
 		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
-		if self.test_each_epi:
+		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode
 			log_likelihood = self._assess_loglikelihood(images_dict['train'][::100,:], labels_dict['train'][::100])
 			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
+			self.log_likelihood_prog[self._r, self._e] = log_likelihood
 		if self.classifier=='neural_DA' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
 			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
@@ -846,12 +847,10 @@ class Network:
 		if self.test_each_epi:
 			perf_test = self.test(images_dict, labels_dict, during_training=True)
 			print_perf += ' ; test performance: %.2f%%' %(perf_test*100)
+			self.perf_test_prog[self._r, self._e] = perf_test
 		if self.verbose: print print_perf
 
 		self.perf_train_prog[self._r, self._e] = perf_train
-		if self.test_each_epi: 
-			self.perf_test_prog[self._r, self._e] = perf_test
-			self.log_likelihood_prog[self._r, self._e] = log_likelihood
 
 		#save weights just after the end of statistical pre-training
 		if self._e==self.n_epi_crit+self.n_epi_fine-1:

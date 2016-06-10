@@ -284,7 +284,10 @@ def save_net(net):
 	n_file.close()
 
 	save_file = os.path.join('output', net.name, net.name + '_params.txt')
-	print_params(vars(net), save_file, runtime=net.runtime)
+	if hasattr(net, 'runtime'):
+		print_params(vars(net), save_file, runtime=net.runtime)
+	else:
+		print_params(vars(net), save_file)
 
 def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
