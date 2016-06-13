@@ -377,7 +377,7 @@ class Network:
 			""" testing of the classifier """
 			if self.classifier=='neural_DA':
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
-				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
@@ -385,7 +385,7 @@ class Network:
 				classResults = self.classes[classIdx]
 			elif self.classifier=='neural_prob':
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
-				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				out_W_normed = out_W/np.sum(out_W, 1)[:,np.newaxis]

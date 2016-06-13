@@ -36,24 +36,24 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'DA_ACh_DA+_ACh+_preACh-_long+_lr_1e-4',
+							name 			= 'dataset_shuffle_shuffled_3',
 							dopa_release 	= True, 
-							ach_release		= True, 
-							n_runs 			= 3,
-							n_epi_crit		= 0,
+							ach_release		= False, 
+							n_runs 			= 50,
+							n_epi_crit		= 20,
 							n_epi_fine 		= 0,
-							n_epi_perc		= 3000,
+							n_epi_perc		= 0,
 							n_epi_post 		= 0,
 							t_hid			= 1.0,#3e0,#
 							t_out			= 0.1,#1.0,#
 							A				= 1.0e3,
-							lr_hid			= 1e-4,#5e-6,#
+							lr_hid			= 5e-3,#5e-6,#
 							lr_out			= 5e-7,#5e-5,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= 'digit_pretrain_lr_1e-3', #'ACh_sigmoid_2', #
+							init_file		= '', #'digit_pretrain_lr_1e-3', #'ACh_sigmoid_2', #
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
@@ -79,7 +79,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'shuffle'			: False
+																						'shuffle'			: True
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
