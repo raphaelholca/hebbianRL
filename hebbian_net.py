@@ -182,11 +182,11 @@ class Network:
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 		self._saved_perf_size = [self.n_classes, self.ach_avg]
 		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		self.ach_tracker = np.empty((self.n_classes,0)) ###
-		self.ach_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		self.dopa_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		self.labels_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		self.perf_tracker = np.empty((self.n_classes,0)) ###
+		# self.ach_tracker = np.empty((self.n_classes,0)) ###
+		# self.ach_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.dopa_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.labels_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.perf_tracker = np.empty((self.n_classes,0)) ###
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -309,11 +309,11 @@ class Network:
 					correct += np.sum(greedy==batch_labels)
 
 					#keep track of ACh release ###
-					self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
-					self.ach_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = ach_hid
-					self.dopa_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = dopa_hid
-					self.labels_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = batch_labels
-					self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
+					# self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
+					# self.ach_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = ach_hid
+					# self.dopa_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = dopa_hid
+					# self.labels_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = batch_labels
+					# self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
