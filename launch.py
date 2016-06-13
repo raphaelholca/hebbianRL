@@ -10,6 +10,7 @@ import matplotlib
 if 'mnt' in os.getcwd(): matplotlib.use('Agg')
 import numpy as np
 import time
+import datetime
 import hebbian_net
 import helper.external as ex
 import helper.assess_network as an
@@ -36,7 +37,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'test_tracker', #'DA_ACh_DA+_ACh+_preACh-_long+_lr_1e-4',
+							name 			= 'test_time',#'DA_ACh_DA+_ACh+_preACh-_2',
 							dopa_release 	= True, 
 							ach_release		= True, 
 							n_runs 			= 1,
@@ -53,7 +54,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= '',#'digit_pretrain_lr_1e-3', #'ACh_sigmoid_2', #
+							init_file		= 'digit_pretrain_lr_1e-3', #'ACh_sigmoid_2', #
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
@@ -114,7 +115,7 @@ an.assess(	net,
 print '\nrun name:\t' + net.name
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_start))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_stop))
-print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(net.runtime))
+print 'train time:\t' +  str(datetime.timedelta(seconds=net.runtime))
 
 
 
