@@ -52,6 +52,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'lr_out'			: 5e-7,#5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
+					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49,#16,#49,#
 					'weight_init' 		: 'input',
 					'init_file'			: 'digit_pretrain_lr_1e-3_10c',

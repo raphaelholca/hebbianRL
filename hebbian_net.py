@@ -23,7 +23,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -61,6 +61,7 @@ class Network:
 				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
+				shuffle_datasets (bool, optional): whether to shuffle train and test datasets to create new split of the data for each individual run. Default: True
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
 				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
@@ -105,6 +106,7 @@ class Network:
 		self.lr_out				= lr_out
 		self.batch_size 		= batch_size
 		self.block_feedback 	= block_feedback
+		self.shuffle_datasets 	= shuffle_datasets	
 		self.n_hid_neurons 		= n_hid_neurons
 		self.weight_init 		= weight_init
 		self.init_file			= init_file
@@ -132,6 +134,8 @@ class Network:
 		self._check_parameters()
 		if not self.pypet:
 			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
+
+		if noise_activ!=0.0: raise NotImplementedError('corruptove noise is commented-out') ##
 
 	def train(self, images_dict, labels_dict, images_params={}):
 		""" 
@@ -191,7 +195,7 @@ class Network:
 			np.random.seed(self.seed+r)
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
-			if self.protocol=='digit': #shuffle train and test datasets for each independent run
+			if self.protocol=='digit' and self.shuffle_datasets: #shuffle train and test datasets for each independent run
 				images_train, images_test, labels_train, labels_test = ex.shuffle_datasets(images_dict, labels_dict)
 			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
@@ -363,7 +367,7 @@ class Network:
 			""" testing of the classifier """
 			if self.classifier=='neural_dopa':
 				hidNeurons = ex.propagate_layerwise(images, hid_W, SM=False, log_weights=self.log_weights) 
-				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				actNeurons = ex.propagate_layerwise(hidNeurons, out_W, log_weights=self.log_weights)
@@ -371,7 +375,7 @@ class Network:
 				classResults = self.classes[classIdx]
 			elif self.classifier=='neural_prob':
 				hidNeurons = ex.propagate_layerwise(images, hid_W, SM=False, log_weights=self.log_weights) 
-				hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
+				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				out_W_normed = out_W/np.sum(out_W, 1)[:,np.newaxis]
@@ -540,7 +544,7 @@ class Network:
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
 		hid_activ_std = np.std(hid_activ)
-		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+		# hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
@@ -584,7 +588,7 @@ class Network:
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
 		hid_activ_std = np.std(hid_activ)
-		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+		# hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
