@@ -191,23 +191,8 @@ class Network:
 			np.random.seed(self.seed+r)
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
-			if self.protocol=='digit':
-				#### shuffle test & train datasets
-				images_con = np.concatenate((images_dict['train'], images_dict['test']), axis=0)
-				labels_con = np.concatenate((labels_dict['train'], labels_dict['test']), axis=0)
-
-				shuffle_idx = np.arange(len(labels_con))
-				np.random.shuffle(shuffle_idx)
-				images_con = images_con[shuffle_idx,:]
-				labels_con = labels_con[shuffle_idx]
-
-				# split_idx = (len(labels_con)/4)*1 			#1:4
-				# split_idx = (len(labels_con)/2)*1 			#1:2
-				# split_idx = (len(labels_con)/4)*3 			#3:4
-				split_idx = len(labels_dict['train']) 		#ori
-				images_train = images_con[:split_idx,:]
-				labels_train = labels_con[:split_idx]
-				####
+			if self.protocol=='digit': #shuffle train and test datasets for each independent run
+				images_train, images_test, labels_train, labels_test = ex.shuffle_datasets(images_dict, labels_dict)
 			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)

@@ -217,6 +217,26 @@ def checkdir(name, protocol, overwrite=True):
 
 	return name
 
+def shuffle_datasets(images_dict, labels_dict):
+	""" shuffle test & train datasets """
+
+	#concatenate images and labels
+	images_conca = np.concatenate((images_dict['train'], images_dict['test']), axis=0)
+	labels_conca = np.concatenate((labels_dict['train'], labels_dict['test']), axis=0)
+
+	#shuffle images and labels
+	shuffle_idx = np.arange(len(labels_conca))
+	np.random.shuffle(shuffle_idx)
+	images_conca = images_conca[shuffle_idx,:]
+	labels_conca = labels_conca[shuffle_idx]
+
+	#split concatenated images and labels into train and test datasets
+	split_idx = len(labels_dict['train'])
+	images_train, images_test = images_conca[:split_idx,:], images_conca[split_idx:,:]
+	labels_train, labels_test = labels_conca[:split_idx], labels_conca[split_idx:]
+
+	return images_train, images_test, labels_train, labels_test
+
 def shuffle(arrays):
 	"""
 	Shuffles the passed vectors according to the same random order

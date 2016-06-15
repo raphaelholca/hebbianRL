@@ -37,7 +37,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'test_10c_shuffle_x1_reshuffle_run_2',#'digit_pretrain_lr_5e-4_10c',
+							name 			= 'test_10c_shuffle_x1_reshuffle_run_3ex',#'digit_pretrain_lr_5e-4_10c',
 							dopa_release 	= False, 
 							ach_release		= False, 
 							n_runs 			= 10,
@@ -69,7 +69,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 985 #np.random.randint(1000)
+							seed 			= 989 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
