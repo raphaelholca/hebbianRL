@@ -65,6 +65,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			images_all = np.append(images, images_test, axis=0)
 			labels_all = np.append(labels, labels_test)
 			images_rdn, labels_rdn = shuffle([images_all, labels_all])
+			# images_rdn, labels_rdn = shuffle([images_rdn, labels_rdn]) ##
 
 			images = images_rdn[:n_images_train, :]
 			labels = labels_rdn[:n_images_train]

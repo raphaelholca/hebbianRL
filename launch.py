@@ -37,7 +37,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'test_shuffle-_3',
+							name 			= 'test_10c_shuffle_x1_reshuffle_run_2',#'digit_pretrain_lr_5e-4_10c',
 							dopa_release 	= False, 
 							ach_release		= False, 
 							n_runs 			= 10,
@@ -69,7 +69,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 977 #np.random.randint(1000)
+							seed 			= 985 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -77,8 +77,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	A				= net.A,
 																	verbose 		= net.verbose,
 																	digit_params 	= {	'dataset_train'		: 'train',
-																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
-																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'shuffle'			: False
 																						},
@@ -99,9 +99,25 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						}
 																	)
 
+
+# images = np.concatenate((images_dict['train'], images_dict['test']), axis=0)
+# labels = np.concatenate((labels_dict['train'], labels_dict['test']), axis=0)
+
+# shuffle_idx = np.arange(len(labels))
+# np.random.shuffle(shuffle_idx)
+# images = images[shuffle_idx,:]
+# labels = labels[shuffle_idx]
+
+# split_idx = (len(labels)/4)*1 			#1:4
+# # split_idx = (len(labels)/2)*1 			#1:2
+# # split_idx = (len(labels)/4)*3 			#3:4
+# # split_idx = 54210 	#ori
+# images_dict = {'train':images[:split_idx,:], 'test': images[split_idx:,:], 'task':None}
+# labels_dict = {'train':labels[:split_idx],   'test': labels[split_idx:],   'task':None}
+
 net.train(images_dict, labels_dict, images_params)
 
-perf_dict = net.test(images_dict, labels_dict)
+CM_all, perf_all = net.test(images_dict['test'], labels_dict['test'])
 
 ex.save_net(net)
 
@@ -109,7 +125,9 @@ an.assess(	net,
 			show_W_act		= True, 
 			sort			= None, 
 			target 			= None,
-			test_all_ori 	= False
+			test_all_ori 	= False,
+			images 			= images_dict['train'],
+			labels 			= labels_dict['train']
 			)
 
 print '\nrun name:\t' + net.name

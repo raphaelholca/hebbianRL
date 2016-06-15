@@ -14,7 +14,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False, plot_RFs=True):
+def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False, plot_RFs=True, images=None, labels=None):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -38,10 +38,18 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			os.makedirs(os.path.join(save_path, 'RFs'))
 	if net.protocol=='gabor' and not os.path.exists(os.path.join(save_path, 'TCs')):
 		os.makedirs(os.path.join(save_path, 'TCs'))
+
+	""" assess receptive fields """
+	if net.protocol=='digit':
+		net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, RF_classifier=net.RF_classifier, save_data=False, verbose=net.verbose, W_naive=net.hid_W_naive, log_weights=net.log_weights)
+	elif net.protocol=='gabor':
+		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.A, net.images_params, save_data=False, verbose=net.verbose, log_weights=net.log_weights)
+	elif net.protocol=='toy_data':
+		net.RF_info = {'RFproba':None}
 	RFproba = net.RF_info['RFproba']
 
 	""" plot and save confusion matrices """
-	print_save_CM(net.perf_dict, net.name, net.classes, net.verbose, True, save_path)
+	print_save_CM(net.CM_all, net.perf_all, net.name, net.classes, net.verbose, True, save_path)
 
 	if net.protocol!='toy_data':
 		""" plot RF properties """
@@ -219,13 +227,12 @@ my_blues = [plt.get_cmap('YlGnBu')(1.*i/n_colors) for i in range(n_colors)]
 my_reds = [plt.get_cmap('YlOrRd')(1.*i/n_colors) for i in range(n_colors)]
 cm_pastel = [plt.get_cmap('Paired')(1.*i/n_colors) for i in range(n_colors)]
 
-def print_save_CM(perf_dict, name, classes, verbose, save_data, save_path):
+def print_save_CM(CM_all, perf_all, name, classes, verbose, save_data, save_path):
 	""" print and save performance measures """
 
-	CM_avg = perf_dict['CM_avg']
-	perf_all = perf_dict['perf_all']
-	perf_avg = perf_dict['perf_avg']
-	perf_ste = perf_dict['perf_ste']
+	CM_avg = np.mean(CM_all,0)
+	perf_avg = np.mean(perf_all)
+	perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
 
 	if verbose or save_data:
 		perf_print = ''
@@ -488,7 +495,7 @@ def plot_perf_progress(name, perf_train, perf_test, dopa_start, epi_start=0, sav
 	ax.set_xticks(np.arange(1, len(perf_train[0,epi_start:])+1))
 	# ax.xaxis.set_ticks_position('bottom')
 	# ax.yaxis.set_ticks_position('left')
-	ax.set_ylim([85.,100.])
+	ax.set_ylim([75.,100.])
 	if n_epi_plot>0: ax.set_xticks(np.arange(0, n_epi_plot+1, np.clip(n_epi_plot/10, 1, 10000)))
 	ax.set_xlabel('training episodes', fontsize=18)
 	ax.set_ylabel('% correct', fontsize=18)
