@@ -740,13 +740,13 @@ class Network:
 			dW = (np.dot(pre_neurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 		#update weights		
-		if self.lim_weights and e>=self.n_epi_crit + self.n_epi_fine: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
-			mask = np.logical_and(np.sum(self.hid_W+hid_dW,0)<=940.801, np.min(self.hid_W+hid_dW,0)>0.2)
+		if self.lim_weights and self._e>=self.n_epi_crit + self.n_epi_fine and pre_neurons.shape[1]==784: #prevents weight change for entire hidden neuron if any weight of this neuron would become negative
+			mask = np.all(W+dW>0.0, axis=0)
 		else:
 			mask = np.ones(np.size(W,1), dtype=bool)
 
 		W[:,mask] += dW[:,mask]
-		W = np.clip(W, 1e-10, np.inf)
+		# W = np.clip(W, 1e-10, np.inf) ##no clipping
 		
 		return W
 

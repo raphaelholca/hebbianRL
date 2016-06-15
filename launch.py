@@ -20,47 +20,47 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 1.6,#0.0,#
-							dMid 				= 0.0,#0.01,#
-							dNeut 				= -0.08,#-0.5,#
-							dLow 				= -0.4,#-4.0,#
+net = hebbian_net.Network(	dHigh 				= 0.0,
+							dMid 				= 0.0,
+							dNeut 				= -0.08,
+							dLow 				= -10.0,
 							dopa_out_same 		= False,
 							train_out_dopa 		= False,
-							dHigh_out			= 0.0,#2.0,#
-							dMid_out			= 0.2,#0.,#
-							dNeut_out			= -0.3,#-0.,#
-							dLow_out			= -0.5,#-0.2,#
+							dHigh_out			= 0.0,
+							dMid_out			= 0.2,
+							dNeut_out			= -0.3,
+							dLow_out			= -0.5,
 							ach_1 				= 12.0,
 							ach_2 				= 6.0,
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 			= 20,
-							protocol			= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 				= 'digit_pretrain_lr_5e-3_10c_reshuffle',
-							dopa_release 		= False, 
+							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
+							name 				= 'digit_pypet_limweights+_1e-10_3',
+							dopa_release 		= True, 
 							ach_release			= False, 
-							n_runs 				= 3,
-							n_epi_crit			= 30,
+							n_runs 				= 1,
+							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 0,
+							n_epi_perc			= 20,
 							n_epi_post 			= 0,
-							t_hid				= 1.0,#3e0,#
-							t_out				= 0.1,#1.0,#
+							t_hid				= 1.0,
+							t_out				= 0.1,
 							A					= 1.0e3,
-							lr_hid				= 5e-3,#1e-3,#5e-6,#
-							lr_out				= 5e-7,#5e-5,#
+							lr_hid				= 5e-3,
+							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= True,
-							n_hid_neurons		= 49,#16,#
+							n_hid_neurons		= 49,
 							weight_init 		= 'input',
-							init_file			= '',
-							lim_weights			= False,
-							log_weights 		= True,#False,#
+							init_file			= 'digit_pretrain_lr_1e-3',
+							lim_weights			= True,
+							log_weights 		= True,
 							epsilon_xplr 		= 1.0,
 							noise_xplr_hid		= 0.2,
-							noise_xplr_out		= 2e4,#2e2,#
+							noise_xplr_out		= 2e4,
 							exploration			= True,
 							compare_output 		= True,
 							noise_activ			= 0.0,
@@ -78,8 +78,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	A				= net.A,
 																	verbose 		= net.verbose,
 																	digit_params 	= {	'dataset_train'		: 'train',
-																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
-																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'shuffle'			: False
 																						},
