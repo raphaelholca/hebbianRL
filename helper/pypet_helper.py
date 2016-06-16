@@ -33,7 +33,7 @@ def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_para
 
 	net.train(images_dict, labels_dict, images_params)
 
-	perf_dict = net.test(images_dict, labels_dict)
+	# CM_all, perf_all = net.test(images_dict['test'], labels_dict['test'])
 
 	p_file = open(os.path.join(save_path, 'networks', net.name), 'w')
 	pickle.dump(net, p_file)
@@ -41,7 +41,7 @@ def launch_one_exploration(parameter_dict, images_dict, labels_dict, images_para
 
 	stat_diff = plot_one_slope_diff(net, save_path)
 
-	return perf_dict['perf_all'], stat_diff
+	return net.perf_all, stat_diff
 
 def add_parameters(traj, parameter_dict):
 	for k in parameter_dict.keys():
@@ -213,7 +213,7 @@ def plot_all_slope_diffs(save_path):
 def launch_assess(save_path, file_name, images, labels, curve_method='with_noise', slope_binned=False):
 	net_file = open(os.path.join(save_path, 'networks', file_name), 'r')
 	best_net = pickle.load(net_file)
-	an.assess(best_net, curve_method=curve_method, slope_binned=slope_binned, save_path=os.path.join(save_path, 'best_net'))
+	an.assess(best_net, curve_method=curve_method, slope_binned=slope_binned, save_path=os.path.join(save_path, 'best_net'), images=images, labels=labels)
 
 def bar_plot(best_param_all, best_perf_all=None):
 	""" best release properties bar plot """

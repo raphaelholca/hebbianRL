@@ -815,7 +815,7 @@ class Network:
 		""" assesses progression of performance of network as it is being trained """
 		
 		print_perf = 'epi ' + str(self._e) + ': '
-		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
+		if self.test_each_epi and (self._train_class_layer or self.classifier=='neural_prob'): ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_train, labels_train)
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
 		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode
