@@ -9,6 +9,7 @@ import os
 import matplotlib
 if 'mnt' in os.getcwd(): matplotlib.use('Agg') #to avoid sending plots to screen when working on the servers
 import numpy as np
+import datetime
 import time
 import pypet
 import helper.external as ex
@@ -29,20 +30,20 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'ach_1' 			: 50.0,
+					'ach_1' 			: 12.0,
 					'ach_2' 			: 6.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_sigm_2_3c',
+					'name' 				: 'pypet_ach_sigm_2_10c_2',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 700,
+					'n_epi_perc'		: 100,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
@@ -53,7 +54,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'block_feedback'	: False,
 					'n_hid_neurons'		: 49,#16,#49,#
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_lr_1e-3',
+					'init_file'			: 'digit_pretrain_lr_1e-3_10c',
 					'lim_weights'		: False,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -68,7 +69,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'test_each_epi'		: True,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 970 #np.random.randint(1000)
+					'seed' 				: 971 #np.random.randint(1000)
 					}
 
 """ explored parameters """
@@ -79,8 +80,8 @@ explore_dict = {
 					# 'dMid'			: [+0.000, +0.001, +0.010, +0.100, +0.500, +1.000, +2.000],
 					# 'dLow'			: [-2.000, -1.000, -0.500, +0.100, +0.010, +0.001, +0.000]
 
-					'ach_1'			: [20.0, 40.0, 60.0, 80.0, 10.0, 12.0], #[-0.25, 0.0, 0.5], #
-					'ach_2'		 	: [2.0, 4.0, 6.0, 8.0, 10.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
+					'ach_1'			: [8.0, 10.0, 12.0, 15.0, 18.0], #[-0.25, 0.0, 0.5], #
+					'ach_2'		 	: [4.0, 6.0, 8.0, 10.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
 					# 'ach_3'		 	: [-1000.0, -100.0, 0.0, 100.0, 1000.0],
 					# 'ach_4'		 	: [-1000.0, -500.0, -100.0, 0.0, 1000.0]
 				}
@@ -90,8 +91,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
-																						'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
-																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'shuffle'			: False
 																						},
@@ -125,7 +126,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 20,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
@@ -155,7 +156,7 @@ if 'dHigh' in explore_dict.keys() and 'dMid' in explore_dict.keys() and 'dNeut' 
 print '\nrun name:\t' + parameter_dict['name']
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(tic))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(toc))
-print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(toc-tic))
+print 'train time:\t' + str(datetime.timedelta(seconds=toc-tic))
 
 
 

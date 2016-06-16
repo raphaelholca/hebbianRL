@@ -73,7 +73,7 @@ class Network:
 				exploration (bool, optional): whether to take take explorative decisions (True) or not (False). Default: True
 				compare_output (bool, optional): whether to compare the value of greedy and taken action to determine if the trial is exploratory. Default: False
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
-				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_DA', 'bayesian'. Default: 'neural_prob'
+				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_dopa', 'bayesian'. Default: 'neural_prob'
 				RF_classifier (str, optional): which classifier to use to classifier RFs. Possible values are: 'data', 'svm'. Default: 'svm'
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
@@ -178,12 +178,15 @@ class Network:
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self.log_likelihood_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self._labels2idx = ex.set_labels2idx(self.classes)
-		self._train_class_layer = True if self.classifier=='neural_DA'  else False
+		self._train_class_layer = True if self.classifier=='neural_dopa'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 		self._saved_perf_size = [self.n_classes, self.ach_avg]
 		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		self.ach_tracker = np.empty((self.n_classes,0)) ###
-		self.perf_tracker = np.empty((self.n_classes,0)) ###
+		# self.ach_tracker = np.empty((self.n_classes,0)) ###
+		# self.ach_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.dopa_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.labels_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
+		# self.perf_tracker = np.empty((self.n_classes,0)) ###
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -277,7 +280,7 @@ class Network:
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
-					if not self.dopa_release: dopa_hid = np.ones(self.batch_size)
+					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
 					#compute ACh signal
 					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
@@ -306,8 +309,11 @@ class Network:
 					correct += np.sum(greedy==batch_labels)
 
 					#keep track of ACh release ###
-					self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
-					self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
+					# self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
+					# self.ach_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = ach_hid
+					# self.dopa_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = dopa_hid
+					# self.labels_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = batch_labels
+					# self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
@@ -375,7 +381,7 @@ class Network:
 				out_W = np.copy(self.out_W)
 
 			""" testing of the classifier """
-			if self.classifier=='neural_DA':
+			if self.classifier=='neural_dopa':
 				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
 				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
@@ -521,8 +527,8 @@ class Network:
 
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
-		if self.classifier not in ['neural_prob', 'neural_DA', 'bayesian']:
-			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural_DA\', \'neural_prob\' and \'bayesian\'.')
+		if self.classifier not in ['neural_prob', 'neural_dopa', 'bayesian']:
+			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural_dopa\', \'neural_prob\' and \'bayesian\'.')
 		if self.protocol not in ['digit', 'gabor', 'toy_data']:
 			raise ValueError( '\'' + self.protocol +  '\' not a legal protocol value. Legal values are: \'digit\' and \'gabor\'.')
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
@@ -540,14 +546,14 @@ class Network:
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
 		if self.classifier == 'bayesian':
 			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_bayesian(batch_images)
-		elif self.classifier == 'neural_DA':
-			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_DA(batch_images)
+		elif self.classifier == 'neural_dopa':
+			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_dopa(batch_images)
 		elif self.classifier == 'neural_prob':
 			greedy, explore_hid, explore_out, posterior, explorative = self._propagate_neural_prob(batch_images)
 
 		return greedy, explore_hid, explore_out, posterior, explorative
 
-	def _propagate_neural_DA(self, batch_images):
+	def _propagate_neural_dopa(self, batch_images):
 		""" propagate input images through the network with a layer of neurons on top """
 		#reset activity (important for cases in which no noise is added)
 		self.hid_neurons_greedy = None
@@ -677,17 +683,17 @@ class Network:
 		""" compute dopa release based on predicted and delivered reward """
 		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_perc) and self._train_class_layer:
 			""" Critical and Post period """
-			dopa_hid = np.ones(self.batch_size)
+			dopa_hid = np.ones(len(reward_hid))
 			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
 	
 		elif self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc: 
 			""" Perceptual learning period """
 			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values)
 			## add parallel out training here
-			dopa_out = np.zeros(self.batch_size)
+			dopa_out = np.zeros(len(reward_hid))
 		else:
-			dopa_hid = np.ones(self.batch_size)
-			dopa_out = np.ones(self.batch_size)
+			dopa_hid = np.ones(len(reward_hid))
+			dopa_out = np.ones(len(reward_hid))
 
 		return dopa_hid, dopa_out
 
@@ -840,7 +846,7 @@ class Network:
 			log_likelihood = self._assess_loglikelihood(images_dict['train'][::100,:], labels_dict['train'][::100])
 			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
 			self.log_likelihood_prog[self._r, self._e] = log_likelihood
-		if self.classifier=='neural_DA' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
+		if self.classifier=='neural_dopa' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
 			print_perf += 'train performance: %.2f%%' %(perf_train*100)
 		else:
 			print_perf += 'train performance: ' + '-N/A-'

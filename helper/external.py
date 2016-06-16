@@ -13,6 +13,7 @@ import shutil
 import numba
 import grating as gr
 import time
+import datetime
 import struct
 from array import array
 
@@ -64,6 +65,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			images_all = np.append(images, images_test, axis=0)
 			labels_all = np.append(labels, labels_test)
 			images_rdn, labels_rdn = shuffle([images_all, labels_all])
+			# images_rdn, labels_rdn = shuffle([images_rdn, labels_rdn]) ##
 
 			images = images_rdn[:n_images_train, :]
 			labels = labels_rdn[:n_images_train]
@@ -302,7 +304,7 @@ def print_params(param_dict, save_file, runtime=None):
 	param_file.write(time_line)
 
 	if runtime is not None:
-		runtime_str = time.strftime("%H:%M:%S", time.gmtime(runtime))
+		runtime_str = str(datetime.timedelta(seconds=runtime))
 		runtime_line = ('runtime\t: %s\n\n' % runtime_str).expandtabs(tab_length)
 		param_file.write(runtime_line)
 	else:

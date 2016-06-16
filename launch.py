@@ -10,6 +10,7 @@ import matplotlib
 if 'mnt' in os.getcwd(): matplotlib.use('Agg')
 import numpy as np
 import time
+import datetime
 import hebbian_net
 import helper.external as ex
 import helper.assess_network as an
@@ -29,31 +30,31 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							dMid_out		= 0.2,#0.,#
 							dNeut_out		= -0.3,#-0.,#
 							dLow_out		= -0.5,#-0.2,#
-							ach_1 			= 80.0,
-							ach_2 			= 8.0,
+							ach_1 			= 12.0,
+							ach_2 			= 6.0,
 							ach_3 			= 0.0,
 							ach_4 			= 0.0,
 							ach_func 		= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 							ach_avg 		= 20,
 							protocol		= 'digit', #'toy_data',#'gabor',#'digit',#
-							name 			= 'dataset_shuffle_shuffled_3',
-							dopa_release 	= True, 
+							name 			= 'test_10c_shuffle_x2',
+							dopa_release 	= False, 
 							ach_release		= False, 
-							n_runs 			= 50,
-							n_epi_crit		= 20,
+							n_runs 			= 5,
+							n_epi_crit		= 10,
 							n_epi_fine 		= 0,
 							n_epi_perc		= 0,
 							n_epi_post 		= 0,
 							t_hid			= 1.0,#3e0,#
 							t_out			= 0.1,#1.0,#
 							A				= 1.0e3,
-							lr_hid			= 5e-3,#5e-6,#
+							lr_hid			= 5e-3,#1e-3,#5e-6,#
 							lr_out			= 5e-7,#5e-5,#
 							batch_size 		= 50,
 							block_feedback 	= False,
 							n_hid_neurons	= 49,#16,#
 							weight_init 	= 'input',
-							init_file		= '', #'digit_pretrain_lr_1e-3', #'ACh_sigmoid_2', #
+							init_file		= '',#'digit_pretrain_lr_1e-3_10c', #'ACh_sigmoid_2', #
 							lim_weights		= False,
 							log_weights 	= True,#False,#
 							epsilon_xplr 	= 1.0,
@@ -68,7 +69,7 @@ net = hebbian_net.Network(	dHigh 			= 1.6,#0.0,#
 							test_each_epi	= True,
 							early_stop 		= False,
 							verbose			= True,
-							seed 			= 976 #np.random.randint(1000)
+							seed 			= 989 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -114,7 +115,7 @@ an.assess(	net,
 print '\nrun name:\t' + net.name
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_start))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_stop))
-print 'train time:\t' + time.strftime("%H:%M:%S", time.gmtime(net.runtime))
+print 'train time:\t' +  str(datetime.timedelta(seconds=net.runtime))
 
 
 
