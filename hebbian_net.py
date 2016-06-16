@@ -23,7 +23,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -61,6 +61,7 @@ class Network:
 				lr_out (float, optional): learning rate for the output layer. Default: 5e-7
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
+				shuffle_datasets (bool, optional): whether to shuffle train and test datasets to create new split of the data for each individual run. Default: True
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
 				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
@@ -105,6 +106,7 @@ class Network:
 		self.lr_out				= lr_out
 		self.batch_size 		= batch_size
 		self.block_feedback 	= block_feedback
+		self.shuffle_datasets 	= shuffle_datasets	
 		self.n_hid_neurons 		= n_hid_neurons
 		self.weight_init 		= weight_init
 		self.init_file			= init_file
@@ -133,6 +135,8 @@ class Network:
 		if not self.pypet:
 			self.name = ex.checkdir(self.name, self.protocol, overwrite=True)
 
+		if noise_activ!=0.0: raise NotImplementedError('corruptove noise is commented-out') ##
+
 	def train(self, images_dict, labels_dict, images_params={}):
 		""" 
 		Train Hebbian neural network
@@ -145,35 +149,25 @@ class Network:
 
 		self._train_start = time.time()
 
-		images, images_task = images_dict['train'], images_dict['task']
-		labels, labels_task = labels_dict['train'], labels_dict['task']
-
-		###
-		# frac_1 = 8 
-		# frac_4 = 1
-		# frac_9 = 2
-		# images = np.concatenate((images[labels==1][::frac_1,:], images[labels==4][::frac_4,:], images[labels==9][::frac_9,:]), axis=0)
-		# labels = np.concatenate((labels[labels==1][::frac_1], labels[labels==4][::frac_4], labels[labels==9][::frac_9]))
-		# print np.sum(labels==1)
-		# print np.sum(labels==4)
-		# print np.sum(labels==9)
-		# images = images[labels!=4,:]
-		# labels = labels[labels!=4]
+		images_train, images_test, images_task = images_dict['train'], images_dict['test'], images_dict['task']
+		labels_train, labels_test, labels_task = labels_dict['train'], labels_dict['test'], labels_dict['task']
 
 		if self.block_feedback:
 			print "***** training using block feedback *****"
 
 		self.images_params = images_params
-		self.n_images = np.size(images,0)
-		self.classes = np.sort(np.unique(labels))
+		self.n_images = np.size(images_train,0)
+		self.classes = np.sort(np.unique(labels_train))
 		self.n_classes = len(self.classes)
 		self.n_out_neurons = len(self.classes)
-		self.n_inp_neurons = np.size(images,1)
+		self.n_inp_neurons = np.size(images_train,1)
 		self.n_epi_tot = self.n_epi_crit + self.n_epi_fine + self.n_epi_perc + self.n_epi_post
 		self.hid_W_naive = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
+		self.CM_all = np.zeros((self.n_runs, self.n_classes, self.n_classes))
+		self.perf_all = np.zeros(self.n_runs)
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
 		self.perf_test_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
 		self.log_likelihood_prog = np.ones((self.n_runs, self.n_epi_tot))*-1 if self.test_each_epi else None
@@ -199,21 +193,22 @@ class Network:
 			if self.verbose: print '\nrun: %d' %r
 
 			np.random.seed(self.seed+r)
-			self._init_weights(images)
+			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
-			if self.protocol=='gabor':
+			if self.protocol=='digit' and self.shuffle_datasets: #shuffle train and test datasets for each independent run
+				images_train, images_test, labels_train, labels_test = ex.shuffle_datasets(images_dict, labels_dict)
+			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
-					images, images_task = images_dict_new['train'], images_dict_new['task']
-					labels, labels_task = labels_dict_new['train'], labels_dict_new['task']
+					images_train, images_task = images_dict_new['train'], images_dict_new['task']
+					labels_train, labels_task = labels_dict_new['train'], labels_dict_new['task']
 				if self.images_params['noise_pixel'] > 0.0:
-					gaussian_noise = np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images))
+					gaussian_noise = np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train))
 				else:
-					gaussian_noise = np.zeros(np.shape(images))
+					gaussian_noise = np.zeros(np.shape(images_train))
+			elif self.protocol=='toy_data' and not self.pypet:
+				an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.name, 'result_init'))
 
-			if self.protocol=='toy_data' and not self.pypet:
-				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'result_init'))
-			
 			""" train network """
 			for e in range(self.n_epi_tot):
 				self._e = e
@@ -222,17 +217,6 @@ class Network:
 				#save weights just after the end of statistical pre-training
 				if e == self.n_epi_crit and self.verbose:
 					print '----------end crit-----------'
-					###
-					# frac_1 = 8 
-					# frac_4 = 1
-					# frac_9 = 2
-					# images = np.concatenate((images[labels==1][::frac_1,:], images[labels==4][::frac_4,:], images[labels==9][::frac_9,:]), axis=0)
-					# labels = np.concatenate((labels[labels==1][::frac_1], labels[labels==4][::frac_4], labels[labels==9][::frac_9]))
-					# print np.sum(labels==1)
-					# print np.sum(labels==4)
-					# print np.sum(labels==9)
-					# images = images[labels!=4,:]
-					# labels = labels[labels!=4]
 				if e == self.n_epi_crit + self.n_epi_fine:
 					self.hid_W_naive[r,:,:] = np.copy(self.hid_W)
 					self.out_W_naive[r,:,:] = np.copy(self.out_W)
@@ -244,28 +228,28 @@ class Network:
 				if self.protocol=='gabor' and e >= self.n_epi_crit:
 					if self.images_params['renew_trainset']: #create new training images
 						rnd_orientations= np.random.random(self.images_params['n_train'])*self.images_params['excentricity']*2 + self.images_params['target_ori'] - self.images_params['excentricity']
-						rnd_images, rnd_labels = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'])
+						images_rndm, labels_rndm = ex.generate_gabors(rnd_orientations, self.images_params['target_ori'], self.images_params['im_size'])
 					else: 
-						rnd_images, rnd_labels = ex.shuffle([images_task, labels_task])
+						images_rndm, labels_rndm = ex.shuffle([images_task, labels_task])
 				else:
-					rnd_images, rnd_labels = ex.shuffle([images, labels])
+					images_rndm, labels_rndm = ex.shuffle([images_train, labels_train])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
-					rnd_images += gaussian_noise
-					rnd_images = ex.normalize(rnd_images, self.A)
+					images_rndm += gaussian_noise
+					images_rndm = ex.normalize(images_rndm, self.A)
 
 				#train network with mini-batches
 				correct = 0.
 				for b in range(self._n_batches):
 					self._b = b
 					#update pdf for bayesian inference
-					self._update_pdf(rnd_images, rnd_labels)
+					self._update_pdf(images_rndm, labels_rndm)
 				
 					#select training images for the current batch
-					batch_images = rnd_images[b*self.batch_size:(b+1)*self.batch_size,:]
-					batch_labels = rnd_labels[b*self.batch_size:(b+1)*self.batch_size]
+					batch_images = images_rndm[b*self.batch_size:(b+1)*self.batch_size,:]
+					batch_labels = labels_rndm[b*self.batch_size:(b+1)*self.batch_size]
 					
 					#propagate images through the network
 					greedy, explore_hid, explore_out, posterior, explorative = self._propagate(batch_images)
@@ -303,7 +287,7 @@ class Network:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 					#update weights of probabilistic neural classifier
 					if self.classifier=='neural_prob' and self._b%100==0:
-						self.out_W = self._learn_out_proba(rnd_images, rnd_labels)
+						self.out_W = self._learn_out_proba(images_rndm, labels_rndm)
 
 					#keep track of training performance
 					correct += np.sum(greedy==batch_labels)
@@ -316,73 +300,73 @@ class Network:
 					# self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
 
 				#assess performance
-				self._assess_perf_progress(correct/self.n_images, images_dict, labels_dict)
+				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
 
 				#update tracking of performance for ach release
-				self._update_ach_perf_track(stim_perf_epi, rnd_labels)
+				self._update_ach_perf_track(stim_perf_epi, labels_rndm)
 
 				#assess early stop
 				if self._assess_early_stop(): break
 
 				if (self.protocol=='toy_data' and e%50==0) and not self.pypet:
-					an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_'+str(e)))
+					an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.name, 'results_'+str(e)))
 
 			#save data
 			if self.protocol=='toy_data' and self.pypet:
-				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.pypet_name, 'results_final_'+self.name+'_run_'+str(r)))
+				an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.pypet_name, 'results_final_'+self.name+'_run_'+str(r)))
 			elif self.protocol=='toy_data':
-				an.assess_toy_data(self, images, labels, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
+				an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.name, 'results_final_'+str(r)))
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
+			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
 
-	def test(self, images_dict, labels_dict, during_training=False):
+	def test(self, images, labels, during_training=False, end_of_run=False):
 		""" 
 		Test Hebbian convolutional neural network
 
 			Args: 
-				images_dict (dict): dictionary of 2D image arrays to test the Network on, with keys: 'train', 'test'.
-				labels_dict (dict): dictionary of label arrays of the images.
+				images (numpy array): 2D image arrays to test the Network on.
+				labels (numpy array): corresponding labels of the images.
 				during_training (bool, optional): whether testing error is assessed during training of the network (is True, less information is computed)
+				end_of_run (bool, optional): whether this is the last testing of a run (if True, perf results are saved)
 
 			returns:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
-		images_train, images_test = np.copy(images_dict['train']), np.copy(images_dict['test'])
-		labels_train, labels_test = labels_dict['train'], labels_dict['test']
 
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
 			if self.images_params['noise_pixel']>0.0:
-				images_test += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_test)) #add Gaussian noise
-				if self.classifier=='bayesian':
-					images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
-			images_test = ex.normalize(images_test, self.A)
+				images += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images)) #add Gaussian noise
+				# if self.classifier=='bayesian':
+				# 	images_train += np.random.normal(0.0, self.images_params['noise_pixel'], size=np.shape(images_train)) #add Gaussian noise
+			images = ex.normalize(images, self.A)
 
 		if self.verbose and not during_training: print "\ntesting network..."
 
 		""" variable initialization """
-		CM_all = []
-		perf_all = []
-		class_results = []
-		n_runs = self.n_runs if not during_training else 1
+		n_runs = 1 if during_training or end_of_run else self.n_runs
+		if not during_training and not end_of_run: 
+			CM_all=np.zeros((self.n_runs, self.n_classes, self.n_classes))
+			perf_all=np.zeros(self.n_runs)
 
 		for iw in range(n_runs):
-			if not during_training:
+			if during_training or end_of_run:
+				hid_W = np.copy(self.hid_W)
+				out_W = np.copy(self.out_W)
+			else:
 				if self.verbose: print 'run: ' + str(iw+1)
 				hid_W = self.hid_W_trained[iw,:,:]
 				out_W = self.out_W_trained[iw,:,:]
-			else:
-				hid_W = np.copy(self.hid_W)
-				out_W = np.copy(self.out_W)
 
 			""" testing of the classifier """
 			if self.classifier=='neural_dopa':
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
+				hidNeurons = ex.propagate_layerwise(images, hid_W, SM=False, log_weights=self.log_weights) 
 				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
@@ -390,7 +374,7 @@ class Network:
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='neural_prob':
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, SM=False, log_weights=self.log_weights) 
+				hidNeurons = ex.propagate_layerwise(images, hid_W, SM=False, log_weights=self.log_weights) 
 				# hidNeurons += np.random.normal(0, self.noise_activ, np.shape(hidNeurons))## corruptive noise
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
@@ -399,45 +383,37 @@ class Network:
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='bayesian':
-				pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images_train, labels_train, hid_W, self.pdf_method, self.t_hid)
-				hidNeurons = ex.propagate_layerwise(images_test, hid_W, t=self.t_hid, log_weights=self.log_weights)
-				posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
-				classIdx = np.argmax(posterior, 1)
-				classResults = self.classes[classIdx]
-			class_results.append(classResults==labels_test)
-			correct_classif = float(np.sum(classResults==labels_test))/len(labels_test)
-			perf_all.append(correct_classif)
+				raise NotImplementedError('bayesian classifier not implemented')
+				# pdf_marginals, pdf_evidence, pdf_labels = bc.pdf_estimate(images_train, labels_train, hid_W, self.pdf_method, self.t_hid)
+				# hidNeurons = ex.propagate_layerwise(images, hid_W, t=self.t_hid, log_weights=self.log_weights)
+				# posterior = bc.bayesian_decoder(hidNeurons, pdf_marginals, pdf_evidence, pdf_labels, self.pdf_method)
+				# classIdx = np.argmax(posterior, 1)
+				# classResults = self.classes[classIdx]
+			correct_classif = float(np.sum(classResults==labels))/len(labels)
 			
 			""" compute classification matrix """
-			if not during_training:
+			if not during_training or end_of_run:
 				CM = np.zeros((len(self.classes), len(self.classes)))
 				for ilabel,label in enumerate(self.classes):
 					for iclassif, classif in enumerate(self.classes):
-						classifiedAs = np.sum(np.logical_and(labels_test==label, classResults==classif))
-						overTot = np.sum(labels_test==label)
+						classifiedAs = np.sum(np.logical_and(labels==label, classResults==classif))
+						overTot = np.sum(labels==label)
 						CM[ilabel, iclassif] = float(classifiedAs)/overTot
-				CM_all.append(CM)
 
-		""" create classification results to save """
-		if not during_training:
-			CM_avg = np.mean(CM_all,0)
-			CM_ste = np.std(CM_all,0)/np.sqrt(np.shape(CM_all)[0])
-			perf_avg = np.mean(perf_all)
-			perf_ste = np.std(perf_all)/np.sqrt(len(perf_all))
-			self.perf_dict = {'CM_all':CM_all, 'CM_avg':CM_avg, 'CM_ste':CM_ste, 'perf_all':perf_all, 'perf_avg':perf_avg, 'perf_ste':perf_ste, 'class_results':class_results}
+			if not during_training and not end_of_run: 
+				CM_all[iw,:,:] = CM
+				perf_all[iw] = correct_classif
+			if end_of_run:
+				self.CM_all[self._r,:,:] = CM
+				self.perf_all[self._r] = correct_classif
 
-			""" assess receptive fields """
-			if self.protocol=='digit':
-				self.RF_info = an.hist(self.name, self.hid_W_trained, self.classes, images_train, labels_train, RF_classifier=self.RF_classifier, save_data=False, verbose=self.verbose, W_naive=self.hid_W_naive, log_weights=self.log_weights)
-			elif self.protocol=='gabor':
-				self.RF_info = an.hist_gabor(self.name, self.hid_W_naive, self.hid_W_trained, self.t_hid, self.A, self.images_params, save_data=False, verbose=self.verbose, log_weights=self.log_weights)
-			elif self.protocol=='toy_data':
-				self.RF_info = {'RFproba':None}
-
-			return self.perf_dict
-		else:
+		if during_training:
 			return correct_classif
-
+		elif end_of_run:
+			return
+		elif not during_training and not end_of_run: 
+			return CM_all, perf_all
+		
 	def _init_weights(self, images=None):
 		""" initialize weights of the network, either by loading saved weights from file or by random initialization """
 		if self.init_file == 'NO_INIT':
@@ -534,13 +510,13 @@ class Network:
 		if self.pdf_method not in ['fit', 'subsample', 'full']:
 			raise ValueError( '\'' + self.pdf_method +  '\' not a legal pdf_method value. Legal values are: \'fit\', \'subsample\' and \'full\'.')
 
-	def _update_pdf(self, rnd_images, rnd_labels, threshold=0.01):
+	def _update_pdf(self, images_rndm, labels_rndm, threshold=0.01):
 		""" re-compute the pdf for bayesian inference if any weights have changed more than a threshold """
 		if self.classifier=='bayesian' and (self._e >= self.n_epi_crit + self.n_epi_fine or self.test_each_epi):
 			W_mschange = np.sum((self._W_in_since_update - self.hid_W)**2, 0)
 			if (W_mschange/940 > threshold).any() or (self._e==0 and self._b==0):
 				self._W_in_since_update = np.copy(self.hid_W)
-				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(rnd_images, rnd_labels, self.hid_W, self.pdf_method, self.t_hid)
+				self._pdf_marginals, self._pdf_evidence, self._pdf_labels = bc.pdf_estimate(images_rndm, labels_rndm, self.hid_W, self.pdf_method, self.t_hid)
 
 	def _propagate(self, batch_images):
 		""" propagate input images through the network, either with a layer of neurons on top or with a bayesian decoder """
@@ -568,7 +544,7 @@ class Network:
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
 		hid_activ_std = np.std(hid_activ)
-		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+		# hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
@@ -612,7 +588,7 @@ class Network:
 		#compute activation of hidden neurons
 		hid_activ = ex.propagate_layerwise(batch_images, self.hid_W, SM=False, log_weights=self.log_weights) 
 		hid_activ_std = np.std(hid_activ)
-		hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
+		# hid_activ += np.random.normal(0, self.noise_activ, np.shape(hid_activ))## corruptive noise
 
 		#add noise to activation of hidden neurons for exploration
 		if self.exploration and self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.dopa_release:
@@ -764,13 +740,13 @@ class Network:
 			dW = (np.dot(pre_neurons.T, postNeurons_lr) - np.sum(postNeurons_lr, 0)*W)
 
 		#update weights		
-		if self.lim_weights and e>=self.n_epi_crit + self.n_epi_fine: #artificially prevents weight explosion; used to dissociate influences in parameter self.exploration
-			mask = np.logical_and(np.sum(self.hid_W+hid_dW,0)<=940.801, np.min(self.hid_W+hid_dW,0)>0.2)
+		if self.lim_weights and self._e>=self.n_epi_crit + self.n_epi_fine and pre_neurons.shape[1]==784: #prevents weight change for entire hidden neuron if any weight of this neuron would become negative
+			mask = np.all(W+dW>0.0, axis=0)
 		else:
 			mask = np.ones(np.size(W,1), dtype=bool)
 
 		W[:,mask] += dW[:,mask]
-		W = np.clip(W, 1e-10, np.inf)
+		# W = np.clip(W, 1e-10, np.inf) ##no clipping
 		
 		return W
 
@@ -835,15 +811,15 @@ class Network:
 						return True
 		return False
 
-	def _assess_perf_progress(self, perf_train, images_dict, labels_dict):
+	def _assess_perf_progress(self, perf_train, images_train, labels_train, images_test, labels_test):
 		""" assesses progression of performance of network as it is being trained """
 		
 		print_perf = 'epi ' + str(self._e) + ': '
-		if self._train_class_layer or self.classifier=='neural_prob': ##remove neural_prob... 
-			correct_out_W = self._check_out_W(images_dict['train'], labels_dict['train'])
+		if self.test_each_epi and (self._train_class_layer or self.classifier=='neural_prob'): ##remove neural_prob... 
+			correct_out_W = self._check_out_W(images_train, labels_train)
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
 		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode
-			log_likelihood = self._assess_loglikelihood(images_dict['train'][::100,:], labels_dict['train'][::100])
+			log_likelihood = self._assess_loglikelihood(images_train[::100,:], labels_train[::100])
 			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
 			self.log_likelihood_prog[self._r, self._e] = log_likelihood
 		if self.classifier=='neural_dopa' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
@@ -851,7 +827,7 @@ class Network:
 		else:
 			print_perf += 'train performance: ' + '-N/A-'
 		if self.test_each_epi:
-			perf_test = self.test(images_dict, labels_dict, during_training=True)
+			perf_test = self.test(images_test, labels_test, during_training=True)
 			print_perf += ' ; test performance: %.2f%%' %(perf_test*100)
 			self.perf_test_prog[self._r, self._e] = perf_test
 		if self.verbose: print print_perf
