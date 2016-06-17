@@ -301,10 +301,10 @@ def faceting(folder_path):
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
 	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
-	threshold = 0.00#01
+	threshold = 0.01 #percent of difference in between max perf and other perf to be considered the same
 	t_threshold = 0.10#0.05
-	vmin=0.0
-	vmax=1.0
+	vmin=0.8
+	vmax=0.97
 	font_large = 20
 	font_small = 18
 
@@ -321,7 +321,7 @@ def faceting(folder_path):
 	for k in param.keys():
 		param_greater_slope[k] = param[k][stat_diff_bool]
 
-	n_mesure = len(np.unique(param['dHigh']))
+	n_measures = len(np.unique(param['dHigh']))
 
 	#find best parameters combination
 	arg_best = np.argmax(perc_correct)
@@ -351,18 +351,28 @@ def faceting(folder_path):
 		best_param_all[k] = np.hstack(param[k][arg_best_all])
 	best_perf_all = np.hstack(perc_correct[arg_best_all])
 
+	# import pdb; pdb.set_trace()
+
+	#creates a structured array of performance
+	perc_correct_struct = np.zeros(len(perc_correct), dtype=[('perf', float), ('dHigh', float), ('dMid', float), ('dNeut', float), ('dLow', float)])
+	perc_correct_struct['perf'] = perc_correct
+	for k in param.keys():
+		perc_correct_struct[k] = param[k]
+
 	""" faceting plot """
-	fig, ax = plt.subplots(n_mesure,n_mesure, figsize=(8,7))#, sharex=True, sharey=True)
+	fig, ax = plt.subplots(n_measures,n_measures, figsize=(8,7))#, sharex=True, sharey=True)
 	fig.patch.set_facecolor('white')
 	for x2_i, x2 in enumerate(np.sort(np.unique(param[order_face[2]]))):
 		for y2_i, y2 in enumerate(np.sort(np.unique(param[order_face[3]]))[::-1]):
+			tmp_perc = np.copy(perc_correct_struct[np.logical_and(param[order_face[2]]==x2, param[order_face[3]]==y2)])
+			tmp_perc[order_face[2]] *= -1
+			tmp_perc = np.sort(tmp_perc, order=[order_face[1], order_face[0]])
+			tmp_perc_sqrd = np.reshape(tmp_perc, (n_measures, n_measures))
+			
+			ax[y2_i, x2_i].imshow(tmp_perc_sqrd['perf'], origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
+
 			x1 = np.unique(param[order_face[0]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
 			y1 = np.unique(param[order_face[1]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
-			z = perc_correct[np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])]
-			z_square = np.reshape(z, (n_mesure, n_mesure))
-			if invert: z_square=z_square.T
-
-			ax[y2_i, x2_i].imshow(z_square, origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
 
 			#indicate all params that give statistically greater slopes after than before training
 			# if x2 in param_greater_slope[order_face[2]][y2==param_greater_slope[order_face[3]]]:
@@ -390,14 +400,14 @@ def faceting(folder_path):
 
 			if y2_i==0: #ticks for top row
 				ax[y2_i,x2_i].set_yticks([])
-				ax[y2_i,x2_i].set_xticks([n_mesure/2])
+				ax[y2_i,x2_i].set_xticks([n_measures/2])
 				ax[y2_i,x2_i].xaxis.set_ticks_position('top')
 				ax[y2_i,x2_i].set_xticklabels([str(x2)], fontsize=font_small)
 				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
-			if x2_i==n_mesure-1: #ticks for right row
+			if x2_i==n_measures-1: #ticks for right row
 				if y2_i!=0:
 					ax[y2_i,x2_i].set_xticks([])
-				ax[y2_i,x2_i].set_yticks([n_mesure/2])
+				ax[y2_i,x2_i].set_yticks([n_measures/2])
 				ax[y2_i,x2_i].yaxis.set_ticks_position('right')
 				ax[y2_i,x2_i].set_yticklabels([str(y2)], fontsize=font_small)
 				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
@@ -405,22 +415,22 @@ def faceting(folder_path):
 				ax[y2_i,x2_i].set_xticks([])
 				ax[y2_i,x2_i].set_yticks([])
 
-			ax[y2_i,x2_i].set_xlim(-.5, n_mesure-.5)
-			ax[y2_i,x2_i].set_ylim(-.5, n_mesure-.5)
+			ax[y2_i,x2_i].set_xlim(-.5, n_measures-.5)
+			ax[y2_i,x2_i].set_ylim(-.5, n_measures-.5)
 
-	ax[n_mesure-1,0].set_xticks(range(n_mesure)[::2])
-	ax[n_mesure-1,0].xaxis.set_ticks_position('bottom')
-	# ax[n_mesure-1,0].set_xticklabels(x1[::2], fontsize=font_small)
-	# ax[n_mesure-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)], fontsize=font_small)
-	ax[n_mesure-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)[::2]], fontsize=font_small)
+	ax[n_measures-1,0].set_xticks(range(n_measures)[::2])
+	ax[n_measures-1,0].xaxis.set_ticks_position('bottom')
+	# ax[n_measures-1,0].set_xticklabels(x1[::2], fontsize=font_small)
+	# ax[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)], fontsize=font_small)
+	ax[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)[::2]], fontsize=font_small)
 
-	ax[n_mesure-1,0].set_yticks(range(n_mesure)[::2])
-	ax[n_mesure-1,0].yaxis.set_ticks_position('left')
-	ax[n_mesure-1,0].set_yticklabels(y1[::2], fontsize=font_small)
-	ax[n_mesure-1,0].tick_params(axis='both', which='major', direction='out')
+	ax[n_measures-1,0].set_yticks(range(n_measures)[::2])
+	ax[n_measures-1,0].yaxis.set_ticks_position('left')
+	ax[n_measures-1,0].set_yticklabels(y1[::2], fontsize=font_small)
+	ax[n_measures-1,0].tick_params(axis='both', which='major', direction='out')
 
-	ax[n_mesure-1,0].set_xlabel(trans[order_face[0]], fontsize=font_large)
-	ax[n_mesure-1,0].set_ylabel(trans[order_face[1]], fontsize=font_large)
+	ax[n_measures-1,0].set_xlabel(trans[order_face[0]], fontsize=font_large)
+	ax[n_measures-1,0].set_ylabel(trans[order_face[1]], fontsize=font_large)
 		
 	fig.text(0.5, 0.96, trans[order_face[2]], ha='center', fontsize=font_large)
 	fig.text(0.965, 0.5, trans[order_face[3]], va='center', rotation=90, fontsize=font_large)
