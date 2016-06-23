@@ -20,7 +20,7 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 2.4,
+net = hebbian_net.Network(	dHigh 				= 1.6,
 							dMid 				= 0.0,
 							dNeut 				= -0.08,
 							dLow 				= -0.8,
@@ -81,7 +81,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'shuffle'			: False
+																						'shuffle'			: True
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
