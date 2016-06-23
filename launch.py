@@ -67,7 +67,7 @@ net = hebbian_net.Network(	dHigh 				= 1.6,
 							noise_activ			= 0.0,
 							pdf_method 			= 'fit',
 							classifier			= 'neural_prob',
-							RF_classifier 		= 'data',
+							RF_classifier 		= 'svm',
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
@@ -82,7 +82,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'shuffle'			: True
+																						'shuffle'			: False
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
