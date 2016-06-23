@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.svm import LinearSVC
 import pickle
 
 ex = reload(ex)
@@ -112,6 +111,7 @@ def hist(name, W, classes, images, labels, n_bins=10, RF_classifier='svm', save_
 	RFselec = np.zeros((n_runs,n_bins))
 
 	if RF_classifier=='svm':
+		#parameters: SVC(C=2.8, cache_size=200, class_weight=None, coef0=0.0, degree=3, gamma=0.0073, kernel='rbf', max_iter=-1, probability=True, random_state=None, shrinking=True, tol=0.001, verbose=True)
 		svm_mnist = pickle.load(open('helper/svm_mnist', 'r'))
 
 	for r in range(n_runs):

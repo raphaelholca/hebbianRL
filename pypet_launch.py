@@ -20,24 +20,24 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 			: 2.0,
+parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
-					'dNeut' 			: -0.0,
-					'dLow' 				: -2.0,
+					'dNeut' 			: -0.08,
+					'dLow' 				: -0.8,
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
 					'dMid_out'			: 0.0,#0.1,#
 					'dNeut_out'			: -0.0,#-0.1,#
 					'dLow_out'			: -2.0,#-0.5,#
-					'ach_1' 			: 15.0,
-					'ach_2' 			: 8.0,
+					'ach_1' 			: 16.0,
+					'ach_2' 			: 9.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_digit_4',
+					'name' 				: 'pypet_digit_9_noiseXplr_0-3',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 3,
@@ -59,7 +59,7 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.2,
+					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -70,16 +70,16 @@ parameter_dict = {	'dHigh' 			: 2.0,
 					'test_each_epi'		: False,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 973 #np.random.randint(1000)
+					'seed' 				: 962 #np.random.randint(1000)
 					}
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+0.000, +1.500, +3.000, +4.500, +6.000],
-					'dNeut'			: [-0.000, -0.025, -0.050, -0.075, -0.100],
+					'dHigh'			: [+0.000, +4.000, +8.000, +12.000, +16.000],
+					'dNeut'			: [-0.000, -0.400, -0.800, -1.200, -1.600],
 
 					'dMid'			: [-0.100, -0.010, +0.000, +0.010, +0.100], #[+0.000, +0.100, +0.200, +0.300, +0.400], #
-					'dLow'			: [-0.000, -0.500, -1.000, -1.500, -2.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
+					'dLow'			: [-0.000, -1.000, -2.000, -3.000, -4.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
 					# 'ach_1'			: [8.0, 10.0, 12.0, 14.0, 15.0, 16.0, 18.0], #[-0.25, 0.0, 0.5], #
 					# 'ach_2'		 	: [4.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0], #[-20.0, -10.0, 0.0, 10.0, 20.0], #
@@ -125,7 +125,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 20,
+						ncores 			= 14,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
