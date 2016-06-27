@@ -37,19 +37,19 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_digit_9_noiseXplr_0-3',
+					'name' 				: 'pypet_digit_11',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 20,
+					'n_epi_perc'		: 100,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-3,#5e-3,
-					'lr_out'			: 5e-7,#5e-7,
+					'lr_hid'			: 5e-3,
+					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
@@ -59,7 +59,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.3,
+					'noise_xplr_hid'	: 0.2,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -70,13 +70,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'test_each_epi'		: False,
 					'early_stop'		: False,
 					'verbose'			: False,
-					'seed' 				: 962 #np.random.randint(1000)
+					'seed' 				: 971 #np.random.randint(1000)
 					}
 
 """ explored parameters """
 explore_dict = {	
 					'dHigh'			: [+0.000, +4.000, +8.000, +12.000, +16.000],
-					'dNeut'			: [-0.000, -0.400, -0.800, -1.200, -1.600],
+					'dNeut'			: [-0.000, -0.250, -0.500, -1.000, -2.000],
 
 					'dMid'			: [-0.100, -0.010, +0.000, +0.010, +0.100], #[+0.000, +0.100, +0.200, +0.300, +0.400], #
 					'dLow'			: [-0.000, -1.000, -2.000, -3.000, -4.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
@@ -125,7 +125,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 14,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 

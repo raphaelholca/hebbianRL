@@ -301,7 +301,7 @@ def faceting(folder_path):
 	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
 	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
-	threshold = 0.005 #percent of difference in between max perf and other perf to be considered the same
+	threshold = 0.002 #percent of difference in between max perf and other perf to be considered the same
 	t_threshold = 0.10#0.05
 	vmin=0.8
 	vmax=0.97
