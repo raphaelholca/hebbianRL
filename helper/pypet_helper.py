@@ -267,7 +267,7 @@ def bar_plot(best_param_all, best_perf_all=None):
 	ax.tick_params(axis='both', which='major', direction='out', width=2, labelsize=18)
 	fig.set_tight_layout(True)
 
-	return fig
+	return fig, ax
 
 def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 	print "importing data..."
@@ -294,19 +294,31 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 
 	return perc_correct, np.array(perc_correct_all), np.array(stat_diff), param
 
-def faceting(folder_path):
+def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_threshold=0.10, vmin=0.8, vmax=0.97, fontsize_label=20, fontsize_tick=18, best_perf=True, name_pred='dMid'):
+	"""
+	Function to plot the results of gridsearch parameter exploration
+
+	Args:
+		folder_path (str): path to data file.
+		savefig (bool, optional): whether to save the figure to file (True) or to return the figure (False). Default: True
+		stat_test (bool, optional): whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent. Default: False
+		threshold (float, optional): percent of difference in between max perf and other perf to be considered the same. Default: 0.002
+		t_threshold (float, optional): threshold p-value for the t-test. Default: 0.10
+		vmin (float, optional): min value for plots. Default: 0.80
+		vmax (float, optional): max value for plots. Default: 0.97
+		fontsize_label (int, optional): font size of label. Default: 20
+		fontsize_tick (int, optional): font size of tick. Default: 18
+		best_perf (bool, optional): whether to write value of best perfomance on plot. Default: True
+		name_pred (str, optional): signifies which labels to use: '+pred', 'delta', or 'dMid'. Default: 'dMid'
+	"""
 	file_name = 'explore_perf'
 
-	# trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
-	trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
-
-	stat_test = False #whether to use statistical testing (True) or relative difference (False) to check if performance is equivalent
-	threshold = 0.002 #percent of difference in between max perf and other perf to be considered the same
-	t_threshold = 0.10#0.05
-	vmin=0.8
-	vmax=0.97
-	font_large = 20
-	font_small = 18
+	if name_pred=='+pred':
+		trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
+	elif name_pred=='delta':
+		trans = {'dMid': r'$\delta_{+/+}$', 'dHigh': r'$\delta_{-/+}$', 'dNeut': r'$\delta_{-/-}$', 'dLow': r'$\delta_{+/-}$'}
+	else:
+		trans = {'dMid': 'dMid', 'dHigh': 'dHigh', 'dNeut': 'dNeut', 'dLow': 'dLow'}
 
 	order_face = ['dNeut', 'dHigh', 'dMid', 'dLow'] #order is x1, y1, x2, y2
 
@@ -360,8 +372,8 @@ def faceting(folder_path):
 		perc_correct_struct[k] = param[k]
 
 	""" faceting plot """
-	fig, ax = plt.subplots(n_measures,n_measures, figsize=(8,7))#, sharex=True, sharey=True)
-	fig.patch.set_facecolor('white')
+	fig_faceting, ax_faceting = plt.subplots(n_measures,n_measures, figsize=(8,7))#, sharex=True, sharey=True)
+	fig_faceting.patch.set_facecolor('white')
 	for x2_i, x2 in enumerate(np.sort(np.unique(param[order_face[2]]))):
 		for y2_i, y2 in enumerate(np.sort(np.unique(param[order_face[3]]))[::-1]):
 			tmp_perc = np.copy(perc_correct_struct[np.logical_and(param[order_face[2]]==x2, param[order_face[3]]==y2)])
@@ -369,7 +381,7 @@ def faceting(folder_path):
 			tmp_perc = np.sort(tmp_perc, order=[order_face[1], order_face[0]])
 			tmp_perc_sqrd = np.reshape(tmp_perc, (n_measures, n_measures))
 			
-			ax[y2_i, x2_i].imshow(tmp_perc_sqrd['perf'], origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
+			ax_faceting[y2_i, x2_i].imshow(tmp_perc_sqrd['perf'], origin='lower', interpolation='nearest', cmap='CMRmap', vmin=vmin, vmax=vmax)
 
 			x1 = np.unique(param[order_face[0]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
 			y1 = np.unique(param[order_face[1]][np.logical_and(x2==param[order_face[2]] , y2==param[order_face[3]])])
@@ -381,7 +393,7 @@ def faceting(folder_path):
 			# 	y1_dots = []
 			# 	for x in param_greater_slope[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
 			# 	for y in param_greater_slope[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
-			# 	ax[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
+			# 	ax_faceting[y2_i, x2_i].scatter(x1_dots, y1_dots, marker ='s', s=60, c='w', edgecolor='k', linewidths=0.5)
 
 			# indicate all params that give performance within [threshold]% of best performance
 			if x2 in best_param_all[order_face[2]][y2==best_param_all[order_face[3]]]:
@@ -390,56 +402,60 @@ def faceting(folder_path):
 				y1_dots = []
 				for x in best_param_all[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
 				for y in best_param_all[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
-				ax[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k', edgecolor='r')
+				ax_faceting[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k', edgecolor='r')
 
 			# indicate params that give best performance
 			if x2==best_param[order_face[2]] and y2==best_param[order_face[3]]:
 				x1_dot = np.argwhere(best_param[order_face[0]] == x1)
 				y1_dot = np.argwhere(best_param[order_face[1]] == y1)
-				ax[y2_i, x2_i].scatter(x1_dot, y1_dot, s=100, c='r', marker='*')
+				ax_faceting[y2_i, x2_i].scatter(x1_dot, y1_dot, s=100, c='r', marker='*')
 
 			if y2_i==0: #ticks for top row
-				ax[y2_i,x2_i].set_yticks([])
-				ax[y2_i,x2_i].set_xticks([n_measures/2])
-				ax[y2_i,x2_i].xaxis.set_ticks_position('top')
-				ax[y2_i,x2_i].set_xticklabels([str(x2)], fontsize=font_small)
-				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
+				ax_faceting[y2_i,x2_i].set_yticks([])
+				ax_faceting[y2_i,x2_i].set_xticks([n_measures/2])
+				ax_faceting[y2_i,x2_i].xaxis.set_ticks_position('top')
+				ax_faceting[y2_i,x2_i].set_xticklabels([str(x2)], fontsize=fontsize_tick)
+				ax_faceting[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
 			if x2_i==n_measures-1: #ticks for right row
 				if y2_i!=0:
-					ax[y2_i,x2_i].set_xticks([])
-				ax[y2_i,x2_i].set_yticks([n_measures/2])
-				ax[y2_i,x2_i].yaxis.set_ticks_position('right')
-				ax[y2_i,x2_i].set_yticklabels([str(y2)], fontsize=font_small)
-				ax[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
+					ax_faceting[y2_i,x2_i].set_xticks([])
+				ax_faceting[y2_i,x2_i].set_yticks([n_measures/2])
+				ax_faceting[y2_i,x2_i].yaxis.set_ticks_position('right')
+				ax_faceting[y2_i,x2_i].set_yticklabels([str(y2)], fontsize=fontsize_tick)
+				ax_faceting[y2_i,x2_i].tick_params(axis='both', which='major', direction='out')
 			elif y2_i!=0:
-				ax[y2_i,x2_i].set_xticks([])
-				ax[y2_i,x2_i].set_yticks([])
+				ax_faceting[y2_i,x2_i].set_xticks([])
+				ax_faceting[y2_i,x2_i].set_yticks([])
 
-			ax[y2_i,x2_i].set_xlim(-.5, n_measures-.5)
-			ax[y2_i,x2_i].set_ylim(-.5, n_measures-.5)
+			ax_faceting[y2_i,x2_i].set_xlim(-.5, n_measures-.5)
+			ax_faceting[y2_i,x2_i].set_ylim(-.5, n_measures-.5)
 
-	ax[n_measures-1,0].set_xticks(range(n_measures)[::2])
-	ax[n_measures-1,0].xaxis.set_ticks_position('bottom')
-	# ax[n_measures-1,0].set_xticklabels(x1[::2], fontsize=font_small)
-	# ax[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)], fontsize=font_small)
-	ax[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)[::2]], fontsize=font_small)
+	ax_faceting[n_measures-1,0].set_xticks(range(n_measures)[::2])
+	ax_faceting[n_measures-1,0].xaxis.set_ticks_position('bottom')
+	# ax_faceting[n_measures-1,0].set_xticklabels(x1[::2], fontsize=fontsize_tick)
+	# ax_faceting[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)], fontsize=fontsize_tick)
+	ax_faceting[n_measures-1,0].set_xticklabels([i.replace('0.', '.') for i in map(str,x1)[::2]], fontsize=fontsize_tick)
 
-	ax[n_measures-1,0].set_yticks(range(n_measures)[::2])
-	ax[n_measures-1,0].yaxis.set_ticks_position('left')
-	ax[n_measures-1,0].set_yticklabels(y1[::2], fontsize=font_small)
-	ax[n_measures-1,0].tick_params(axis='both', which='major', direction='out')
+	ax_faceting[n_measures-1,0].set_yticks(range(n_measures)[::2])
+	ax_faceting[n_measures-1,0].yaxis.set_ticks_position('left')
+	ax_faceting[n_measures-1,0].set_yticklabels(y1[::2], fontsize=fontsize_tick)
+	ax_faceting[n_measures-1,0].tick_params(axis='both', which='major', direction='out')
 
-	ax[n_measures-1,0].set_xlabel(trans[order_face[0]], fontsize=font_large)
-	ax[n_measures-1,0].set_ylabel(trans[order_face[1]], fontsize=font_large)
+	ax_faceting[n_measures-1,0].set_xlabel(trans[order_face[0]], fontsize=fontsize_label)
+	ax_faceting[n_measures-1,0].set_ylabel(trans[order_face[1]], fontsize=fontsize_label)
 		
-	fig.text(0.5, 0.96, trans[order_face[2]], ha='center', fontsize=font_large)
-	fig.text(0.965, 0.5, trans[order_face[3]], va='center', rotation=90, fontsize=font_large)
-	fig.text(0.025, 0.975, 'best perf: '+best_perf_str, va='center', fontsize=font_small, weight='semibold')
+	fig_faceting.text(0.5, 0.96, trans[order_face[2]], ha='center', fontsize=fontsize_label)
+	fig_faceting.text(0.965, 0.5, trans[order_face[3]], va='center', rotation=90, fontsize=fontsize_label)
+	if best_perf:
+		fig_faceting.text(0.025, 0.975, 'best perf: '+best_perf_str, va='center', fontsize=fontsize_tick, weight='semibold')
 
-	fig.savefig(os.path.join(folder_path, 'faceting.pdf'), format='pdf')
+	fig_bar, ax_bar = bar_plot(best_param_all, best_perf_all)
 
-	fig_bar = bar_plot(best_param_all, best_perf_all)
-	fig_bar.savefig(os.path.join(folder_path, 'release_values.pdf'), format='pdf')
+	if savefig:
+		fig_faceting.savefig(os.path.join(folder_path, 'faceting.pdf'), format='pdf')
+		fig_bar.savefig(os.path.join(folder_path, 'release_values.pdf'), format='pdf')
+	else:
+		return fig_faceting, ax_faceting, fig_bar, ax_bar
 
 
 
