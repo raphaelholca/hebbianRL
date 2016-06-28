@@ -19,7 +19,7 @@ from array import array
 
 gr = reload(gr)
 
-def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy_data_params={}, load_test=True):
+def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy_data_params={}, load_test=True, normalize_im=True):
 	""" 
 	Load images training and testing images 
 
@@ -31,7 +31,6 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				classes (numpy array): classes of the MNIST dataset to load
 				dataset_train (str): name of the dataset to load for training the network; maybe 'test' or 'train'
 				dataset_path (str): path of the MNIST dataset
-				shuffle (bool): whether to mix train and test dataset and split them up again
 			gabor_params (dict): parameters for creating the gabor patches. These are:
 				n_train (int): number of training images
 				n_test (int): number of testing images
@@ -41,6 +40,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				rnd_phase (bool): whether to use random phase (True) or use set phase
 				im_size (int): side of the gabor filter image (total pixels = im_size * im_size)
 			load_test (bool, optional): whether to load test images (True) or not (False). Default: True
+			normalize_im (bool, optional): whether to normalize images. Default: True
 
 		returns:
 			(2D numpy array): training images
@@ -53,30 +53,29 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 	"""
 
 	if protocol == 'digit':
+		if digit_params=={}:
+			print "*** no digit parameters provided, falling back on default ***"
+			digit_params={	'dataset_train'	: 'train',
+							'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+							'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+							}
+
 		if verbose: print 'loading train images...'
 		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
 
-		if verbose: print 'loading test images...'
-		dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
-		images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
-
-		if digit_params['shuffle']:
-			n_images_train = len(labels)
-			images_all = np.append(images, images_test, axis=0)
-			labels_all = np.append(labels, labels_test)
-			images_rdn, labels_rdn = shuffle([images_all, labels_all])
-			# images_rdn, labels_rdn = shuffle([images_rdn, labels_rdn]) ##
-
-			images = images_rdn[:n_images_train, :]
-			labels = labels_rdn[:n_images_train]
-			images_test = images_rdn[n_images_train:, :]
-			labels_test = labels_rdn[n_images_train:]
-		
 		images, labels = even_labels(images, labels, digit_params['classes'])
-		images = normalize(images, A)
+		if normalize_im: images = normalize(images, A)
 
-		images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
-		images_test = normalize(images_test, A)
+		if load_test:
+			if verbose: print 'loading test images...'
+			dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
+			images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
+		
+			images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
+			if normalize_im: images_test = normalize(images_test, A)
+		else:
+			images_test = None
+			labels_test = None
 
 		images_task = None
 		labels_task = None
@@ -87,6 +86,18 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 		orientations_task = None
 
 	elif protocol == 'gabor':
+		if gabor_params=={}:
+			print "*** no gabor parameters provided, falling back on default ***"
+			gabor_params 	= {	'n_train' 			: 10000,
+								'n_test' 			: 10000,
+								'renew_trainset'	: False,
+								'target_ori' 		: 165.,
+								'excentricity' 		: 90.,#3.0,#1.5,
+								'noise_pixel'		: 0.0,
+								'rnd_phase' 		: False,
+								'rnd_freq' 			: False,
+								'im_size'			: 50
+								}
 		if verbose: print 'creating gabor training images...'
 		gabor_params['target_ori'] %= 180.
 
