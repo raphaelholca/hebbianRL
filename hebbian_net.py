@@ -128,7 +128,7 @@ class Network:
 		self.pypet 				= pypet
 		self.pypet_name 		= pypet_name if pypet_name != '' else name
 		self._early_stop_cond 	= []
-		self.ach_func 			= {'linear':ex.ach_linear, 'exponential':ex.ach_exponential, 'polynomial':ex.ach_polynomial, 'sigmoidal':ex.ach_sigmoidal, 'handmade':ex.ach_handmade, 'preset':'preset'}[ach_func]
+		self.ach_func 			= {'linear':ex.ach_linear, 'exponential':ex.ach_exponential, 'polynomial':ex.ach_polynomial, 'sigmoidal':ex.ach_sigmoidal, 'handmade':ex.ach_handmade, 'preset':'preset', 'labels':'labels', 'labels_reverse':'labels_reverse'}[ach_func]
 
 		np.random.seed(self.seed)
 		self._check_parameters()
@@ -176,11 +176,6 @@ class Network:
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 		self._saved_perf_size = [self.n_classes, self.ach_avg]
 		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		# self.ach_tracker = np.empty((self.n_classes,0)) ###
-		# self.ach_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		# self.dopa_release_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		# self.labels_tracker = np.ones((self.n_runs, self.n_images*self.n_epi_tot))*-5 ###
-		# self.perf_tracker = np.empty((self.n_classes,0)) ###
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -291,13 +286,6 @@ class Network:
 
 					#keep track of training performance
 					correct += np.sum(greedy==batch_labels)
-
-					#keep track of ACh release ###
-					# self.ach_tracker = np.append(self.ach_tracker, (self._ach_release_func(labels=self.classes))[:,np.newaxis], axis=1)
-					# self.ach_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = ach_hid
-					# self.dopa_release_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = dopa_hid
-					# self.labels_tracker[self._r, (self._e*self.n_images) + self._b*self.batch_size : (self._e*self.n_images) + self._b*self.batch_size + len(ach_hid)] = batch_labels
-					# self.perf_tracker = np.append(self.perf_tracker, (self._stim_perf_avg/np.mean(self._stim_perf_avg))[:,np.newaxis], axis=1)
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
@@ -683,8 +671,14 @@ class Network:
 				ach[labels==1] = 0.17 #0.17 #1.00 #1.0
 				ach[labels==4] = 1.82 #1.82 #10.64 #9.0
 				ach[labels==9] = 1.02 #1.02 #5.98 #4.0
-				# ach += np.clip((np.random.random(size=ach.shape[0])-0.5)*0.4*10., 0.,16.)
-				# ach += np.clip((np.random.random(size=ach.shape[0])-0.5)*0.4, 0.,2.)
+			elif self.ach_func=='labels': #uses the labels for the value of ACh; used for 'motivation' or 'relevance' aspect of ACh
+				ach = np.ones_like(labels, dtype=float)
+				for l in np.unique(labels):
+					ach[labels==l] = l+1
+			elif self.ach_func=='labels_reverse': #uses the reverse labels for the value of ACh; used for 'motivation' or 'relevance' aspect of ACh
+				ach = np.ones_like(labels, dtype=float)
+				for l in np.unique(labels):
+					ach[labels==l] = abs(l-(self.n_classes))
 			else:
 				#average over stimuli
 				if self._saved_perf_size[0]==self.n_images: 
