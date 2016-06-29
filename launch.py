@@ -112,6 +112,7 @@ an.assess(	net,
 			test_all_ori 	= False,
 			images 			= images_dict['train'],
 			labels 			= labels_dict['train']
+			save_net 		= True
 			)
 
 print '\nrun name:\t' + net.name
