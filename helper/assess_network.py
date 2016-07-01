@@ -13,7 +13,7 @@ import pickle
 ex = reload(ex)
 gr = reload(gr)
 
-def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False, plot_RFs=True, images=None, labels=None):
+def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=None, target=None, save_path='', test_all_ori=False, plot_RFs=True, images=None, labels=None, save_net=False):
 	"""
 	Assess network properties: plot weights, compute weight distribution, compute tuning curves, save data, etc.
 
@@ -26,6 +26,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 		sort (str, optional): sorting methods for weights when displaying. Valid value: None, 'class', 'tSNE'. Default: None
 		target (int, optional): target digit (to be used to color plots). Use None if not desired. Default: None
 		save_path (str, optional): path where to save data
+		save_net (bool, optional): whether to save net with assess data to file
 	"""
 
 	""" create saving directory """
@@ -40,7 +41,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 
 	""" assess receptive fields """
 	if net.protocol=='digit':
-		net.RF_info = hist(net.name, net.hid_W_trained, net.classes, images, labels, RF_classifier=net.RF_classifier, save_data=False, verbose=net.verbose, W_naive=net.hid_W_naive, log_weights=net.log_weights)
+		net.RF_info = hist(net, images, labels)
 	elif net.protocol=='gabor':
 		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.A, net.images_params, save_data=False, verbose=net.verbose, log_weights=net.log_weights)
 	elif net.protocol=='toy_data':
@@ -81,27 +82,32 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot performance at various orientations """
 	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
 
-def hist(name, W, classes, images, labels, n_bins=10, RF_classifier='svm', save_data=True, verbose=True, save_path='', W_naive=None, log_weights=False):
+	""" save net to file """
+	if save_net:
+		pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
+
+def hist(net, images, labels, n_bins=10):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
 	Args:
-		name (str): name of the network, used to save to file
-		W (numpy array): weight matrix from input to hidden layer; shape = (input x hidden)
-		classes (numpy array): all classes of the MNIST dataset used in the current run
+		net (Network object): Network to assess
 		images (numpy array): images of the MNIST dataset used for training
 		labels (numpy array): labels corresponding to the images of the MNIST dataset
 		n_bins (int, optional): number of bins in the histogram (i.e., number of classes)
-		RF_classifier (str, optional): RF_classifier to use on the RFs (can be 'data' or 'svm'). Default: 'data'
-		save_data (bool, optional): whether save data
-		verbose (bool, optional): whether to display text ouput
-		save_path (str, optional): path where to save data
 
 	return:
 		RF_info (dict): dictionary of data array relative to receptive field properties of the neurons
 	"""
 
-	if verbose: print "computing RF classes..."
+	if net.verbose: print "computing RF classes..."
+	if images is None:
+		images_dict, labels_dict, _, _ = ex.load_images(protocol=net.protocol, A=net.A, verbose=net.verbose, digit_params=net.images_params, load_test=False)
+		images = images_dict['train']
+		labels = labels_dict['train']
+
+	W = net.hid_W_trained
+	W_naive = net.hid_W_naive
 	n_runs = np.size(W,0)
 	n_neurons = np.size(W,2)
 
@@ -110,23 +116,23 @@ def hist(name, W, classes, images, labels, n_bins=10, RF_classifier='svm', save_
 	RFclass = np.zeros((n_runs,n_bins))
 	RFselec = np.zeros((n_runs,n_bins))
 
-	if RF_classifier=='svm':
+	if net.RF_classifier=='svm':
 		#parameters: SVC(C=2.8, cache_size=200, class_weight=None, coef0=0.0, degree=3, gamma=0.0073, kernel='rbf', max_iter=-1, probability=True, random_state=None, shrinking=True, tol=0.001, verbose=True)
 		svm_mnist = pickle.load(open('helper/svm_mnist', 'r'))
 
 	for r in range(n_runs):
-		if verbose: print 'run: ' + str(r+1)
-		if RF_classifier=='data':
-			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r], log_weights=log_weights),1)
+		if net.verbose: print 'run: ' + str(r+1)
+		if net.RF_classifier=='data':
+			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r], log_weights=net.log_weights),1)
 			if W_naive is not None: 
-				mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r], log_weights=log_weights),1)
+				mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r], log_weights=net.log_weights),1)
 			for n in range(n_neurons):
 				RFproba[int(r),n,:] = np.histogram(labels[mostActiv==n], bins=n_bins, range=(-0.5,9.5))[0]
 				RFproba[int(r),n,:]/= np.sum(RFproba[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
 				if W_naive is not None: 
 					RFproba_naive[int(r),n,:] = np.histogram(labels[mostActiv_naive==n], bins=n_bins, range=(-0.5,9.5))[0]
 					RFproba_naive[int(r),n,:]/= np.sum(RFproba_naive[int(r),n,:])+1e-20 #+1e-20 to avoid divide zero error
-		elif RF_classifier=='svm':
+		elif net.RF_classifier=='svm':
 			classif = svm_mnist.predict(W[r].T)
 			RFproba[int(r), np.arange(n_neurons), classif] = 1.0
 			if W_naive is not None: 

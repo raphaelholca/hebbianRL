@@ -148,10 +148,10 @@ def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelhol
         path = '/mnt/antares_raid/home/raphaelholca/Documents/data-sets/MNIST'
 
 
-    if dataset is "train":
+    if dataset == 'train':
         fname_img = os.path.join(path, 'train-images.idx3-ubyte')
         fname_lbl = os.path.join(path, 'train-labels.idx1-ubyte')
-    elif dataset is "test":
+    elif dataset == 'test':
         fname_img = os.path.join(path, 't10k-images.idx3-ubyte')
         fname_lbl = os.path.join(path, 't10k-labels.idx1-ubyte')
     else:
