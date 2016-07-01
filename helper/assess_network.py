@@ -326,10 +326,10 @@ def tSNE_sort(W):
 	returns:
 		(numpy array) : sorted weights
 	"""
-	import tsne
+	from helper.tsne import tsne
 	import numpy.ma as ma
 
-	Y = tsne.tsne(W.T, 2 , 50).T
+	Y = tsne(W.T, 2 , 50).T
 	side = int(np.sqrt(np.size(W,1)))
 	n_hid_neurons = np.size(W,1)
 

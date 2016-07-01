@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import helper.assess_network as an
 import grating as gr
+import plots.plot_vars as pv
 import hebbian_net
 import pypet
 import pickle
@@ -12,6 +13,7 @@ from scipy import stats
 
 an = reload(an)
 gr = reload(gr)
+pv = reload(pv)
 hebbian_net = reload(hebbian_net)
 
 def launch_exploration(traj, images_dict, labels_dict, images_params, save_path):
@@ -226,8 +228,6 @@ def bar_plot(best_param_all, best_perf_all=None):
 	num_colors = 20
 	color_list = np.array([plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)])
 	color_cycle_idx = np.arange(n_measures)%5 
-	grey_1 = (0.8, 0.8, 0.8, 1.0)
-	grey_2 = (0.3, 0.3, 0.3, 1.0)
 	trans = {'dMid': '+pred +rew', 'dHigh': '-pred +rew', 'dNeut': '-pred -rew', 'dLow': '+pred -rew'}
 
 	if normalize:
@@ -245,7 +245,7 @@ def bar_plot(best_param_all, best_perf_all=None):
 
 	for idx, param in enumerate(order_bar):
 		if order_value:
-			ax.bar(np.arange(n_measures)*width+idx, np.sort(best_param_all[param]+1e-10), width=width, edgecolor=grey_1, color=grey_1)
+			ax.bar(np.arange(n_measures)*width+idx, np.sort(best_param_all[param]+1e-10), width=width, edgecolor=pv.red_1, color=pv.red_1)
 		else:
 			ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
 
@@ -259,7 +259,7 @@ def bar_plot(best_param_all, best_perf_all=None):
 	# ax.hlines(0, 0, 4)
 
 	#y-axis
-	ax.set_ylabel('VTA value', fontsize=18)
+	ax.set_ylabel('DA value', fontsize=18)
 	ax.yaxis.set_ticks_position('left')
 	ax.spines['right'].set_visible(False)
 
@@ -323,6 +323,11 @@ def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_thre
 	order_face = ['dNeut', 'dHigh', 'dMid', 'dLow'] #order is x1, y1, x2, y2
 
 	perc_correct, perc_correct_all, stat_diff, param = import_traj(folder_path, file_name, order_face)
+
+	###
+	perc_correct = perc_correct_all[:,2]
+	perc_correct_all = perc_correct_all[:,2][:,np.newaxis]
+	###
 
 	#find slopes that are significanly different after as compared to before
 	stat_diff[len(stat_diff)/2]=-1.0 #ignores middle bin

@@ -62,7 +62,6 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 		if verbose: print 'loading train images...'
 		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-
 		images, labels = even_labels(images, labels, digit_params['classes'])
 		if normalize_im: images = normalize(images, A)
 

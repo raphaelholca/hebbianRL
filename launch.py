@@ -111,7 +111,7 @@ an.assess(	net,
 			target 			= None,
 			test_all_ori 	= False,
 			images 			= images_dict['train'],
-			labels 			= labels_dict['train']
+			labels 			= labels_dict['train'],
 			save_net 		= True
 			)
 
