@@ -16,6 +16,7 @@ import time
 import datetime
 import struct
 from array import array
+from pdb import set_trace
 
 gr = reload(gr)
 
@@ -228,7 +229,7 @@ def checkdir(name, protocol, overwrite=True):
 
 	return name
 
-def shuffle_datasets(images_dict, labels_dict):
+def shuffle_datasets(images_dict, labels_dict, idx_shuffle=None):
 	""" shuffle test & train datasets """
 
 	#concatenate images and labels
@@ -236,17 +237,19 @@ def shuffle_datasets(images_dict, labels_dict):
 	labels_conca = np.concatenate((labels_dict['train'], labels_dict['test']), axis=0)
 
 	#shuffle images and labels
-	shuffle_idx = np.arange(len(labels_conca))
-	np.random.shuffle(shuffle_idx)
-	images_conca = images_conca[shuffle_idx,:]
-	labels_conca = labels_conca[shuffle_idx]
+	if idx_shuffle is None:
+		idx_shuffle = np.arange(len(labels_conca))
+		np.random.shuffle(idx_shuffle)
+	images_conca = images_conca[idx_shuffle,:]
+	labels_conca = labels_conca[idx_shuffle]
 
 	#split concatenated images and labels into train and test datasets
 	split_idx = len(labels_dict['train'])
 	images_train, images_test = images_conca[:split_idx,:], images_conca[split_idx:,:]
 	labels_train, labels_test = labels_conca[:split_idx], labels_conca[split_idx:]
+	idx_train, idx_test = idx_shuffle[:split_idx], idx_shuffle[split_idx:]
 
-	return images_train, images_test, labels_train, labels_test
+	return images_train, images_test, labels_train, labels_test, idx_train, idx_test
 
 def shuffle(arrays):
 	"""
@@ -326,7 +329,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'test_each_epi', 'early_stop', 'verbose', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -577,6 +580,11 @@ def exploration(epsilon_xplr, batch_size):
 	explorative_trials[explorative_proba < epsilon_xplr] = 1
 
 	return explorative_trials
+
+def weighted_sum(array_to_sum, weigths):
+	norma = np.nansum(np.ceil(np.nanmean(array_to_sum,0))*weigths) #normalize weights; solves problem if array_to_sum is not full (i.e., contains NaN)
+	result = np.nansum(array_to_sum*weigths, axis=1)
+	return result/norma
 
 def generate_toy_data(protocol, A, toy_data_params):
 	""" generate 2D and 3D toy data to test model """

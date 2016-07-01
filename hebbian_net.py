@@ -14,6 +14,7 @@ import time
 import pickle
 import scipy.special
 import os
+from pdb import set_trace
 
 ex = reload(ex)
 gr = reload(gr)
@@ -23,7 +24,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -45,6 +46,7 @@ class Network:
 				ach_4 (float, optional): value of the fourth parameter of the release function for acetylcholine. Default: 0.0
 				ach_func (str, optional): release function for acetylcholine. Default: 'sigmoidal'
 				ach_avg (int, optional): number of episodes to average over for moving averag of performance. Default: 20 
+				ach_stim (bool, optional): whether to average stimulus difficulty over stimuli (True) or over classes (False). Default: False 
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -90,6 +92,7 @@ class Network:
 		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
 		self.ach_values 		= {'ach_1': ach_1, 'ach_2': ach_2, 'ach_3': ach_3, 'ach_4': ach_4} 
 		self.ach_avg 			= ach_avg
+		self.ach_stim 			= ach_stim
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -156,7 +159,7 @@ class Network:
 			print "***** training using block feedback *****"
 
 		self.images_params = images_params
-		self.n_images = np.size(images_train,0)
+		self.n_images = images_train.shape[0]
 		self.classes = np.sort(np.unique(labels_train))
 		self.n_classes = len(self.classes)
 		self.n_out_neurons = len(self.classes)
@@ -166,6 +169,8 @@ class Network:
 		self.hid_W_trained = np.zeros((self.n_runs, self.n_inp_neurons, self.n_hid_neurons))
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
+		self._idx_shuffle = None
+		self._idx_shuffle_saved = np.zeros((self.n_runs, images_train.shape[0] + images_test.shape[0]), dtype=int)
 		self.CM_all = np.zeros((self.n_runs, self.n_classes, self.n_classes))
 		self.perf_all = np.zeros(self.n_runs)
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
@@ -174,8 +179,9 @@ class Network:
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_dopa'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
-		self._saved_perf_size = [self.n_classes, self.ach_avg]
+		self._saved_perf_size = [self.n_images, self.ach_avg] if self.ach_stim else [self.n_classes, self.ach_avg]
 		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
+		self.stim_perf_labels_saved = np.empty((self.n_runs, self._saved_perf_size[0]))*np.nan
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -191,7 +197,7 @@ class Network:
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='digit' and self.shuffle_datasets: #shuffle train and test datasets for each independent run
-				images_train, images_test, labels_train, labels_test = ex.shuffle_datasets(images_dict, labels_dict)
+				images_train, images_test, labels_train, labels_test, idx_train, idx_test = ex.shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
 			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
@@ -227,7 +233,10 @@ class Network:
 					else: 
 						images_rndm, labels_rndm = ex.shuffle([images_task, labels_task])
 				else:
-					images_rndm, labels_rndm = ex.shuffle([images_train, labels_train])
+					if not self.ach_stim:
+						images_rndm, labels_rndm = ex.shuffle([images_train, labels_train])
+					else:
+						images_rndm, labels_rndm, self._stim_perf, idx_train = ex.shuffle([images_train, labels_train, self._stim_perf, idx_train])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -307,6 +316,8 @@ class Network:
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
+			self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
+			self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
@@ -435,10 +446,10 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
+		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		self._stim_perf_weights = (np.arange(saved_net.ach_avg, dtype=float)+1)[::-1]
-		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
-		self._stim_perf_avg = np.nansum(self._stim_perf*self._stim_perf_weights, axis=1)
+		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 		f_net.close()
 
 	def _init_weights_random(self):
@@ -459,7 +470,6 @@ class Network:
 		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
 		self._stim_perf[:,1:] *= np.nan
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
-		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
 
 	def _init_weights_input(self, images):
@@ -486,7 +496,6 @@ class Network:
 		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
 		self._stim_perf[:,1:] *= np.nan
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
-		self._stim_perf_weights /= np.sum(self._stim_perf_weights)
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
 
 	def _check_parameters(self):
@@ -681,6 +690,7 @@ class Network:
 					ach[labels==l] = abs(l-(self.n_classes))
 			else:
 				#average over stimuli
+				set_trace()
 				if self._saved_perf_size[0]==self.n_images: 
 					perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
 					rel_perf = perf_avg/np.mean(self._stim_perf_avg)
@@ -706,7 +716,7 @@ class Network:
 				self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
 		else:
 			raise ValueError('save performance matrix of wrong shape')
-		self._stim_perf_avg = np.nansum(self._stim_perf*self._stim_perf_weights, axis=1)
+		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 
 	def _learning_step(self, pre_neurons, post_neurons, W, lr, dopa=None, ach=None, numba=True):
 		"""
