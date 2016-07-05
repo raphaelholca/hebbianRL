@@ -179,9 +179,9 @@ class Network:
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_dopa'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
-		self._saved_perf_size = [self.n_images, self.ach_avg] if self.ach_stim else [self.n_classes, self.ach_avg]
+		self._saved_perf_size = (self.n_images, self.ach_avg) if self.ach_stim else (self.n_classes, self.ach_avg)
 		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		self.stim_perf_labels_saved = np.empty((self.n_runs, self._saved_perf_size[0]))*np.nan
+		self.stim_perf_labels_saved = np.empty((self.n_runs, self.n_images))*np.nan
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -209,6 +209,7 @@ class Network:
 					gaussian_noise = np.zeros(np.shape(images_train))
 			elif self.protocol=='toy_data' and not self.pypet:
 				an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.name, 'result_init'))
+			images_rndm, labels_rndm = images_train, labels_train
 
 			""" train network """
 			for e in range(self.n_epi_tot):
@@ -224,7 +225,7 @@ class Network:
 					if self.verbose: print '----------end fine-----------'
 				if e == self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.verbose: 
 					print '----------end dopa-----------'
-
+				
 				#shuffle or create new input images
 				if self.protocol=='gabor' and e >= self.n_epi_crit:
 					if self.images_params['renew_trainset']: #create new training images
@@ -236,7 +237,7 @@ class Network:
 					if not self.ach_stim:
 						images_rndm, labels_rndm = ex.shuffle([images_train, labels_train])
 					else:
-						images_rndm, labels_rndm, self._stim_perf, idx_train = ex.shuffle([images_train, labels_train, self._stim_perf, idx_train])
+						images_rndm, labels_rndm, self._stim_perf, idx_train = ex.shuffle([images_rndm, labels_rndm, self._stim_perf, idx_train])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -316,7 +317,7 @@ class Network:
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
-			self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
+			self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm) if 'labels_rndm' in locals() else None
 			self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
@@ -448,6 +449,8 @@ class Network:
 		self.out_W = np.copy(saved_out_W)
 		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
+			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
 		self._stim_perf_weights = (np.arange(saved_net.ach_avg, dtype=float)+1)[::-1]
 		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 		f_net.close()
@@ -467,8 +470,7 @@ class Network:
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
 	
-		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
-		self._stim_perf[:,1:] *= np.nan
+		self._stim_perf = np.ones(self._saved_perf_size)*np.nan
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
 
@@ -493,8 +495,7 @@ class Network:
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 
-		self._stim_perf = np.ones((self._saved_perf_size[0], self._saved_perf_size[1]))
-		self._stim_perf[:,1:] *= np.nan
+		self._stim_perf = np.ones(self._saved_perf_size)*np.nan
 		self._stim_perf_weights = (np.arange(self._saved_perf_size[1], dtype=float)+1)[::-1]
 		self._stim_perf_avg = np.ones(self._saved_perf_size[0])
 
@@ -690,7 +691,6 @@ class Network:
 					ach[labels==l] = abs(l-(self.n_classes))
 			else:
 				#average over stimuli
-				set_trace()
 				if self._saved_perf_size[0]==self.n_images: 
 					perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
 					rel_perf = perf_avg/np.mean(self._stim_perf_avg)
@@ -880,7 +880,7 @@ class Network:
 		""" check out_W assignment after each episode """
 		if RFproba is None:
 			if self.protocol=='digit':
-				RFproba = an.hist(self.name, self.hid_W[np.newaxis,:,:], self.classes, images, labels, RF_classifier=self.RF_classifier, save_data=False, verbose=False, log_weights=self.log_weights)['RFproba']
+				RFproba = an.hist(self, images, labels, verbose=False)['RFproba']
 			elif self.protocol=='gabor':
 				_, pref_ori = gr.tuning_curves(self.hid_W[np.newaxis,:,:], self.t_hid, self.A, self.images_params, self.name, curve_method='no_softmax', plot=False, log_weights=self.log_weights)
 				RFproba = np.zeros((1, self.n_hid_neurons, self.n_out_neurons), dtype=int)

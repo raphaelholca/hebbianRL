@@ -86,7 +86,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	if save_net:
 		pickle.dump(net, open(os.path.join(save_path, 'Network'), 'w'))
 
-def hist(net, images, labels, n_bins=10):
+def hist(net, images, labels, n_bins=10, verbose=None):
 	"""
 	computes the class of the weight (RF) of each neuron. Can be used to compute the selectivity index of a neuron. Selectivity is measured as # of preferred stimulus example that activate the neuron / # all stimulus example that activate the neuron
 
@@ -100,9 +100,11 @@ def hist(net, images, labels, n_bins=10):
 		RF_info (dict): dictionary of data array relative to receptive field properties of the neurons
 	"""
 
-	if net.verbose: print "computing RF classes..."
+	verbose = net.verbose if verbose is None else verbose
+
+	if verbose: print "computing RF classes..."
 	if images is None:
-		images_dict, labels_dict, _, _ = ex.load_images(protocol=net.protocol, A=net.A, verbose=net.verbose, digit_params=net.images_params, load_test=False)
+		images_dict, labels_dict, _, _ = ex.load_images(protocol=net.protocol, A=net.A, verbose=verbose, digit_params=net.images_params, load_test=False)
 		images = images_dict['train']
 		labels = labels_dict['train']
 
@@ -121,7 +123,7 @@ def hist(net, images, labels, n_bins=10):
 		svm_mnist = pickle.load(open('helper/svm_mnist', 'r'))
 
 	for r in range(n_runs):
-		if net.verbose: print 'run: ' + str(r+1)
+		if verbose: print 'run: ' + str(r+1)
 		if net.RF_classifier=='data':
 			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r], log_weights=net.log_weights),1)
 			if W_naive is not None: 
