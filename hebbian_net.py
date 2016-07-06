@@ -180,8 +180,9 @@ class Network:
 		self._train_class_layer = True if self.classifier=='neural_dopa'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 		self._saved_perf_size = (self.n_images, self.ach_avg) if self.ach_stim else (self.n_classes, self.ach_avg)
-		self.stim_perf_saved = np.empty((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		self.stim_perf_labels_saved = np.empty((self.n_runs, self.n_images))*np.nan
+		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
+		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan
+		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -235,9 +236,9 @@ class Network:
 						images_rndm, labels_rndm = ex.shuffle([images_task, labels_task])
 				else:
 					if not self.ach_stim:
-						images_rndm, labels_rndm = ex.shuffle([images_train, labels_train])
+						images_rndm, labels_rndm, self.ach_tracker = ex.shuffle([images_rndm, labels_rndm, self.ach_tracker])
 					else:
-						images_rndm, labels_rndm, self._stim_perf, idx_train = ex.shuffle([images_rndm, labels_rndm, self._stim_perf, idx_train])
+						images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker = ex.shuffle([images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker])
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
@@ -296,6 +297,10 @@ class Network:
 
 					#keep track of training performance
 					correct += np.sum(greedy==batch_labels)
+
+					#track ACh release
+					self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
+
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
@@ -675,6 +680,7 @@ class Network:
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
 		# if self.ach_release: #ACh starts at crit	
+			self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 
 			if self.ach_func=='preset': #uses preset values (only valid of 1-4-9)
 				ach = np.ones_like(labels, dtype=float)
@@ -716,7 +722,6 @@ class Network:
 				self._stim_perf[c,0] = np.mean(stim_perf_epi[labels==self.classes[c]])
 		else:
 			raise ValueError('save performance matrix of wrong shape')
-		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 
 	def _learning_step(self, pre_neurons, post_neurons, W, lr, dopa=None, ach=None, numba=True):
 		"""
