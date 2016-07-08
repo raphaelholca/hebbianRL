@@ -78,7 +78,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			else: W_act_pass=None
 			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)
 		if net.images_params['dataset_train']=='2D':
-			plot_2D(net, images, labels)
+			plot_2D(net, images, labels, save_path=save_path)
 		
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
