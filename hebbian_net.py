@@ -299,7 +299,7 @@ class Network:
 					correct += np.sum(greedy==batch_labels)
 
 					#track ACh release
-					self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
+					# self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
 
 
 				#assess performance
