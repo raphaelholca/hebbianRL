@@ -299,7 +299,7 @@ class Network:
 					correct += np.sum(greedy==batch_labels)
 
 					#track ACh release
-					self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
+					# self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
 
 
 				#assess performance
@@ -462,15 +462,16 @@ class Network:
 
 	def _init_weights_random(self):
 		""" initialize weights of the network randomly or by loading saved weights from file """
-		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
-		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
+		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons)) + 1.0
+		# self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 
 		###
-		# self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
+		self.hid_W = np.random.random_sample(size=(self.n_inp_neurons, self.n_hid_neurons))
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A).T
-		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
+		self.hid_W = ex.normalize(self.hid_W.T, self.A*1.1).T
 		# self.hid_W = ex.normalize(self.hid_W.T, self.A*1.5*self.A/1e3).T
 
+		self.out_W = (np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))/1000+1.0)/self.n_hid_neurons
 		# self.out_W = np.random.random_sample(size=(self.n_hid_neurons, self.n_out_neurons))
 		# self.out_W *= 1./np.sum(self.out_W,0) * 2.0
 		###
