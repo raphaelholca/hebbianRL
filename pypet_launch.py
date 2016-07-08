@@ -36,15 +36,15 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
-					'ach_stim' 			: True,
+					'ach_stim' 			: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_avgStim_2',
+					'name' 				: 'pypet_2D_ACh',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 90,
+					'n_epi_perc'		: 50,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
@@ -54,9 +54,9 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
-					'n_hid_neurons'		: 49,#16,#49,#
+					'n_hid_neurons'		: 15,#49,#
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_lr_5e-3_ach_stim_3runs',
+					'init_file'			: 'digit_pretrain_2D',
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -76,21 +76,21 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+0.000, +4.000, +8.000, +12.000, +16.000],
-					# 'dNeut'			: [-0.000, -0.250, -0.500, -1.000, -2.000],
+					# 'dHigh'			: [+0.000, +2.000, +4.000, +6.000, +8.000],
+					# 'dNeut'			: [-0.000, -0.100, -0.200, -0.500, -1.000],
 
 					# 'dMid'			: [-0.100, -0.010, +0.000, +0.010, +0.100], #[+0.000, +0.100, +0.200, +0.300, +0.400], #
-					# 'dLow'			: [-0.000, -1.000, -2.000, -3.000, -4.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
+					# 'dLow'			: [-0.000, -0.500, -1.000, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
-					'ach_1'			: [-5.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 5.0],
-					# 'ach_2'		 	: [4.0, 8.0, 12.0, 16.0],
+					'ach_1'			: [0.0, 0.5, 1.0, 2.0, 5.0],
+					'ach_2'		 	: [4.0, 8.0, 12.0, 16.0],
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
-																	digit_params 	= {	'dataset_train'		: 'train',
+																	digit_params 	= {	'dataset_train'		: '2D',
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
