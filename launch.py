@@ -14,6 +14,7 @@ import datetime
 import hebbian_net
 import helper.external as ex
 import helper.assess_network as an
+from pdb import set_trace
 
 hebbian_net = reload(hebbian_net)
 ex = reload(ex)
@@ -30,7 +31,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							dMid_out			= 0.2,
 							dNeut_out			= -0.3,
 							dLow_out			= -0.5,
-							ach_1 				= 40.0, #16.0, ##<---
+							ach_1 				= 16.0,
 							ach_2 				= 9.0,
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
@@ -38,9 +39,9 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							ach_avg 			= 20,
 							ach_stim 			= False,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= '01358_ACh',
-							dopa_release 		= False, 
-							ach_release			= True, 
+							name 				= 'test_im_2D_DA',
+							dopa_release 		= True, 
+							ach_release			= False, 
 							n_runs 				= 1,
 							n_epi_crit			= 20,
 							n_epi_fine 			= 0,
@@ -78,9 +79,15 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 																	A				= net.A,
 																	verbose 		= net.verbose,
+<<<<<<< HEAD
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
 																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+=======
+																	digit_params 	= {	'dataset_train'		: '2D',
+																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+>>>>>>> da1e3eb759ac758c60f54c289262cc7e8a79f5ba
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,

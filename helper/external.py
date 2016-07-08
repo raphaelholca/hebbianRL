@@ -62,20 +62,44 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 							}
 
 		if verbose: print 'loading train images...'
-		images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-		images, labels = even_labels(images, labels, digit_params['classes'])
-		if normalize_im: images = normalize(images, A)
+		if digit_params['dataset_train']=='2D': #load saved 2-D images
+			data = pickle.load(open('/Users/raphaelholca/Documents/data-sets/MNIST_2D/data_2D', 'r'))
+			images_all = data['images']
+			labels_all = data['labels']
+			
+			#pick classes
+			class_mask = np.zeros(len(labels_all),dtype=bool)
+			for c in digit_params['classes']:
+				class_mask = np.logical_or(class_mask, labels_all==c)
+			images_all=images_all[class_mask]
+			labels_all=labels_all[class_mask]
 
-		if load_test:
-			if verbose: print 'loading test images...'
-			dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
-			images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
-		
-			images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
-			if normalize_im: images_test = normalize(images_test, A)
+			#normalize and even out dataset
+			if normalize_im: images_all = normalize(images_all, A)
+			images_all, labels_all = even_labels(images_all, labels_all, digit_params['classes'])
+			
+			#split dataset in train and test sets
+			images_all, labels_all = shuffle([images_all, labels_all])
+			idx_split = len(labels_all)*9/10
+			images = images_all[:idx_split]
+			labels = labels_all[:idx_split]
+			images_test = images_all[idx_split:]
+			labels_test = labels_all[idx_split:]
 		else:
-			images_test = None
-			labels_test = None
+			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
+			images, labels = even_labels(images, labels, digit_params['classes'])
+			if normalize_im: images = normalize(images, A)
+
+			if load_test:
+				if verbose: print 'loading test images...'
+				dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
+				images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
+			
+				images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
+				if normalize_im: images_test = normalize(images_test, A)
+			else:
+				images_test = None
+				labels_test = None
 
 		images_task = None
 		labels_task = None

@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import KDTree
 import pickle
+from pdb import set_trace
 
 ex = reload(ex)
 gr = reload(gr)
@@ -71,10 +73,12 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			correct_out_W = 0.
 
 		""" plot weights """
-		if plot_RFs:
+		if plot_RFs and not net.images_params['dataset_train']=='2D':
 			if show_W_act: W_act_pass=net.out_W_trained
 			else: W_act_pass=None
-			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)	
+			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)
+		if net.images_params['dataset_train']=='2D':
+			plot_2D(net, images, labels)
 		
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
@@ -124,7 +128,7 @@ def hist(net, images, labels, n_bins=10, verbose=None):
 
 	for r in range(n_runs):
 		if verbose: print 'run: ' + str(r+1)
-		if net.RF_classifier=='data':
+		if net.RF_classifier=='data' or net.images_params['dataset_train']=='2D':
 			mostActiv = np.argmax(ex.propagate_layerwise(images, W[r], log_weights=net.log_weights),1)
 			if W_naive is not None: 
 				mostActiv_naive = np.argmax(ex.propagate_layerwise(images, W_naive[r], log_weights=net.log_weights),1)
@@ -176,7 +180,65 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		fig = plot_hist(h_mean, map(str, map(int, bin_mid)), h_err=h_err)
 		
 		plt.savefig(os.path.join(save_path, net.name+'_RFhist.pdf'))
-		plt.close(fig)
+		plt.close()
+
+def plot_2D(net, images, labels, save_path=''):
+	images = images[:,:2]
+	W = net.hid_W.T[:,:2]
+	W_L2 = net.out_W
+	classes = net.classes
+	
+	X_min, X_max = np.min(images, 0), np.max(images, 0)
+	images = (images - X_min) / (X_max - X_min)
+	W = (W - X_min) / (X_max - X_min)
+	c_list = np.array([plt.get_cmap('Paired')(1.*i/10) for i in range(10)])
+	
+	if save_path=='': save_path=os.path.join('.', 'output', net.name)
+
+	plt.figure()
+	ax = plt.subplot(111)
+	
+	""" plot stimuli """
+	ax.scatter(images[:,0], images[:,1], c=c_list[labels], edgecolors=c_list[labels])
+	# for i in range(n_images):
+	#     ax.text(images[i, 0], images[i, 1], str(labels[i]), color=plt.cm.Paired(labels[i] / 10.), fontdict={'weight': 'bold', 'size': 9})
+	
+	""" plot weights """
+	ax.scatter(W[:,0], W[:,1], marker='x', s=100, c='k')
+
+	# """ plot weights images """
+	# shown_images = np.array([[1., 1.]])  # just something big
+	# for i in range(W.shape[0]):
+	#     imagebox = offsetbox.AnnotationBbox(
+	#         offsetbox.OffsetImage(W[i], cmap=plt.cm.gray_r),
+	#         W[i],
+	#         frameon=False, #frame is too large; frame is added in im_reduce
+	#         pad=0.1)
+	#     ax.add_artist(imagebox)
+	
+	""" plot decision boundary """
+	#create mesh grid
+	h = 0.01
+	x_min, x_max = images[:, 0].min()-0.1, images[:, 0].max()+0.1
+	y_min, y_max = images[:, 1].min()-0.1, images[:, 1].max()+0.1
+	xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+	mesh_points = np.c_[xx.ravel(), yy.ravel()]
+	#find class of nearest weight of mesh points
+	closest_neuron = KDTree(W).query(mesh_points)[1]
+	closest_class = classes[np.argmax(W_L2[closest_neuron,:],1)]
+	ax.contourf(xx, yy, closest_class.reshape(xx.shape), levels=np.arange(10)+0.5, alpha=0.2, cmap=plt.cm.Paired)
+
+	""" compute classification performance """
+	classif_closest_neuron = KDTree(W).query(images)[1]
+	classif = classes[np.argmax(W_L2[classif_closest_neuron,:],1)]
+	perc_correct = float(np.sum(classif==labels))/len(labels)
+
+	""" plot variables """
+	plt.xticks([]), plt.yticks([])
+	plt.xlim(-0.1,1.1)
+	plt.ylim(-0.1,1.1)
+	plt.savefig(os.path.join(save_path, net.name+'data_2D.png'))
+	plt.close()
 
 def hist_gabor(name, hid_W_naive, hid_W_trained, t, A, images_params, save_data, verbose, save_path='', curve_method='basic', log_weights=False):
 	""" Computes the distribution of orientation preference of neurons in the network. """
