@@ -63,7 +63,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 		if verbose: print 'loading train images...'
 		if digit_params['dataset_train']=='2D': #load saved 2-D images
-			data = pickle.load(open('/Users/raphaelholca/Documents/data-sets/MNIST_2D/data_2D', 'r'))
+			data = pickle.load(open('../data-sets/MNIST_2D/data_2D', 'r'))
 			images_all = data['images']
 			labels_all = data['labels']
 			
