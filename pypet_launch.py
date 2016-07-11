@@ -38,13 +38,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_avg' 			: 20,
 					'ach_stim' 			: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_2D_ACh_3',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 1,
+					'name' 				: 'pypet_2D_DA_6_xplr_0-2',
+					'dopa_release' 		: True, 
+					'ach_release'		: False, 
+					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 100,
+					'n_epi_perc'		: 300,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,#0.1,#
 					't_out'				: 0.1,
@@ -54,13 +54,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
-					'n_hid_neurons'		: 25,#49,#
+					'n_hid_neurons'		: 15,#49,#
 					'weight_init' 		: 'input',
 					'init_file'			: 'digit_pretrain_2D',
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.3, #0.3 #0.2
+					'noise_xplr_hid'	: 0.2, #0.3 #0.2
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -76,13 +76,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+0.500, +1.000, +1.500],
-					# 'dNeut'			: [-0.010, +0.000, +0.010],
+					'dHigh'			: [+1.500, +2.000, +2.500],
+					'dNeut'			: [-0.010, +0.000, +0.010],
 
-					# 'dMid'			: [+0.010, +0.100, +0.500], #[+0.000, +0.100, +0.200, +0.300, +0.400], #
-					# 'dLow'			: [-0.500, -1.000, -1.500] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
+					'dMid'			: [+0.010, +0.100, +0.500], #[+0.200, +0.300, +0.400, +0.500, +0.600], #
+					'dLow'			: [-1.500, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
-					'ach_1'			: [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 80.0],
+					# 'ach_1'			: [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 80.0],
 					# 'ach_2'		 	: [4.0, 8.0, 12.0, 16.0],
 				}
 
