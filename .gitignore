@@ -6,6 +6,7 @@ logs/*
 output/*
 helper/SVM-MNIST*
 helper/tsne.py
+helper/._tsne.py
 helper/.DS_Store
 weights_bp
 write-up/*

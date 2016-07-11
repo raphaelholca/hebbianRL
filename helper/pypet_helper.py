@@ -324,11 +324,6 @@ def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_thre
 
 	perc_correct, perc_correct_all, stat_diff, param = import_traj(folder_path, file_name, order_face)
 
-	###
-	perc_correct = perc_correct_all[:,2]
-	perc_correct_all = perc_correct_all[:,2][:,np.newaxis]
-	###
-
 	#find slopes that are significanly different after as compared to before
 	stat_diff[len(stat_diff)/2]=-1.0 #ignores middle bin
 	stat_diff_bool = np.zeros(np.size(stat_diff,0), dtype=bool)

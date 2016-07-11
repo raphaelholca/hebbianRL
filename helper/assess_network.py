@@ -42,7 +42,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 		os.makedirs(os.path.join(save_path, 'TCs'))
 
 	""" assess receptive fields """
-	if net.protocol=='digit':
+	if net.protocol=='digit' and images is not None:
 		net.RF_info = hist(net, images, labels)
 	elif net.protocol=='gabor':
 		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.A, net.images_params, save_data=False, verbose=net.verbose, log_weights=net.log_weights)
@@ -78,7 +78,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			else: W_act_pass=None
 			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)
 		if net.images_params['dataset_train']=='2D':
-			plot_2D(net, images, labels)
+			plot_2D(net, images, labels, save_path=save_path)
 		
 	""" plot performance progression """
 	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
@@ -183,62 +183,70 @@ def plot_RF_info(net, save_path='', curve_method='basic', slope_binned=False):
 		plt.close()
 
 def plot_2D(net, images, labels, save_path=''):
+	if net.verbose: print "\nploting RFs..."
 	images = images[:,:2]
-	W = net.hid_W.T[:,:2]
-	W_L2 = net.out_W
 	classes = net.classes
 	
 	X_min, X_max = np.min(images, 0), np.max(images, 0)
 	images = (images - X_min) / (X_max - X_min)
-	W = (W - X_min) / (X_max - X_min)
 	c_list = np.array([plt.get_cmap('Paired')(1.*i/10) for i in range(10)])
 	
 	if save_path=='': save_path=os.path.join('.', 'output', net.name)
+	if not os.path.exists(os.path.join(save_path, 'RFs')):
+		os.makedirs(os.path.join(save_path, 'RFs'))
 
-	plt.figure()
-	ax = plt.subplot(111)
-	
-	""" plot stimuli """
-	ax.scatter(images[:,0], images[:,1], c=c_list[labels], edgecolors=c_list[labels])
-	# for i in range(n_images):
-	#     ax.text(images[i, 0], images[i, 1], str(labels[i]), color=plt.cm.Paired(labels[i] / 10.), fontdict={'weight': 'bold', 'size': 9})
-	
-	""" plot weights """
-	ax.scatter(W[:,0], W[:,1], marker='x', s=100, c='k')
+	for r in range(net.n_runs):
+		if net.verbose: print 'run: ' + str(r+1)
+		W = net.hid_W_trained[r,:2,:].T
+		W_L2 = net.out_W_trained[r]
+		# W = net.hid_W_naive[r,:2,:].T #<--change commenting to plot naive weights
+		# W_L2 = net.out_W_naive[r]
+		W = (W - X_min) / (X_max - X_min)
 
-	# """ plot weights images """
-	# shown_images = np.array([[1., 1.]])  # just something big
-	# for i in range(W.shape[0]):
-	#     imagebox = offsetbox.AnnotationBbox(
-	#         offsetbox.OffsetImage(W[i], cmap=plt.cm.gray_r),
-	#         W[i],
-	#         frameon=False, #frame is too large; frame is added in im_reduce
-	#         pad=0.1)
-	#     ax.add_artist(imagebox)
-	
-	""" plot decision boundary """
-	#create mesh grid
-	h = 0.01
-	x_min, x_max = images[:, 0].min()-0.1, images[:, 0].max()+0.1
-	y_min, y_max = images[:, 1].min()-0.1, images[:, 1].max()+0.1
-	xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-	mesh_points = np.c_[xx.ravel(), yy.ravel()]
-	#find class of nearest weight of mesh points
-	closest_neuron = KDTree(W).query(mesh_points)[1]
-	closest_class = classes[np.argmax(W_L2[closest_neuron,:],1)]
-	ax.contourf(xx, yy, closest_class.reshape(xx.shape), levels=np.arange(10)+0.5, alpha=0.2, cmap=plt.cm.Paired)
+		plt.figure()
+		ax = plt.subplot(111)
+		
+		""" plot stimuli """
+		ax.scatter(images[:,0], images[:,1], c=c_list[labels], edgecolors=c_list[labels])
+		# for i in range(n_images):
+		#     ax.text(images[i, 0], images[i, 1], str(labels[i]), color=plt.cm.Paired(labels[i] / 10.), fontdict={'weight': 'bold', 'size': 9})
+		
+		""" plot weights """
+		ax.scatter(W[:,0], W[:,1], marker='x', s=100, c='k')
 
-	""" compute classification performance """
-	classif_closest_neuron = KDTree(W).query(images)[1]
-	classif = classes[np.argmax(W_L2[classif_closest_neuron,:],1)]
-	perc_correct = float(np.sum(classif==labels))/len(labels)
+		# """ plot weights images """
+		# shown_images = np.array([[1., 1.]])  # just something big
+		# for i in range(W.shape[0]):
+		#     imagebox = offsetbox.AnnotationBbox(
+		#         offsetbox.OffsetImage(W[i], cmap=plt.cm.gray_r),
+		#         W[i],
+		#         frameon=False, #frame is too large; frame is added in im_reduce
+		#         pad=0.1)
+		#     ax.add_artist(imagebox)
+		
+		""" plot decision boundary """
+		#create mesh grid
+		h = 0.01
+		x_min, x_max = images[:, 0].min()-0.1, images[:, 0].max()+0.1
+		y_min, y_max = images[:, 1].min()-0.1, images[:, 1].max()+0.1
+		xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+		mesh_points = np.c_[xx.ravel(), yy.ravel()]
+		#find class of nearest weight of mesh points
+		closest_neuron = KDTree(W).query(mesh_points)[1]
+		closest_class = classes[np.argmax(W_L2[closest_neuron,:],1)]
+		ax.contourf(xx, yy, closest_class.reshape(xx.shape), levels=np.arange(10)+0.5, alpha=0.2, cmap=plt.cm.Paired)
 
-	""" plot variables """
-	plt.xticks([]), plt.yticks([])
-	plt.xlim(-0.1,1.1)
-	plt.ylim(-0.1,1.1)
-	plt.savefig(os.path.join(save_path, net.name+'data_2D.png'))
-	plt.close()
+		""" compute classification performance """
+		classif_closest_neuron = KDTree(W).query(images)[1]
+		classif = classes[np.argmax(W_L2[classif_closest_neuron,:],1)]
+		perc_correct = float(np.sum(classif==labels))/len(labels)
+
+		""" plot variables """
+		plt.xticks([]), plt.yticks([])
+		plt.xlim(-0.1,1.1)
+		plt.ylim(-0.1,1.1)
+		plt.savefig(os.path.join(save_path, 'RFs', net.name+ '_' + str(r).zfill(3)+'_naive.png'))
+		plt.close()
 
 def hist_gabor(name, hid_W_naive, hid_W_trained, t, A, images_params, save_data, verbose, save_path='', curve_method='basic', log_weights=False):
 	""" Computes the distribution of orientation preference of neurons in the network. """
