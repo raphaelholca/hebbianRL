@@ -712,6 +712,12 @@ def multimodal_toy_data(protocol, A, toy_data_params):
 
 	return images, images_test, labels, labels_test
 
+def project_3D_to_2D(data_3D):
+	""" project data points in 3D into 2D """
+	data_2D = np.zeros((data_3D.shape[0], 2))
+	return data_2D
+
+
 def set_labels2idx(classes):
 	""" creates a numpy array to convert labels to indexes """
 	labels2idx = np.zeros(10, dtype=int)
