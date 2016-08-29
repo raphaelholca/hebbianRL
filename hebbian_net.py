@@ -282,7 +282,7 @@ class Network:
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
 					#compute ACh signal
-					if ach_uncertainty:
+					if self.ach_uncertainty:
 						stim_perf_epi = np.append(stim_perf_epi, np.max(self.out_neurons_explore,1))
 					else:
 						stim_perf_epi = np.append(stim_perf_epi, reward_hid)

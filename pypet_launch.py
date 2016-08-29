@@ -55,13 +55,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
-					'n_hid_neurons'		: 15,#49,#
+					'n_hid_neurons'		: 49,
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_2D',
+					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty',
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.2, #0.3 #0.2
+					'noise_xplr_hid'	: 0.3, #0.3 #0.2
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -77,21 +77,21 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+1.500, +2.000, +2.500],
-					'dNeut'			: [-0.010, +0.000, +0.010],
+					# 'dHigh'			: [+1.500, +2.000, +2.500],
+					# 'dNeut'			: [-0.010, +0.000, +0.010],
 
-					'dMid'			: [+0.010, +0.100, +0.500], #[+0.200, +0.300, +0.400, +0.500, +0.600], #
-					'dLow'			: [-1.500, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
+					# 'dMid'			: [+0.010, +0.100, +0.500], #[+0.200, +0.300, +0.400, +0.500, +0.600], #
+					# 'dLow'			: [-1.500, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
-					# 'ach_1'			: [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 80.0],
-					# 'ach_2'		 	: [4.0, 8.0, 12.0, 16.0],
+					'ach_1'			: [8.0, 10.0, 12.0, 14.0, 15.0, 16.0, 18.0],
+					'ach_2'		 	: [4.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0],
 				}
 
 """ load and pre-process images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= parameter_dict['protocol'],
 																	A 				= parameter_dict['A'],
 																	verbose 		= parameter_dict['verbose'],
-																	digit_params 	= {	'dataset_train'		: '2D',
+																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
