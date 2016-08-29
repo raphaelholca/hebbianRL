@@ -24,7 +24,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -47,6 +47,7 @@ class Network:
 				ach_func (str, optional): release function for acetylcholine. Default: 'sigmoidal'
 				ach_avg (int, optional): number of episodes to average over for moving averag of performance. Default: 20 
 				ach_stim (bool, optional): whether to average stimulus difficulty over stimuli (True) or over classes (False). Default: False 
+				ach_uncertainty (bool, optional): whether to use uncertainty (True) or performance (False) as a measure of task difficulty. Default: True
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -93,6 +94,7 @@ class Network:
 		self.ach_values 		= {'ach_1': ach_1, 'ach_2': ach_2, 'ach_3': ach_3, 'ach_4': ach_4} 
 		self.ach_avg 			= ach_avg
 		self.ach_stim 			= ach_stim
+		self.ach_uncertainty 	= ach_uncertainty
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -183,6 +185,8 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan
+		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
+		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -260,6 +264,11 @@ class Network:
 					#propagate images through the network
 					greedy, explore_hid, explore_out, posterior, explorative = self._propagate(batch_images)
 
+					###
+					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
+					# self.decision_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
+					###
+
 					#compute reward prediction
 					predicted_reward_hid = ex.reward_prediction(explorative, self.compare_output, greedy, explore_hid)
 					predicted_reward_out = ex.reward_prediction(explorative, self.compare_output, greedy, explore_out) if self._train_class_layer else None
@@ -273,7 +282,10 @@ class Network:
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
 					#compute ACh signal
-					stim_perf_epi = np.append(stim_perf_epi, reward_hid)
+					if ach_uncertainty:
+						stim_perf_epi = np.append(stim_perf_epi, np.max(self.out_neurons_explore,1))
+					else:
+						stim_perf_epi = np.append(stim_perf_epi, reward_hid)
 					ach_hid = self._ach_release_func(batch_labels) if self.ach_release else np.ones(self.batch_size)
 
 					#block feedback
@@ -284,7 +296,7 @@ class Network:
 						lr_hid = 0.0
 						lr_out = 5e-7
 					else: 
-						lr_hid = self.lr_hid 
+						lr_hid = self.lr_hid
 						lr_out = self.lr_out
 
 					#update weights
@@ -452,7 +464,7 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
-		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
+		if self.ach_release: self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
 			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
@@ -482,6 +494,7 @@ class Network:
 
 	def _init_weights_input(self, images):
 		""" initialize weights by using the input statistics """
+
 		m_d = np.zeros_like(images[0])
 		for i in xrange(images.shape[0]):
 			m_d += images[i]
@@ -491,7 +504,7 @@ class Network:
 		for i in xrange(images.shape[0]):
 			v_d += (images[i] - m_d) ** 2
 		v_d /= images.shape[0]
-        
+
 		self.hid_W = np.zeros(shape=(self.n_inp_neurons, self.n_hid_neurons), dtype=float)
 		for i in xrange(self.n_hid_neurons):
 			self.hid_W[:,i] = m_d + 2.*v_d*np.random.random_sample(self.n_inp_neurons)
