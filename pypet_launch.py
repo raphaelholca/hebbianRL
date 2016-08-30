@@ -57,7 +57,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49,
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty',
+					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty_short',
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -126,7 +126,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 20,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
