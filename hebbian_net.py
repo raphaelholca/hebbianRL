@@ -710,12 +710,13 @@ class Network:
 				for l in np.unique(labels):
 					ach[labels==l] = abs(l-(self.n_classes))
 			else:
-				#average over stimuli
-				if self._saved_perf_size[0]==self.n_images: 
-					perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
-					rel_perf = perf_avg/np.mean(self._stim_perf_avg)
-				#average over classes
-				elif self._saved_perf_size[0]==self.n_classes:
+				if self.ach_stim: #average over stimuli
+					if self.ach_uncertainty: #uses uncertainty of current stimulus
+						rel_perf = np.max(self.out_neurons_explore, axis=1)/np.mean(self._stim_perf_avg)
+					else:
+						perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
+						rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+				else: #average over classes
 					rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
 					rel_perf = rel_perf_classes[self._labels2idx[labels]]
 				ach = self.ach_func(rel_perf, **self.ach_values)
