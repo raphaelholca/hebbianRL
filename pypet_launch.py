@@ -36,10 +36,10 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
-					'ach_stim' 			: False,
+					'ach_stim' 			: True,
 					'ach_uncertainty' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_uncertainty',
+					'name' 				: 'pypet_ach_uncertainty_stim_2',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
@@ -57,7 +57,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49,
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty_short',
+					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty_short_stim',
 					'lim_weights'		: True,
 					'log_weights' 		: True,
 					'epsilon_xplr'		: 1.0,
@@ -83,8 +83,8 @@ explore_dict = {
 					# 'dMid'			: [+0.010, +0.100, +0.500], #[+0.200, +0.300, +0.400, +0.500, +0.600], #
 					# 'dLow'			: [-1.500, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
-					'ach_1'			: [8.0, 10.0, 12.0, 14.0, 15.0, 16.0, 18.0],
-					'ach_2'		 	: [4.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0],
+					'ach_1'			: [8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0],
+					'ach_2'		 	: [0.0, 1.0, 4.0, 8.0, 20.0, 40.0],
 				}
 
 """ load and pre-process images """
@@ -126,7 +126,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 20,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 

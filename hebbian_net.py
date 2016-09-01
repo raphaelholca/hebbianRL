@@ -185,6 +185,7 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan
+		self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 
@@ -267,6 +268,7 @@ class Network:
 					###
 					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
 					# self.decision_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
+					self.confidence_tracker[b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
 					###
 
 					#compute reward prediction
@@ -710,12 +712,13 @@ class Network:
 				for l in np.unique(labels):
 					ach[labels==l] = abs(l-(self.n_classes))
 			else:
-				#average over stimuli
-				if self._saved_perf_size[0]==self.n_images: 
-					perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
-					rel_perf = perf_avg/np.mean(self._stim_perf_avg)
-				#average over classes
-				elif self._saved_perf_size[0]==self.n_classes:
+				if self.ach_stim: #average over stimuli
+					if self.ach_uncertainty: #uses uncertainty of current stimulus
+						rel_perf = np.max(self.out_neurons_explore, axis=1)/np.mean(self._stim_perf_avg)
+					else:
+						perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
+						rel_perf = perf_avg/np.mean(self._stim_perf_avg)
+				else: #average over classes
 					rel_perf_classes = self._stim_perf_avg/np.mean(self._stim_perf_avg)
 					rel_perf = rel_perf_classes[self._labels2idx[labels]]
 				ach = self.ach_func(rel_perf, **self.ach_values)
