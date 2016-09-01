@@ -40,13 +40,13 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							ach_stim 			= True,
 							ach_uncertainty 	= True,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'digit_pretrain_lr_5e-4_uncertainty_short_stim',
+							name 				= 'ACh_uncertainty_stim_2',
 							dopa_release 		= False, 
-							ach_release			= False, 
+							ach_release			= True, 
 							n_runs 				= 3,
-							n_epi_crit			= 120,
+							n_epi_crit			= 30,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 0,
+							n_epi_perc			= 60,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
@@ -73,7 +73,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
-							seed 				= 985 #np.random.randint(1000)
+							seed 				= 984 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
