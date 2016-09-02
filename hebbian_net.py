@@ -693,9 +693,9 @@ class Network:
 	def _ach_release_func(self, labels=None):
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
-		# if self.ach_release: #ACh starts at crit	
+		# if self.ach_release: #ACh starts at crit
 			if self.ach_stim and self.ach_uncertainty:
-				self._stim_perf_avg = np.mean(self._stim_perf)
+				self._stim_perf_avg = np.nanmean(self._stim_perf)
 			else:
 				self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 
