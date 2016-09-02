@@ -53,6 +53,9 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 	""" plot and save confusion matrices """
 	print_save_CM(net.CM_all, net.perf_all, net.name, net.classes, net.verbose, True, save_path)
 
+	""" plot performance progression """
+	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
+
 	if net.protocol!='toy_data':
 		""" plot RF properties """
 		plot_RF_info(net, save_path, curve_method=curve_method, slope_binned=slope_binned)		
@@ -79,9 +82,6 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 			plot_all_RF(net.name, net.hid_W_trained, RFproba, target=target, W_act=W_act_pass, sort=sort, not_same=not_same, verbose=net.verbose, save_path=save_path)
 		if net.images_params['dataset_train']=='2D':
 			plot_2D(net, images, labels, save_path=save_path)
-		
-	""" plot performance progression """
-	plot_perf_progress(net.name, net.perf_train_prog, net.perf_test_prog, net.n_epi_crit, epi_start=0, save_path=save_path)
 
 	""" plot performance at various orientations """
 	if net.protocol=='gabor' and test_all_ori: perf_all_ori(net, save_path=save_path)
