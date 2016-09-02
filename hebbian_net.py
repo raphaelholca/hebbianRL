@@ -694,7 +694,10 @@ class Network:
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
 		# if self.ach_release: #ACh starts at crit	
-			self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
+			if self.ach_stim and self.ach_uncertainty:
+				self._stim_perf_avg = np.mean(self._stim_perf)
+			else:
+				self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 
 			if self.ach_func=='preset': #uses preset values (only valid of 1-4-9)
 				ach = np.ones_like(labels, dtype=float)
@@ -712,7 +715,7 @@ class Network:
 			else:
 				if self.ach_stim: #average over stimuli
 					if self.ach_uncertainty: #uses uncertainty of current stimulus
-						rel_perf = np.max(self.out_neurons_explore, axis=1)/np.mean(self._stim_perf_avg)
+						rel_perf = np.max(self.out_neurons_explore, axis=1)/self._stim_perf_avg
 					else:
 						perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
 						rel_perf = perf_avg/np.mean(self._stim_perf_avg)
@@ -839,7 +842,7 @@ class Network:
 		""" assesses progression of performance of network as it is being trained """
 		
 		print_perf = 'epi ' + str(self._e) + ': '
-		if self.test_each_epi and (self._train_class_layer or self.classifier=='neural_prob'): ##remove neural_prob... 
+		if self.test_each_epi and self._train_class_layer: ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_train, labels_train)
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
 		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode

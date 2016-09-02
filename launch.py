@@ -40,13 +40,13 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							ach_stim 			= True,
 							ach_uncertainty 	= True,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'ACh_uncertainty_stim_2',
+							name 				= 'ACh__uncertainty_stim_2D',
 							dopa_release 		= False, 
 							ach_release			= True, 
-							n_runs 				= 3,
-							n_epi_crit			= 30,
+							n_runs 				= 1,
+							n_epi_crit			= 5,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 60,
+							n_epi_perc			= 0,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
@@ -73,14 +73,14 @@ net = hebbian_net.Network(	dHigh 				= 4.0,
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
-							seed 				= 984 #np.random.randint(1000)
+							seed 				= 983 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 																	A				= net.A,
 																	verbose 		= net.verbose,
-																	digit_params 	= {	'dataset_train'		: 'train',
+																	digit_params 	= {	'dataset_train'		: '2D',
 																						# 'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
@@ -122,8 +122,6 @@ print '\nrun name:\t' + net.name
 print 'start time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_start))
 print 'end time:\t' + time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(net._train_stop))
 print 'train time:\t' +  str(datetime.timedelta(seconds=net.runtime))
-
-
 
 
 
