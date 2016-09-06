@@ -39,7 +39,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_stim' 			: True,
 					'ach_uncertainty' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ach_uncertainty_stim_avg20',
+					'name' 				: 'pypet_ach_uncert_stim_avg_stopEval',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 3,
@@ -83,8 +83,8 @@ explore_dict = {
 					# 'dMid'			: [+0.010, +0.100, +0.500], #[+0.200, +0.300, +0.400, +0.500, +0.600], #
 					# 'dLow'			: [-1.500, -2.000, -3.000] #[-0.000, -0.800, -1.600, -2.400, -3.200] #
 
-					'ach_1'			: [8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0],
-					'ach_2'		 	: [0.0, 1.0, 4.0, 8.0, 20.0, 40.0],
+					'ach_1'			: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0],
+					'ach_2'		 	: [4.0],
 				}
 
 """ load and pre-process images """
