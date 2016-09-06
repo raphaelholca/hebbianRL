@@ -717,7 +717,8 @@ class Network:
 			else:
 				if self.ach_stim: #average over stimuli
 					if self.ach_uncertainty: #uses uncertainty of current stimulus
-						rel_perf = np.max(self.out_neurons_explore, axis=1)/self._stim_perf_avg
+						rel_perf = np.nanmean(self._stim_perf,1)[self._b*self.batch_size:(self._b+1)*self.batch_size]/self._stim_perf_avg
+						# rel_perf = np.max(self.out_neurons_explore, axis=1)/self._stim_perf_avg
 					else:
 						perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
 						rel_perf = perf_avg/np.mean(self._stim_perf_avg)

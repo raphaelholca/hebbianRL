@@ -42,7 +42,7 @@ def assess(net, curve_method='basic', slope_binned=True, show_W_act=True, sort=N
 		os.makedirs(os.path.join(save_path, 'TCs'))
 
 	""" assess receptive fields """
-	if net.protocol=='digit' and images is not None:
+	if net.protocol=='digit':
 		net.RF_info = hist(net, images, labels)
 	elif net.protocol=='gabor':
 		net.RF_info = hist_gabor(net.name, net.hid_W_naive, net.hid_W_trained, net.t_hid, net.A, net.images_params, save_data=False, verbose=net.verbose, log_weights=net.log_weights)
