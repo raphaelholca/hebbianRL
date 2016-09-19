@@ -523,6 +523,8 @@ class Network:
 
 	def _check_parameters(self):
 		""" checks if parameters of the Network object are correct """
+		if self.name=='':
+			raise ValueError('No name provided for the Network object')
 		if self.classifier not in ['neural_prob', 'neural_dopa', 'bayesian']:
 			raise ValueError( '\'' + self.classifier +  '\' not a legal classifier value. Legal values are: \'neural_dopa\', \'neural_prob\' and \'bayesian\'.')
 		if self.protocol not in ['digit', 'gabor', 'toy_data']:
@@ -718,7 +720,7 @@ class Network:
 			else:
 				if self.ach_stim: #average over stimuli
 					if self.ach_uncertainty: #uses uncertainty of current stimulus
-						rel_perf = np.nanmean(self._stim_perf,1)[self._b*self.batch_size:(self._b+1)*self.batch_size]/self._stim_perf_avg ##averaged over 20 episodes
+						rel_perf = np.nanmean(self._stim_perf[self._b*self.batch_size:(self._b+1)*self.batch_size, :],1)/self._stim_perf_avg ##averaged over 20 episodes
 						# rel_perf = np.max(self.out_neurons_explore, axis=1)/self._stim_perf_avg ##single stimuli
 					else:
 						perf_avg = self._stim_perf_avg[self._b*self.batch_size:(self._b+1)*self.batch_size]
