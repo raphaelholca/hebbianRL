@@ -40,7 +40,7 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							ach_stim 			= False,
 							ach_uncertainty 	= False,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'long_DA',
+							name 				= 'long_ACh_DA',
 							dopa_release 		= True, 
 							ach_release			= False, 
 							n_runs 				= 20,
@@ -58,7 +58,7 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							shuffle_datasets	= True,
 							n_hid_neurons		= 49, #49, #15 ##<-----
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_20run_300epi',
+							init_file			= 'long_ACh',
 							lim_weights			= True,
 							log_weights 		= True,
 							epsilon_xplr 		= 1.0,
@@ -73,6 +73,7 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
+							save_light 			= True,
 							seed 				= 974 #np.random.randint(1000)
 							)
 

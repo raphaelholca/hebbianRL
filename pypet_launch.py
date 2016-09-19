@@ -72,6 +72,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'test_each_epi'		: False,
 					'early_stop'		: False,
 					'verbose'			: False,
+					'save_light' 		: True,
 					'seed' 				: 987 #np.random.randint(1000)
 					}
 

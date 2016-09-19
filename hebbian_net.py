@@ -24,7 +24,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights=False, epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -82,6 +82,7 @@ class Network:
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
+				save_light (bool, optional): whether to save a lighter version of the network (excludes ach_tracker, stim_perf_labels_saved, _idx_shuffle_saved)
 				seed (int, optional): seed of the random number generator. Default: None
 				pypet (bool, optional): whether the network simulation is part of pypet exploration
 				pypet_name (str, optional): name of the directory in which data is saved when doing pypet exploration. Default: ''
@@ -129,6 +130,7 @@ class Network:
 		self.test_each_epi		= test_each_epi
 		self.early_stop 		= early_stop
 		self.verbose 			= verbose
+		self.save_light 		= save_light
 		self.seed 				= seed
 		self.pypet 				= pypet
 		self.pypet_name 		= pypet_name if pypet_name != '' else name
@@ -172,7 +174,7 @@ class Network:
 		self.out_W_naive = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self.out_W_trained = np.zeros((self.n_runs, self.n_hid_neurons, self.n_out_neurons))
 		self._idx_shuffle = None
-		self._idx_shuffle_saved = np.zeros((self.n_runs, images_train.shape[0] + images_test.shape[0]), dtype=int)
+		self._idx_shuffle_saved = np.zeros((self.n_runs, images_train.shape[0] + images_test.shape[0]), dtype=int) if not self.save_light or self.ach_release else None
 		self.CM_all = np.zeros((self.n_runs, self.n_classes, self.n_classes))
 		self.perf_all = np.zeros(self.n_runs)
 		self.perf_train_prog = np.ones((self.n_runs, self.n_epi_tot))*-1
@@ -183,9 +185,9 @@ class Network:
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 		self._saved_perf_size = (self.n_images, self.ach_avg) if self.ach_stim else (self.n_classes, self.ach_avg)
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
-		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan
-		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan
-		self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
+		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
+		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
+		# self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 
@@ -268,7 +270,7 @@ class Network:
 					###
 					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
 					# self.decision_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
-					self.confidence_tracker[b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
+					# self.confidence_tracker[b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
 					###
 
 					#compute reward prediction
@@ -314,7 +316,7 @@ class Network:
 					correct += np.sum(greedy==batch_labels)
 
 					#track ACh release
-					if self.ach_release: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
+					if self.ach_release and not self.save_light: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
 
 
 				#assess performance
@@ -337,8 +339,8 @@ class Network:
 			self.hid_W_trained[r,:,:] = np.copy(self.hid_W)
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
-			self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm) if 'labels_rndm' in locals() else None
-			self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
+			if 'labels_rndm' in locals() and not self.save_light: self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
+			if not self.save_light or self.ach_release: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
