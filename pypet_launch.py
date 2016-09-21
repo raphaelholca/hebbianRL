@@ -59,7 +59,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'weight_init' 		: 'input',
 					'init_file'			: 'digit_pretrain_lr_5e-4_uncertainty_short_stim',#'digit_pretrain_lr_5e-4_uncertainty',
 					'lim_weights'		: True,
-					'log_weights' 		: True,
+					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3, #0.3 #0.2
 					'noise_xplr_out'	: 2e4,
