@@ -223,7 +223,7 @@ def bar_plot(best_param_all, best_perf_all=None):
 	n_measures = len(best_param_all['dHigh'])
 	normalize = False #normalize bar height so dHigh=1
 	order_perf = False #order bar by best performance
-	order_value = True #order bar by VTA value
+	order_value = False #order bar by VTA value
 
 	num_colors = 20
 	color_list = np.array([plt.get_cmap('Paired')(1.*i/num_colors) for i in range(num_colors)])
@@ -247,7 +247,8 @@ def bar_plot(best_param_all, best_perf_all=None):
 		if order_value:
 			ax.bar(np.arange(n_measures)*width+idx, np.sort(best_param_all[param]+1e-10), width=width, edgecolor=pv.red_1, color=pv.red_1)
 		else:
-			ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
+			ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width*0.8, edgecolor=pv.red_1, color=pv.red_1)
+			# ax.bar(np.arange(n_measures)*width+idx, best_param_all[param]+1e-10, width=width, edgecolor=color_list[color_cycle_idx], color=color_list[color_cycle_idx])
 
 	#x-axis
 	ax.set_xticks(np.arange(len(order_bar))+0.4)
@@ -294,7 +295,7 @@ def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
 
 	return perc_correct, np.array(perc_correct_all), np.array(stat_diff), param
 
-def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_threshold=0.10, vmin=0.8, vmax=0.97, fontsize_label=20, fontsize_tick=18, best_perf=True, name_pred='dMid'):
+def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_threshold=0.10, vmin=0.8, vmax=0.97, fontsize_label=20, fontsize_tick=18, print_best_perf=True, name_pred='dMid'):
 	"""
 	Function to plot the results of gridsearch parameter exploration
 
@@ -402,7 +403,7 @@ def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_thre
 				y1_dots = []
 				for x in best_param_all[order_face[0]][mask_best]: x1_dots.append(np.argwhere(x==x1))
 				for y in best_param_all[order_face[1]][mask_best]: y1_dots.append(np.argwhere(y==y1))
-				ax_faceting[y2_i, x2_i].scatter(x1_dots, y1_dots, s=10, c='k', edgecolor='r')
+				ax_faceting[y2_i, x2_i].scatter(x1_dots, y1_dots, s=30, c='r', edgecolor='k')
 
 			# indicate params that give best performance
 			if x2==best_param[order_face[2]] and y2==best_param[order_face[3]]:
@@ -446,7 +447,7 @@ def faceting(folder_path, savefig=True, stat_test=False, threshold=0.002, t_thre
 		
 	fig_faceting.text(0.5, 0.96, trans[order_face[2]], ha='center', fontsize=fontsize_label)
 	fig_faceting.text(0.965, 0.5, trans[order_face[3]], va='center', rotation=90, fontsize=fontsize_label)
-	if best_perf:
+	if print_best_perf:
 		fig_faceting.text(0.025, 0.975, 'best perf: '+best_perf_str, va='center', fontsize=fontsize_tick, weight='semibold')
 
 	fig_bar, ax_bar = bar_plot(best_param_all, best_perf_all)
