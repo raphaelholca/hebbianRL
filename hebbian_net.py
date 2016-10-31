@@ -701,7 +701,7 @@ class Network:
 		""" compute ach realease based on average performance for each stimulus """
 		if self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc and self.ach_release: #ACh starts at perc
 		# if self.ach_release: #ACh starts at crit
-			if self.ach_stim and self.ach_uncertainty:
+			if hasattr(self, 'ach_stim') and (self.ach_stim and self.ach_uncertainty):
 				self._stim_perf_avg = 0.80 ##np.nanmean(self._stim_perf) ##<--------set mean perf; only to speed-up computations
 			else:
 				self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)

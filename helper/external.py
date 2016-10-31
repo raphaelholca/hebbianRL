@@ -470,7 +470,7 @@ def propagate_layerwise(X, W, SM=True, t=1., log_weights='log'):
 
 	if log_weights=='lin':
 		activ = np.dot(X, W)
-	elif log_weights=='log':
+	elif log_weights=='log' or log_weights:
 		activ = np.dot(X, np.log(W))
 	elif log_weights=='linlog':
 		mask_W = W>1.
