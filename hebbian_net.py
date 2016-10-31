@@ -460,7 +460,7 @@ class Network:
 		#randomly choose weights from one of the saved runs
 		run_to_load = self._r % saved_net.n_runs 
 		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
-		saved_out_W = np.copy(saved_net.out_W_trained[run_to_load, :, :])
+		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -469,7 +469,7 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
-		if self.ach_release: self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
+		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
 			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
