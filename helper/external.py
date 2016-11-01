@@ -352,7 +352,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'seed', 'save_light', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_func', 'dopa_values', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'seed', 'save_light', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -526,26 +526,32 @@ def reward_delivery(labels, actions):
 
 	return reward
 
-def reward_prediction(explorative, compare_output, best_action=None, action_taken=None):
+def reward_prediction(explorative, compare_output, classes, out_neurons_greedy=None, out_neurons_explore=None, dopa_func='discrete'):
 	"""
 	Computes reward prediction based on the best (greedy) action and the action taken
 
 	Args:
 		explorative (numpy array): contains 1s for trials where noise is injected (exploratory) and 0s otherwise
 		compare_output (bool): whether to compare the value of greedy and taken action to determine if the trial is exploratory
-		best_action (numpy array, optional): best (greedy) action for each trial of a batch. Default: None
-		action_taken (numpy array, optional): action taken for each trial of a batch. Default: None
+		out_neurons_greedy (numpy array, optional): greedy activation of the output neurons. Default: None
+		out_neurons_explore (numpy array, optional): explorative activation of the output neurons. Default: None
 
 	returns:
 		numpy array: reward prediction, either deterministic or expected value (depending on proba_predict)
 	"""
-
+	
 	if compare_output:
-		return best_action == action_taken
+		if dopa_func=='discrete':
+			best_action = classes[np.argmax(out_neurons_greedy,1)]
+			action_taken = classes[np.argmax(out_neurons_explore,1)]
+			return best_action == action_taken
+		else:
+			action_taken = np.argmax(out_neurons_explore,1)
+			return out_neurons_greedy[np.arange(len(out_neurons_explore)), np.argmax(out_neurons_explore,1)]
 	else:
 		return ~explorative
 
-def compute_dopa(predicted_reward, reward, dopa_values):
+def compute_dopa(predicted_reward, reward, dopa_values, dopa_func):
 	"""
 	Computes the dopa signal based on the actual and predicted rewards
 
@@ -558,14 +564,12 @@ def compute_dopa(predicted_reward, reward, dopa_values):
 		numpy array: array of dopamine release value
 	"""
 
-	dopa = np.zeros(len(reward))
-
-	dopa[np.logical_and(predicted_reward==0, reward==1)] = dopa_values['dHigh']		#unpredicted reward
-	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']		#correct reward prediction
-	dopa[np.logical_and(predicted_reward==0, reward==0)] = dopa_values['dNeut']		#correct no reward prediction
-	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']		#incorrect reward prediction
-
-	return dopa
+	if dopa_func=='discrete':
+		return dopa_discrete(predicted_reward, reward, dopa_values)
+	elif dopa_func=='sigmoidal':
+		return dopa_sigmoidal(predicted_reward, reward, dopa_values)
+	else:
+		raise ValueError("Unrecognised dopa_func value: %s") % dopa_func
 
 def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
 	""" 
@@ -772,6 +776,23 @@ def ach_handmade(rel_perf, ach_1=None, ach_2=None, ach_3=None, ach_4=None):
 
 	# return ((((rel_perf-1)*-1)+1)**15)*3
 	return 3*(np.exp(ach_1 * (-rel_perf + 1.0)) + ach_2)
+
+def dopa_discrete(predicted_reward, reward, dopa_values):
+	""" discrete release value of DA, based on explorative of exploitative classification decision """
+	dopa = np.zeros(len(reward))
+
+	dopa[np.logical_and(predicted_reward==0, reward==1)] = dopa_values['dHigh']		#unpredicted reward
+	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']		#correct reward prediction
+	dopa[np.logical_and(predicted_reward==0, reward==0)] = dopa_values['dNeut']		#correct no reward prediction
+	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']		#incorrect reward prediction
+
+	return dopa
+
+def dopa_sigmoidal(predicted_reward, reward, dopa_values):
+	""" sigmoidal relation between RPE and DA release """
+
+	RPE = reward - predicted_reward
+	return ((dopa_values['dHigh'] - dopa_values['dLow']) / (1.0+np.exp(dopa_values['dNeut']*RPE))) + dopa_values['dLow']
 
 
 

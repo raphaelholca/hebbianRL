@@ -24,7 +24,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -34,6 +34,7 @@ class Network:
 				dMid (float): values of dopamine release for +reward expectation, +reward delivery
 				dNeut (float): values of dopamine release for -reward expectation, -reward delivery
 				dLow (float): values of dopamine release for +reward expectation, -reward delivery
+				dopa_func (str, optional): relationship between RPE and DA release. Default: 'discrete'
 				dopa_out_same (bool, optional): whether to use the same dopa values in the output layer as in the hidden layer (True) or use the values provided in the 'd_out' variables below. Default: True
 				train_out_dopa (bool, optional): whether to train the output layer during the dopa period. Default: True
 				dHigh_out (float, optional): values of dopamine release for -reward expectation, +reward delivery for output layer. Default: 0.0
@@ -89,6 +90,7 @@ class Network:
 		"""
 		
 		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
+		self.dopa_func 			= dopa_func
 		self.dopa_out_same 		= dopa_out_same
 		self.train_out_dopa		= train_out_dopa
 		self.dopa_values_out 	= {'dHigh': dHigh_out, 'dMid':dMid_out, 'dNeut':dNeut_out, 'dLow':dLow_out} if not self.dopa_out_same else self.dopa_values.copy()
@@ -187,6 +189,7 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
+		self.dopa_tracker = np.array([])
 		# self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
@@ -274,8 +277,8 @@ class Network:
 					###
 
 					#compute reward prediction
-					predicted_reward_hid = ex.reward_prediction(explorative, self.compare_output, greedy, explore_hid)
-					predicted_reward_out = ex.reward_prediction(explorative, self.compare_output, greedy, explore_out) if self._train_class_layer else None
+					predicted_reward_hid = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, self.dopa_func)
+					predicted_reward_out = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore_hid_out, self.dopa_func) if self._train_class_layer else None
 
 					#compute reward
 					reward_hid = ex.reward_delivery(batch_labels, explore_hid)
@@ -284,6 +287,8 @@ class Network:
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
+
+					self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
 
 					#compute ACh signal
 					if self.ach_uncertainty:
@@ -599,7 +604,6 @@ class Network:
 		greedy = self.classes[np.argmax(self.out_neurons_greedy,1)]
 		explore_hid = self.classes[np.argmax(self.out_neurons_explore_hid,1)]
 		explore_out = self.classes[np.argmax(self.out_neurons_explore_out,1)]
-
 		return greedy, explore_hid, explore_out, None, self.batch_explorative
 
 	def _propagate_neural_prob(self, batch_images):
@@ -684,11 +688,11 @@ class Network:
 		if (self._e < self.n_epi_crit + self.n_epi_fine or self._e >= self.n_epi_crit + self.n_epi_fine + self.n_epi_perc) and self._train_class_layer:
 			""" Critical and Post period """
 			dopa_hid = np.ones(len(reward_hid))
-			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out)
+			dopa_out = ex.compute_dopa(predicted_reward_out, reward_out, self.dopa_values_out, self.dopa_func)
 	
 		elif self._e >= self.n_epi_crit + self.n_epi_fine and self._e < self.n_epi_crit + self.n_epi_fine + self.n_epi_perc: 
 			""" Perceptual learning period """
-			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values)
+			dopa_hid = ex.compute_dopa(predicted_reward_hid, reward_hid, self.dopa_values, self.dopa_func)
 			## add parallel out training here
 			dopa_out = np.zeros(len(reward_hid))
 		else:
