@@ -190,6 +190,8 @@ class Network:
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
 		self.dopa_tracker = np.array([])
+		self.RP_tracker = np.array([])
+		self.RPE_tracker = np.array([])
 		# self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
@@ -283,6 +285,9 @@ class Network:
 					#compute reward
 					reward_hid = ex.reward_delivery(batch_labels, explore_hid)
 					reward_out = ex.reward_delivery(batch_labels, explore_out) if self._train_class_layer else None
+
+					self.RP_tracker = np.append(self.RP_tracker, predicted_reward_hid)
+					self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-predicted_reward_hid)
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)

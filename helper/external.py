@@ -568,8 +568,12 @@ def compute_dopa(predicted_reward, reward, dopa_values, dopa_func):
 		return dopa_discrete(predicted_reward, reward, dopa_values)
 	elif dopa_func=='sigmoidal':
 		return dopa_sigmoidal(predicted_reward, reward, dopa_values)
+	elif dopa_func=='linear':
+		return dopa_linear(predicted_reward, reward, dopa_values)
+	elif dopa_func=='exponential':
+		return dopa_exponential(predicted_reward, reward, dopa_values)
 	else:
-		raise ValueError("Unrecognised dopa_func value: %s") % dopa_func
+		raise ValueError("Unrecognised dopa_func value")
 
 def no_difference(best, alte, diff_tol=0.005, confidence='0.95'):
 	""" 
@@ -787,12 +791,27 @@ def dopa_discrete(predicted_reward, reward, dopa_values):
 	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']		#incorrect reward prediction
 
 	return dopa
+	# return np.zeros(len(reward)) ##
+
+def dopa_linear(predicted_reward, reward, dopa_values):
+	""" linear relation between RPE and DA release """
+
+	RPE = reward - predicted_reward
+	return dopa_values['dHigh']*RPE + dopa_values['dMid']
+
+
+def dopa_exponential(predicted_reward, reward, dopa_values):
+	""" exponential relation between RPE and DA release """
+
+	RPE = reward - predicted_reward
+	return (np.exp(dopa_values['dHigh']*RPE)-1.0)*(5.0/dopa_values['dHigh'])
 
 def dopa_sigmoidal(predicted_reward, reward, dopa_values):
 	""" sigmoidal relation between RPE and DA release """
 
 	RPE = reward - predicted_reward
-	return ((dopa_values['dHigh'] - dopa_values['dLow']) / (1.0+np.exp(dopa_values['dNeut']*RPE))) + dopa_values['dLow']
+	return ((dopa_values['dHigh'] - dopa_values['dLow']) / (1.0+np.exp(dopa_values['dMid']*RPE))) + dopa_values['dLow']
+	# return np.zeros(len(reward)) ##
 
 
 

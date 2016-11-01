@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
 					'dNeut' 			: -0.08,
 					'dLow' 				: -0.8,
-					'dopa_func' 		: 'discrete',
+					'dopa_func' 		: 'linear',
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -40,13 +40,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_stim' 			: False,
 					'ach_uncertainty' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_digit_DA_greedy',
+					'name' 				: 'pypet_digit_DA_conti_lin',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
-					'n_runs' 			: 10,
+					'n_runs' 			: 5,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 100,
+					'n_epi_perc'		: 50,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
@@ -79,11 +79,11 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+0.00, +4.00, +8.00, +12.0, +16.0],
+					'dHigh'			: [+1.00, +4.00, +8.00],
 					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75, -1.50],
-
-					'dMid'			: [+0.00, +0.10, +0.20, +0.50, +1.00],
-					'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
+ 
+					'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
+					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
 					# 'ach_1'			: [4.0, 8.0, 10.0, 12.0, 14.0, 16.0],
 					# 'ach_2'		 	: [5.0, 10.0],
@@ -128,7 +128,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 5,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
