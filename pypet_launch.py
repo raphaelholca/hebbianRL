@@ -38,27 +38,28 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,#100,
 					'ach_stim' 			: False,
-					'ach_uncertainty' 	: True,
+					'ach_uncertainty' 	: False,
+					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_digit_DA_conti_exp',
-					'dopa_release' 		: True, 
-					'ach_release'		: False, 
-					'n_runs' 			: 5,
-					'n_epi_crit'		: 0,	
+					'name' 				: 'pypet_ACh_approx_class',
+					'dopa_release' 		: False, 
+					'ach_release'		: True, 
+					'n_runs' 			: 6,
+					'n_epi_crit'		: 1,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 50,
+					'n_epi_perc'		: 30,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3',
+					'init_file'			: '', #digit_pretrain_class_3run_lr_5e-3
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -79,14 +80,14 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+0.50, +0.75, +1.00, +1.25, +1.50, +1.75, +2.00],
+					# 'dHigh'			: [+0.50, +0.75, +1.00, +1.25, +1.50, +1.75, +2.00],
 					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75, -1.50],
  
 					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
 					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
-					# 'ach_1'			: [4.0, 8.0, 10.0, 12.0, 14.0, 16.0],
-					# 'ach_2'		 	: [5.0, 10.0],
+					'ach_1'			: [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0],
+					'ach_2'		 	: [10.0],
 				}
 
 """ load and pre-process images """
@@ -128,7 +129,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 5,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
