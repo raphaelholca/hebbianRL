@@ -24,7 +24,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_approx_class=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -49,6 +49,7 @@ class Network:
 				ach_avg (int, optional): number of episodes to average over for moving averag of performance. Default: 20 
 				ach_stim (bool, optional): whether to average stimulus difficulty over stimuli (True) or over classes (False). Default: False 
 				ach_uncertainty (bool, optional): whether to use uncertainty (True) or performance (False) as a measure of task difficulty. Default: True
+				ach_approx_class (bool, optional): whether to approximate the class of the stimulus using net output (True) or use true class label (False). Default: False
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -98,6 +99,7 @@ class Network:
 		self.ach_avg 			= ach_avg
 		self.ach_stim 			= ach_stim
 		self.ach_uncertainty 	= ach_uncertainty
+		self.ach_approx_class 	= ach_approx_class
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -260,6 +262,7 @@ class Network:
 
 				#train network with mini-batches
 				correct = 0.
+				greedy_all = np.array([], dtype=int)
 				for b in range(self._n_batches):
 					self._b = b
 					#update pdf for bayesian inference
@@ -271,6 +274,7 @@ class Network:
 					
 					#propagate images through the network
 					greedy, explore_hid, explore_out, posterior, explorative = self._propagate(batch_images)
+					greedy_all = np.append(greedy_all, greedy)
 
 					###
 					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
@@ -333,7 +337,10 @@ class Network:
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
 
 				#update tracking of performance for ach release
-				self._update_ach_perf_track(stim_perf_epi, labels_rndm)
+				if self.ach_approx_class:
+					self._update_ach_perf_track(stim_perf_epi, greedy_all)
+				else:
+					self._update_ach_perf_track(stim_perf_epi, labels_rndm)
 
 				#assess early stop
 				if self._assess_early_stop(): break
@@ -356,6 +363,8 @@ class Network:
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start
+
+		# set_trace()
 
 	def test(self, images, labels, during_training=False, end_of_run=False):
 		""" 
