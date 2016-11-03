@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
 					'dNeut' 			: -0.08,
 					'dLow' 				: -0.8,
-					'dopa_func' 		: 'linear',
+					'dopa_func' 		: 'exponential',
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -40,7 +40,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_stim' 			: False,
 					'ach_uncertainty' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_digit_DA_conti_lin',
+					'name' 				: 'pypet_digit_DA_conti_exp',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 5,
@@ -79,10 +79,10 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+1.00, +4.00, +8.00],
+					'dHigh'			: [+0.50, +0.75, +1.00, +1.25, +1.50, +1.75, +2.00],
 					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75, -1.50],
  
-					'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
+					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
 					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
 					# 'ach_1'			: [4.0, 8.0, 10.0, 12.0, 14.0, 16.0],
