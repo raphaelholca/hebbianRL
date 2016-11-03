@@ -804,7 +804,7 @@ def dopa_exponential(predicted_reward, reward, dopa_values):
 	""" exponential relation between RPE and DA release """
 
 	RPE = reward - predicted_reward
-	return (np.exp(dopa_values['dHigh']*RPE)-1.0)*(5.0/dopa_values['dHigh'])
+	return (np.exp(dopa_values['dHigh']*RPE)-1.0)*(5.0/dopa_values['dHigh']) + dopa_values['dMid']
 
 def dopa_sigmoidal(predicted_reward, reward, dopa_values):
 	""" sigmoidal relation between RPE and DA release """
