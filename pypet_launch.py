@@ -3,6 +3,8 @@ Author: Raphael Holca-Lamarre
 Date: 23/10/2014
 
 This code uses PyPet to explore the parameters of the hebbian neural network object.
+
+
 """
 
 import os
@@ -37,11 +39,12 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,#100,
-					'ach_stim' 			: True,
+					'ach_stim' 			: False,
 					'ach_uncertainty' 	: True,
+					'ach_BvSB' 			: True,
 					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_stim_uncert',
+					'name' 				: 'pypet_ACh_approx_class_uncert_BvSB',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 6,
@@ -65,7 +68,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3, #0.3 #0.2
 					'noise_xplr_out'	: 2e4,
-					'exploration'		: False,
+					'exploration'		: True,
 					'compare_output' 	: True,
 					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
@@ -86,7 +89,7 @@ explore_dict = {
 					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
 					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
-					'ach_1'			: [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0],
+					'ach_1'			: [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
 					'ach_2'		 	: [10.0],
 				}
 
