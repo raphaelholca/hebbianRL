@@ -24,7 +24,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
 					'dNeut' 			: -0.08,
 					'dLow' 				: -0.8,
-					'dopa_func' 		: 'exponential',
+					'dopa_func' 		: 'exponential', #'sigmoidal', #'discrete', linear
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -37,29 +37,29 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,#100,
-					'ach_stim' 			: False,
-					'ach_uncertainty' 	: False,
-					'ach_approx_class' 	: False,
+					'ach_stim' 			: True,
+					'ach_uncertainty' 	: True,
+					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_DA_exp_2',
-					'dopa_release' 		: True, 
-					'ach_release'		: False, 
-					'n_runs' 			: 5,
-					'n_epi_crit'		: 0,	
+					'name' 				: 'pypet_ACh_stim_uncert',
+					'dopa_release' 		: False, 
+					'ach_release'		: True, 
+					'n_runs' 			: 6,
+					'n_epi_crit'		: 1,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 10,
+					'n_epi_perc'		: 30,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3', #digit_pretrain_class_3run_lr_5e-3
+					'init_file'			: '', #digit_pretrain_class_3run_lr_5e-3
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -80,14 +80,14 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50],
+					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50],
 					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75, -1.50],
  
-					'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
+					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
 					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
-					# 'ach_1'			: [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0],
-					# 'ach_2'		 	: [10.0],
+					'ach_1'			: [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0],
+					'ach_2'		 	: [10.0],
 				}
 
 """ load and pre-process images """

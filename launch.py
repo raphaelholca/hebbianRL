@@ -21,8 +21,8 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 8.0, 
-							dMid 				= 0.01,
+net = hebbian_net.Network(	dHigh 				= 1.25, #8.0, 
+							dMid 				= 0.0, #0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -3.0,
 							dopa_func 			= 'exponential', #'sigmoidal', #'discrete', linear
@@ -42,13 +42,13 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							ach_uncertainty 	= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'test_class',
+							name 				= 'long_ACh_true_class_perf_pretrain',
 							dopa_release 		= False, 
 							ach_release			= True, 
-							n_runs 				= 1,
+							n_runs 				= 20,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 1,
+							n_epi_perc			= 300,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
@@ -60,7 +60,7 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							shuffle_datasets	= True,
 							n_hid_neurons		= 49, #49, #15 ##<-----
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_3run_lr_5e-3', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -76,7 +76,7 @@ net = hebbian_net.Network(	dHigh 				= 8.0,
 							early_stop 			= False,
 							verbose				= True,
 							save_light 			= True,
-							seed 				= 975 #np.random.randint(1000)
+							seed 				= 974 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
