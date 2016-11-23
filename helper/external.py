@@ -352,7 +352,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'seed', 'save_light', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'save_light', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -772,8 +772,7 @@ def ach_polynomial(rel_perf, ach_1, ach_2, ach_3, ach_4):
 def ach_sigmoidal(rel_perf, ach_1, ach_2=None, ach_3=None, ach_4=None):
 	""" sigmoidal relation between relative perfomance and ACh release """
 	
-	# return 2.0/(1.0+np.exp(ach_1*(rel_perf-1.0)))
-	return ach_2*(2.0/(1.0+np.exp(ach_1*(rel_perf-1.0))))
+	return (ach_2/(1.0+np.exp(ach_1*(rel_perf-1.0))))
 
 def ach_handmade(rel_perf, ach_1=None, ach_2=None, ach_3=None, ach_4=None):
 	""" handmade relation between relative perfomance and ACh release """
