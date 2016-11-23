@@ -44,13 +44,13 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_BvSB' 			: True,
 					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_approx_class_uncert_BvSB',
+					'name' 				: 'pypet_ACh_5_inferclass_BvSB',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
-					'n_runs' 			: 6,
-					'n_epi_crit'		: 1,	
+					'n_runs' 			: 3,
+					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 30,
+					'n_epi_perc'		: 50,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
@@ -62,7 +62,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: '', #digit_pretrain_class_3run_lr_5e-3
+					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3', #digit_pretrain_class_3run_lr_5e-3
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -89,8 +89,8 @@ explore_dict = {
 					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
 					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
 
-					'ach_1'			: [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
-					'ach_2'		 	: [10.0],
+					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
+					'ach_2'		 	: [10.0, 20.0, 30.0, 40.0, 50.0],
 				}
 
 """ load and pre-process images """
