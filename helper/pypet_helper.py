@@ -270,7 +270,7 @@ def bar_plot(best_param_all, best_perf_all=None):
 
 	return fig, ax
 
-def import_traj(folder_path, file_name, order_face, traj_name='explore_perf'):
+def import_traj(folder_path, file_name, order_face=None, traj_name='explore_perf'):
 	print "importing data..."
 	traj = pypet.load_trajectory(traj_name, filename=os.path.join(folder_path, file_name+'.hdf5'), force=True)
 	traj.v_auto_load = True

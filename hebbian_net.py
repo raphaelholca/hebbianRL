@@ -338,7 +338,6 @@ class Network:
 					#track ACh release
 					if self.ach_release and not self.save_light: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
 
-
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
 

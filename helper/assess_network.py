@@ -346,7 +346,7 @@ def print_save_CM(CM_all, perf_all, name, classes, verbose, save_data, save_path
 		plt.close(fig)
 
 
-def plot_all_RF(name, W, RFproba, target=None, W_act=None, sort=None, not_same=None, verbose=True, save_path=''):
+def plot_all_RF(name, W, RFproba=None, target=None, W_act=None, sort=None, not_same=None, verbose=True, save_path=''):
 	""" Plot the RFs of neurons """
 	if verbose: print "\nploting RFs..."
 
