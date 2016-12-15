@@ -26,7 +26,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
 					'dNeut' 			: -0.08,
 					'dLow' 				: -0.8,
-					'dopa_func' 		: 'exponential', #'sigmoidal', #'discrete', linear
+					'dopa_func' 		: 'discrete', #'sigmoidal', #'discrete', linear
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -40,22 +40,22 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,#100,
 					'ach_stim' 			: False,
-					'ach_uncertainty' 	: True,
-					'ach_BvSB' 			: True,
-					'ach_approx_class' 	: True,
+					'ach_uncertainty' 	: False,
+					'ach_BvSB' 			: False,
+					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_5_inferclass_BvSB',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 3,
+					'name' 				: 'pypet_DA_xplr_0-1',
+					'dopa_release' 		: True, 
+					'ach_release'		: False, 
+					'n_runs' 			: 1,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 50,
+					'n_epi_perc'		: 15,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
@@ -66,7 +66,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.3, #0.3 #0.2
+					'noise_xplr_hid'	: 0.1, ##<-------
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -83,14 +83,14 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50],
-					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75, -1.50],
+					'dHigh'			: [+4.00, +8.00, +12.0],
+					'dNeut'			: [-0.10, -0.25, -0.75],
  
-					# 'dMid'			: [-0.50, -0.10, +0.00, +0.10, +0.50],
-					# 'dLow'			: [-0.00, -1.00, -2.00, -3.00, -4.00]
+					'dMid'			: [-0.01, +0.00, +0.01],
+					'dLow'			: [-1.00, -2.00, -3.00]
 
-					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
-					'ach_2'		 	: [10.0, 20.0, 30.0, 40.0, 50.0],
+					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
+					# 'ach_2'		 	: [10.0, 20.0, 30.0, 40.0, 50.0],
 				}
 
 """ load and pre-process images """
@@ -132,7 +132,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 5,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
