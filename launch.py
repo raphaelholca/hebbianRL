@@ -43,18 +43,18 @@ net = hebbian_net.Network(	dHigh 				= 4, #8.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'DA_test',
+							name 				= 'DA_post_reward_proba',
 							dopa_release 		= True, 
 							ach_release			= False, 
 							n_runs 				= 1,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 15,
+							n_epi_perc			= 1,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
 							A					= 1.0e3,
-							lr_hid				= 5e-3, #5e-4,#5e-3, ##<---------
+							lr_hid				= 0,##5e-3, #5e-4,#5e-3, ##<---------
 							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
@@ -76,7 +76,7 @@ net = hebbian_net.Network(	dHigh 				= 4, #8.0,
 							test_each_epi		= False,
 							early_stop 			= False,
 							verbose				= True,
-							save_light 			= True,
+							save_light 			= False,
 							seed 				= 974 #np.random.randint(1000)
 							)
 
