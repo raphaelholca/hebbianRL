@@ -196,9 +196,10 @@ class Network:
 		# self.dopa_tracker = np.array([])
 		# self.RP_tracker = np.array([])
 		# self.RPE_tracker = np.array([])
-		# self.confidence_tracker = np.ones((self.n_images, self.n_classes))*np.nan
-		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
-		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
+		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
+		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
+		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
+		# self.posterior_tracker_explore = np.ones((self.n_epi_perc, self.n_images, self.n_classes))*np.nan
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -279,9 +280,10 @@ class Network:
 					greedy_all = np.append(greedy_all, greedy)
 
 					###
-					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
-					# self.decision_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
-					# self.confidence_tracker[b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
+					# self.decision_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size] = np.argmax(self.out_neurons_greedy,1)
+					# self.decision_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size] = np.argmax(self.out_neurons_explore,1)
+					# self.posterior_tracker_greedy[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_greedy)
+					# self.posterior_tracker_explore[self._e, b*self.batch_size:(b+1)*self.batch_size, :] = np.copy(self.out_neurons_explore)
 					###
 
 					#compute reward prediction
@@ -337,7 +339,6 @@ class Network:
 
 					#track ACh release
 					if self.ach_release and not self.save_light: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
-
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
