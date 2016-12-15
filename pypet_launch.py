@@ -39,26 +39,15 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,#100,
-<<<<<<< HEAD
-					'ach_stim' 			: True,
-=======
 					'ach_stim' 			: False,
->>>>>>> 39e165cdfb0a79b80e9b0ddaf9f6ef1150ac3f83
 					'ach_uncertainty' 	: False,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-<<<<<<< HEAD
-					'name' 				: 'pypet_ACh_6_stimwise_perf_5',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 3,
-=======
 					'name' 				: 'pypet_DA_xplr_0-1',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 1,
->>>>>>> 39e165cdfb0a79b80e9b0ddaf9f6ef1150ac3f83
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_perc'		: 15,
@@ -100,13 +89,8 @@ explore_dict = {
 					'dMid'			: [-0.01, +0.00, +0.01],
 					'dLow'			: [-1.00, -2.00, -3.00]
 
-<<<<<<< HEAD
-					'ach_1'			: [0.0, 0.5, 1.0, 2.0, 5.0],
-					'ach_2'			: [10.0, 20.0, 30.0, 40.0, 50.0],
-=======
 					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
 					# 'ach_2'		 	: [10.0, 20.0, 30.0, 40.0, 50.0],
->>>>>>> 39e165cdfb0a79b80e9b0ddaf9f6ef1150ac3f83
 				}
 
 """ load and pre-process images """
