@@ -26,7 +26,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'dMid' 				: 0.0,
 					'dNeut' 			: -0.08,
 					'dLow' 				: -0.8,
-					'dopa_func' 		: 'discrete', #'sigmoidal', #'discrete', linear
+					'dopa_func' 		: 'exponential', #'exponential', #'discrete', 'linear'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -44,7 +44,7 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_DA_xplr_0-1',
+					'name' 				: 'pypet_DA_exp_3',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 1,
@@ -62,11 +62,11 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_class_3run_30epi_stimwise_perf', #digit_pretrain_class_3run_lr_5e-3
+					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3', #digit_pretrain_class_3run_lr_5e-3
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.1, ##<-------
+					'noise_xplr_hid'	: 0.3, ##<-------
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -83,11 +83,14 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+4.00, +8.00, +12.0],
-					'dNeut'			: [-0.10, -0.25, -0.75],
+					# 'dHigh'			: [+4.00, +8.00, +12.0],
+					# 'dNeut'			: [-0.10, -0.25, -0.75],
  
-					'dMid'			: [-0.01, +0.00, +0.01],
-					'dLow'			: [-1.00, -2.00, -3.00]
+					# 'dMid'			: [-0.01, +0.00, +0.01],
+					# 'dLow'			: [-1.00, -2.00, -3.00]
+
+					'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
+					'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
 					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
 					# 'ach_2'		 	: [10.0, 20.0, 30.0, 40.0, 50.0],
@@ -132,7 +135,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 5,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
