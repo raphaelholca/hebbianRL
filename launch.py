@@ -21,19 +21,19 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 4, #8.0, 
-							dMid 				= 0.0, #0.01,
+net = hebbian_net.Network(	dHigh 				= 4.00,
+							dMid 				= 0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
-							dopa_func 			= 'discrete', #'exponential', #'discrete', 'linear'
+							dopa_func 			= 'discrete', #'sigmoidal', #'discrete', linear
 							dopa_out_same 		= True,
 							train_out_dopa 		= False,
 							dHigh_out			= 0.0,
 							dMid_out			= 0.2,
 							dNeut_out			= -0.3,
 							dLow_out			= -0.5,
-							ach_1 				= 6.0, #<----
-							ach_2 				= 9.0,
+							ach_1 				= 15.0, #<----
+							ach_2 				= 30.0, #<----
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset', 'labels', 'labels_reverse'
@@ -59,7 +59,7 @@ net = hebbian_net.Network(	dHigh 				= 4, #8.0,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= True,
-							n_hid_neurons		= 49, #49, #15 ##<-----
+							n_hid_neurons		= 10, ##<------
 							weight_init 		= 'input',
 							init_file			= 'digit_pretrain_class_3run_lr_5e-3', #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
