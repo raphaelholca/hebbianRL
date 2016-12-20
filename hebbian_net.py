@@ -198,7 +198,7 @@ class Network:
 		# self.RPE_tracker = np.array([])
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
-		self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
+		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.posterior_tracker_explore = np.ones((self.n_epi_perc, self.n_images, self.n_classes))*np.nan
 
 		if self.verbose: 

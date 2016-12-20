@@ -21,11 +21,11 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 4.00,
-							dMid 				= 0.01,
+net = hebbian_net.Network(	dHigh 				= 6.0,
+							dMid 				= -0.4,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
-							dopa_func 			= 'discrete', #'sigmoidal', #'discrete', linear
+							dopa_func 			= 'linear', #'exponential', #'discrete', 'linear'
 							dopa_out_same 		= True,
 							train_out_dopa 		= False,
 							dHigh_out			= 0.0,
@@ -43,25 +43,25 @@ net = hebbian_net.Network(	dHigh 				= 4.00,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'DA_post_reward_proba',
+							name 				= 'long_DA_lr',
 							dopa_release 		= True, 
 							ach_release			= False, 
-							n_runs 				= 1,
+							n_runs 				= 3,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 1,
+							n_epi_perc			= 30,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
 							A					= 1.0e3,
-							lr_hid				= 0,##5e-3, #5e-4,#5e-3, ##<---------
+							lr_hid				= 5e-3, #5e-4,#5e-3, ##<---------
 							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= True,
-							n_hid_neurons		= 10, ##<------
+							n_hid_neurons		= 49, ##<------
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_3run_lr_5e-3', #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -73,10 +73,10 @@ net = hebbian_net.Network(	dHigh 				= 4.00,
 							pdf_method 			= 'fit',
 							classifier			= 'neural_prob',
 							RF_classifier 		= 'svm',
-							test_each_epi		= False,
+							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
-							save_light 			= False,
+							save_light 			= True,
 							seed 				= 974 #np.random.randint(1000)
 							)
 
