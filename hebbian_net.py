@@ -189,7 +189,7 @@ class Network:
 		self._labels2idx = ex.set_labels2idx(self.classes)
 		self._train_class_layer = True if self.classifier=='neural_dopa'  else False
 		self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
-		self._saved_perf_size = (self.n_classes, self.ach_avg) if not self.ach_stim else None
+		self._saved_perf_size = (self.n_images, self.ach_avg) if self.ach_stim else (self.n_classes, self.ach_avg)
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
@@ -200,6 +200,9 @@ class Network:
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.posterior_tracker_explore = np.ones((self.n_epi_perc, self.n_images, self.n_classes))*np.nan
+
+		self.images_saved = np.ones((self.n_images, 784))
+
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -226,6 +229,7 @@ class Network:
 				else:
 					gaussian_noise = np.zeros(np.shape(images_train))
 			elif self.protocol=='toy_data' and not self.pypet:
+				images_train, images_test, labels_train, labels_test, idx_train, idx_test = ex.shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
 				an.assess_toy_data(self, images_train, labels_train, os.path.join('.', 'output', self.name, 'result_init'))
 			images_rndm, labels_rndm = images_train, labels_train
 
@@ -367,6 +371,8 @@ class Network:
 			if not self.save_light or self.ach_release: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
+
+			self.images_saved = np.copy(images_rndm)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start

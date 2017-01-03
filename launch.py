@@ -32,18 +32,18 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 							dMid_out			= 0.2,
 							dNeut_out			= -0.3,
 							dLow_out			= -0.5,
-							ach_1 				= 10.0, #<----
-							ach_2 				= 10.0, #<----
+							ach_1 				= 20.0, #<----
+							ach_2 				= 20.0, #<----
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset', 'labels', 'labels_reverse'
-							ach_avg 			= 1,
-							ach_stim 			= True,
+							ach_avg 			= 20,
+							ach_stim 			= False,
 							ach_uncertainty 	= True,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'ACh_compa_stim',
+							name 				= 'ACh_compa_class_images',
 							dopa_release 		= False, 
 							ach_release			= True, 
 							n_runs 				= 1,
@@ -59,9 +59,9 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= True,
-							n_hid_neurons		= 49, ##<------
+							n_hid_neurons		= 49, #49, ##<------
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_3run_lr_5e-3_noAchAvg', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'digit_pretrain_class_3run_lr_5e-3', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -84,7 +84,7 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		= net.protocol,
 																	A				= net.A,
 																	verbose 		= net.verbose,
-																	digit_params 	= {	'dataset_train'		: 'train',
+																	digit_params 	= {	'dataset_train'		: 'train', #'2D', 'train', 'test'
 																						# 'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
