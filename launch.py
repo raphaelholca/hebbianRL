@@ -43,7 +43,7 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'ACh_compa_class_images',
+							name 				= 'test',
 							dopa_release 		= False, 
 							ach_release			= True, 
 							n_runs 				= 1,
