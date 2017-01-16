@@ -193,16 +193,13 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
-		# self.dopa_tracker = np.array([])
+		self.dopa_tracker = np.array([])
 		# self.RP_tracker = np.array([])
-		# self.RPE_tracker = np.array([])
+		self.RPE_tracker = np.array([])
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.posterior_tracker_explore = np.ones((self.n_epi_perc, self.n_images, self.n_classes))*np.nan
-
-		self.images_saved = np.ones((self.n_images, 784))
-
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -300,12 +297,31 @@ class Network:
 
 					# self.RP_tracker = np.append(self.RP_tracker, predicted_reward_hid)
 					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-predicted_reward_hid)
+					self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
-					# self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
+					pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
+					dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
+					dopa_hid[dopa_disc==4.0] = 4.0
+
+					# pred_rew_exp = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'exponential')
+					# dopa_xplor = ex.compute_dopa(predicted_reward_hid, reward_hid, {'dHigh': 1.844, 'dMid':1.065}, 'exponential')
+					# dopa_xploit = ex.compute_dopa(predicted_reward_hid, reward_hid, {'dHigh': 0.909, 'dMid':1.128}, 'exponential')
+					# mask_xplr = self.classes[np.argmax(self.out_neurons_greedy,1)] != self.classes[np.argmax(self.out_neurons_explore,1)]
+					# dopa_hid[mask_xplr] = dopa_xplor[mask_xplr]
+					# dopa_hid[~mask_xplr] = dopa_xploit[~mask_xplr]
+
+					### to have DA only for a specific class
+					# dopa_hid[~np.logical_or(batch_labels==4, explore_hid==4)] = 0.0
+					# dopa_hid[~(explore_hid==9)] = 0.0
+					# set_trace()
+					###
+
+
+					self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
 
 					#compute ACh signal
 					if self.ach_uncertainty:
@@ -371,8 +387,6 @@ class Network:
 			if not self.save_light or self.ach_release: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
-
-			self.images_saved = np.copy(images_rndm)
 
 		self._train_stop = time.time()
 		self.runtime = self._train_stop - self._train_start

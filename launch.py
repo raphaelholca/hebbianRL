@@ -21,12 +21,12 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 6.0,
-							dMid 				= -0.4,
+net = hebbian_net.Network(	dHigh 				= 2.0, #6.0,#2.0,#4.0,
+							dMid 				= 1.1, #-0.4,#1.1,#0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
-							dopa_func 			= 'linear', #'exponential', #'discrete', 'linear'
-							dopa_out_same 		= True,
+							dopa_func 			= 'exponential', #'exponential', #'discrete', 'linear'
+							dopa_out_same 		= False,
 							train_out_dopa 		= False,
 							dHigh_out			= 0.0,
 							dMid_out			= 0.2,
@@ -39,14 +39,14 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset', 'labels', 'labels_reverse'
 							ach_avg 			= 20,
 							ach_stim 			= False,
-							ach_uncertainty 	= True,
+							ach_uncertainty 	= False,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'test',
-							dopa_release 		= False, 
-							ach_release			= True, 
-							n_runs 				= 1,
+							name 				= 'dopa_exp_discr_dHigh',
+							dopa_release 		= True, 
+							ach_release			= False, 
+							n_runs 				= 10,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
 							n_epi_perc			= 50,
@@ -54,14 +54,14 @@ net = hebbian_net.Network(	dHigh 				= 6.0,
 							t_hid				= 1.0,
 							t_out				= 0.1,
 							A					= 1.0e3,
-							lr_hid				= 5e-4, #5e-4,#5e-3, ##<---------
+							lr_hid				= 5e-3, #5e-4,#5e-3, ##<---------
 							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= True,
-							n_hid_neurons		= 49, #49, ##<------
+							n_hid_neurons		= 49, ##<------
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_3run_lr_5e-3', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,

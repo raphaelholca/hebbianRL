@@ -11,7 +11,7 @@ train_svm = False
 train_kmeans = False
 grid_search = False
 
-n_runs = 10
+n_runs = 1##10
 
 def shuffle_data(X, y):
 	idx_shuffle = np.arange(len(y))
@@ -49,8 +49,8 @@ if train_mlp:
 		all_scores_mlp = np.zeros(n_runs)
 		for n in range(n_runs):
 			print "run %d" % n
-			# mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08)
-			mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='l-bfgs', alpha=1e-6, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True)
+			mlp = MLPClassifier(hidden_layer_sizes=(25,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08)
+			# mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='l-bfgs', alpha=1e-6, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True)
 			X_train, y_train, X_test, y_test = shuffle_data(X, y)
 			mlp.fit(X_train, y_train)
 			mlp_score = mlp.score(X_test, y_test)
