@@ -88,6 +88,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																						'even_dataset'		: True
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,

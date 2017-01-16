@@ -59,6 +59,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			digit_params={	'dataset_train'	: 'train',
 							'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 							'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
+							'even_dataset'	: True
 							}
 
 		if verbose: print 'loading train images...'
@@ -76,7 +77,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 
 			#normalize and even out dataset
 			if normalize_im: images_all = normalize(images_all, A)
-			images_all, labels_all = even_labels(images_all, labels_all, digit_params['classes'])
+			if digit_params['even_dataset']:
+				images_all, labels_all = even_labels(images_all, labels_all, digit_params['classes'])
 			
 			#split dataset in train and test sets
 			images_all, labels_all = shuffle([images_all, labels_all])
@@ -87,7 +89,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			labels_test = labels_all[idx_split:]
 		else:
 			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-			images, labels = even_labels(images, labels, digit_params['classes'])
+			if digit_params['even_dataset']:
+				images, labels = even_labels(images, labels, digit_params['classes'])
 			if normalize_im: images = normalize(images, A)
 
 			if load_test:
@@ -95,7 +98,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				dataset_test = 'test' if digit_params['dataset_train']=='train' else 'train'
 				images_test, labels_test = read_images_from_mnist(classes=digit_params['classes'], dataset=dataset_test ,  path=digit_params['dataset_path'])
 			
-				images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
+				if digit_params['even_dataset']:
+					images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
 				if normalize_im: images_test = normalize(images_test, A)
 			else:
 				images_test = None

@@ -23,10 +23,10 @@ pp = reload(pp)
 
 """ static parameters """
 parameter_dict = {	'dHigh' 			: 2.4,
-					'dMid' 				: 0.0,
+					'dMid' 				: 0.,#0.0,
 					'dNeut' 			: -0.08,
-					'dLow' 				: -0.8,
-					'dopa_func' 		: 'exponential', #'exponential', #'discrete', 'linear'
+					'dLow' 				: 0.,#-0.8,
+					'dopa_func' 		: 'discrete', #'exponential', #'discrete', 'linear'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -38,31 +38,31 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
-					'ach_avg' 			: 1,#20, ##<------
-					'ach_stim' 			: True,
-					'ach_uncertainty' 	: True,
-					'ach_BvSB' 			: True,
+					'ach_avg' 			: 20, ##<------
+					'ach_stim' 			: False,
+					'ach_uncertainty' 	: False,
+					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_8_stimwise_BvSB_noavg_2',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 3,
+					'name' 				: 'pypet_DA_pure_explor',
+					'dopa_release' 		: True, 
+					'ach_release'		: False, 
+					'n_runs' 			: 1,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 50,
+					'n_epi_perc'		: 15,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: True,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3_noAchAvg', #digit_pretrain_class_3run_lr_5e-3
+					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3',
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -83,8 +83,8 @@ parameter_dict = {	'dHigh' 			: 2.4,
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [+4.00, +8.00, +12.0],
-					# 'dNeut'			: [-0.10, -0.25, -0.75],
+					'dHigh'			: [+1.00, +2.00, +4.00, +8.00],
+					'dNeut'			: [-0.10, -0.25, -0.50, -0.75, -1.00],
  
 					# 'dMid'			: [-0.01, +0.00, +0.01],
 					# 'dLow'			: [-1.00, -2.00, -3.00]
@@ -92,8 +92,8 @@ explore_dict = {
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
-					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
-					'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
+					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
+					# 'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
 				}
 
 """ load and pre-process images """
@@ -104,6 +104,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
+																						'even_dataset'		: True
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
