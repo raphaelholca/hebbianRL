@@ -205,7 +205,6 @@ class Network:
 			print 'seed: ' + str(self.seed) + '\n'
 			print 'run:  ' + self.name
 			print '\ntraining network...'
-		
 		""" execute multiple training runs """
 		for r in range(self.n_runs):
 			self._r = r
@@ -479,7 +478,6 @@ class Network:
 		""" initialize weights of the network by loading saved weights from file """
 		if not os.path.exists(os.path.join('output', self.init_file)):
 			raise IOError, "weight file \'%s\' not found" % self.init_file
-
 		f_net = open(os.path.join('output', self.init_file, 'Network'), 'r')
 		saved_net = pickle.load(f_net)
 
