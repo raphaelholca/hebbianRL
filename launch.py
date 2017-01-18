@@ -21,11 +21,11 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 2.0, #6.0,#2.0,#4.0,
-							dMid 				= 1.1, #-0.4,#1.1,#0.01,
+net = hebbian_net.Network(	dHigh 				= 1.0, #6.0,#2.0,#4.0,
+							dMid 				= 4.0, #-0.4,#1.1,#0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
-							dopa_func 			= 'exponential', #'exponential', #'discrete', 'linear'
+							dopa_func 			= 'linear_discrete', #'exponential', #'discrete', 'linear'
 							dopa_out_same 		= False,
 							train_out_dopa 		= False,
 							dHigh_out			= 0.0,
@@ -43,13 +43,13 @@ net = hebbian_net.Network(	dHigh 				= 2.0, #6.0,#2.0,#4.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'dopa_exp_discr_dHigh',
+							name 				= 'dopa_lindisc_dHigh',
 							dopa_release 		= True, 
 							ach_release			= False, 
-							n_runs 				= 10,
+							n_runs 				= 1,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 50,
+							n_epi_perc			= 15,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
 							t_out				= 0.1,

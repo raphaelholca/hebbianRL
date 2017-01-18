@@ -574,6 +574,8 @@ def compute_dopa(predicted_reward, reward, dopa_values, dopa_func):
 		return dopa_sigmoidal(predicted_reward, reward, dopa_values)
 	elif dopa_func=='linear':
 		return dopa_linear(predicted_reward, reward, dopa_values)
+	elif dopa_func=='linear_discrete':
+		return dopa_linear_discrete(predicted_reward, reward, dopa_values)
 	elif dopa_func=='exponential':
 		return dopa_exponential(predicted_reward, reward, dopa_values)
 	else:
@@ -801,6 +803,12 @@ def dopa_linear(predicted_reward, reward, dopa_values):
 
 	RPE = reward - predicted_reward
 	return dopa_values['dHigh']*RPE + dopa_values['dMid']
+
+def dopa_linear_discrete(predicted_reward, reward, dopa_values):
+	""" linear relation between RPE and DA release """
+
+	RPE = reward - predicted_reward
+	return dopa_values['dHigh']*(RPE-0.75) + 4.0
 
 def dopa_exponential(predicted_reward, reward, dopa_values):
 	""" exponential relation between RPE and DA release """
