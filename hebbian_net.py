@@ -305,11 +305,11 @@ class Network:
 					### linearise the exponential RPE->DA function
 					if self.dopa_func=='linear_discrete':
 						pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
-						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
-						dopa_hid[dopa_disc== 4.00] =  4.00 #dHigh
+						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 8.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-3.0}, 'discrete')
+						# dopa_hid[dopa_disc== 8.00] =  8.00 #dHigh
 						dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
 						dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
-						dopa_hid[dopa_disc==-1.00] = -1.00 #dLow
+						dopa_hid[dopa_disc==-3.00] = -3.00 #dLow
 					###
 
 					### to have DA only for a specific class

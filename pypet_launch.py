@@ -22,11 +22,11 @@ ex = reload(ex)
 pp = reload(pp)
 
 """ static parameters """
-parameter_dict = {	'dHigh' 			: 2.4,
-					'dMid' 				: 0.,#0.0,
-					'dNeut' 			: -0.08,
-					'dLow' 				: 0.,#-0.8,
-					'dopa_func' 		: 'discrete', #'exponential', #'discrete', 'linear'
+parameter_dict = {	'dHigh' 			: 4.0,
+					'dMid' 				: 0.01,
+					'dNeut' 			: -0.25,
+					'dLow' 				: -1.0,
+					'dopa_func' 		: 'linear_discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -44,10 +44,10 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_DA_pure_explor',
+					'name' 				: 'pypet_lin_discr_dHigh_5',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
-					'n_runs' 			: 1,
+					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
 					'n_epi_perc'		: 15,
@@ -78,16 +78,19 @@ parameter_dict = {	'dHigh' 			: 2.4,
 					'early_stop'		: False,
 					'verbose'			: False,
 					'save_light' 		: True,
-					'seed' 				: 987 #np.random.randint(1000)
+					'seed' 				: 990#np.random.randint(1000)
 					}
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+1.00, +2.00, +4.00, +8.00],
-					'dNeut'			: [-0.10, -0.25, -0.50, -0.75, -1.00],
+					'dHigh'			: [-40.0, -20.0, -10.0, -5.0 +0.0, +2.0, +5.0, +10.0, +20.0, +40.0],
+					# 'dHigh'			: [3.00, 3.25, 3.50, 3.75, 4.00, 4.25, 4.50, 4.75, 5.00],
+					# 'dNeut'			: [-0.10, -0.25, -0.50, -0.75, -1.00],
  
 					# 'dMid'			: [-0.01, +0.00, +0.01],
 					# 'dLow'			: [-1.00, -2.00, -3.00]
+					# 'dLow'			: [-2.00, -1.00, -0.50, +0.00, +0.50, +1.00, +2.00, +3.00, +4.00]
+					# 'dLow'			: [-3.00, -2.00, -1.50, -1.25, -1.00, -0.75, -0.50, -0.00]
 
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]

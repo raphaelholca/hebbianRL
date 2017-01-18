@@ -808,7 +808,10 @@ def dopa_linear_discrete(predicted_reward, reward, dopa_values):
 	""" linear relation between RPE and DA release """
 
 	RPE = reward - predicted_reward
-	return dopa_values['dHigh']*(RPE-0.75) + 4.0
+	return dopa_values['dHigh']*(RPE - 0.84953668) + 8.0 # dHigh linear
+	# return np.ones_like(RPE)*dopa_values['dHigh']  # dHigh discrete
+	# return dopa_values['dLow']*(RPE + 0.84088919) - 1.0 # dLow linear
+	# return np.ones_like(RPE)*dopa_values['dLow']  # dLow discrete
 
 def dopa_exponential(predicted_reward, reward, dopa_values):
 	""" exponential relation between RPE and DA release """
