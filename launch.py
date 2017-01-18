@@ -43,10 +43,10 @@ net = hebbian_net.Network(	dHigh 				= 2.0, #6.0,#2.0,#4.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= False, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'dopa_exp_discr_dHigh',
+							name 				= 'dopa_exp_discr_dLow',
 							dopa_release 		= True, 
 							ach_release			= False, 
-							n_runs 				= 10,
+							n_runs 				= 5,
 							n_epi_crit			= 0,
 							n_epi_fine 			= 0,
 							n_epi_perc			= 50,
@@ -76,7 +76,7 @@ net = hebbian_net.Network(	dHigh 				= 2.0, #6.0,#2.0,#4.0,
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
-							save_light 			= False,
+							save_light 			= True,
 							seed 				= 974 #np.random.randint(1000)
 							)
 
