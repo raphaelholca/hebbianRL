@@ -302,16 +302,15 @@ class Network:
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
-					pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
-					dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
-					dopa_hid[dopa_disc==-1.0] = -1.0
-
-					# pred_rew_exp = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'exponential')
-					# dopa_xplor = ex.compute_dopa(predicted_reward_hid, reward_hid, {'dHigh': 1.844, 'dMid':1.065}, 'exponential')
-					# dopa_xploit = ex.compute_dopa(predicted_reward_hid, reward_hid, {'dHigh': 0.909, 'dMid':1.128}, 'exponential')
-					# mask_xplr = self.classes[np.argmax(self.out_neurons_greedy,1)] != self.classes[np.argmax(self.out_neurons_explore,1)]
-					# dopa_hid[mask_xplr] = dopa_xplor[mask_xplr]
-					# dopa_hid[~mask_xplr] = dopa_xploit[~mask_xplr]
+					### linearise the exponential RPE->DA function
+					if self.dopa_func=='linear_discrete':
+						pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
+						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
+						dopa_hid[dopa_disc== 4.00] =  4.00 #dHigh
+						dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
+						dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
+						dopa_hid[dopa_disc==-1.00] = -1.00 #dLow
+					###
 
 					### to have DA only for a specific class
 					# dopa_hid[~np.logical_or(batch_labels==4, explore_hid==4)] = 0.0
