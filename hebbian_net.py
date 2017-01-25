@@ -193,9 +193,9 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
-		# self.dopa_tracker = np.array([])
+		self.dopa_tracker = np.array([])
 		# self.RP_tracker = np.array([])
-		# self.RPE_tracker = np.array([])
+		self.RPE_tracker = np.array([])
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
@@ -296,7 +296,7 @@ class Network:
 
 					# self.RP_tracker = np.append(self.RP_tracker, predicted_reward_hid)
 					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-predicted_reward_hid)
-					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
+					self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
@@ -305,11 +305,11 @@ class Network:
 					### linearise the exponential RPE->DA function
 					if self.dopa_func=='linear_discrete':
 						pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
-						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 8.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-3.0}, 'discrete')
-						# dopa_hid[dopa_disc== 8.00] =  8.00 #dHigh
-						dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
-						dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
-						dopa_hid[dopa_disc==-3.00] = -3.00 #dLow
+						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
+						# dopa_hid[dopa_disc== 4.00] =  4.00 #dHigh
+						# dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
+						# dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
+						dopa_hid[dopa_disc==-1.00] = -1.00 #dLow
 					###
 
 					### to have DA only for a specific class
@@ -318,7 +318,7 @@ class Network:
 					# set_trace()
 					###
 
-					# self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
+					self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
 
 					#compute ACh signal
 					if self.ach_uncertainty:
