@@ -69,7 +69,7 @@ class Network:
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				shuffle_datasets (bool, optional): whether to shuffle train and test datasets to create new split of the data for each individual run. Default: True
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
-				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
+				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file), 'naive' (load naive from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				log_weights (str, optional): transfer function of the weights; possible values: 'lin', 'log', 'linlog'. Default: 'log'
@@ -193,9 +193,9 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
-		self.dopa_tracker = np.array([])
+		# self.dopa_tracker = np.array([])
 		# self.RP_tracker = np.array([])
-		self.RPE_tracker = np.array([])
+		# self.RPE_tracker = np.array([])
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
@@ -296,7 +296,7 @@ class Network:
 
 					# self.RP_tracker = np.append(self.RP_tracker, predicted_reward_hid)
 					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-predicted_reward_hid)
-					self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
+					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
@@ -318,7 +318,7 @@ class Network:
 					# set_trace()
 					###
 
-					self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
+					# self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
 
 					#compute ACh signal
 					if self.ach_uncertainty:
@@ -489,6 +489,8 @@ class Network:
 			self._init_weights_random()
 		elif self.weight_init == 'input' and images is not None:
 			self._init_weights_input(images)
+		elif self.weight_init == 'naive':
+			self._init_weights_file()
 		else:
 			raise ValueError ('wrong weitgh initialization method: %s' % self.weight_init)
 
@@ -501,8 +503,12 @@ class Network:
 
 		#randomly choose weights from one of the saved runs
 		run_to_load = self._r % saved_net.n_runs 
-		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
-		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
+		if self.weight_init=='naive':
+			saved_hid_W = saved_net.hid_W_naive[run_to_load, :, :] # saved_net.hid_W_trained[run_to_load, :, :]
+			saved_out_W = saved_net.out_W_naive[run_to_load, :, :] # saved_net.out_W_trained[run_to_load, :, :]
+		else:
+			saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
+			saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -511,7 +517,7 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
-		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
+		if not self.save_light: self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
 			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
