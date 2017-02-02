@@ -91,12 +91,25 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
 			if digit_params['even_dataset']:
 				images, labels = even_labels(images, labels, digit_params['classes'])
-			if 'class_reduce' in digit_params and digit_params['class_reduce'] is not None:
-				mask_subsamp = np.zeros(len(labels), dtype=bool)
-				mask_subsamp[::10] = True ##subsampling by factor of 10
-				mask = np.logical_or(labels != digit_params['class_reduce'], mask_subsamp)
-				images = images[mask]
-				labels = labels[mask]
+			if 'class_reduce' in digit_params and digit_params['class_reduce']:
+				subs=20
+				overs=3
+				images_non_uni = np.empty((0, images.shape[1]))
+				labels_non_uni = np.empty(0, dtype=int)
+				for _ in range(overs):
+					images_non_uni = np.append(images_non_uni, images[labels==0], axis=0)
+					images_non_uni = np.append(images_non_uni, images[labels==1], axis=0)
+					labels_non_uni = np.append(labels_non_uni, labels[labels==0])
+					labels_non_uni = np.append(labels_non_uni, labels[labels==1])
+				images_non_uni = np.append(images_non_uni, images[labels==3][::subs], axis=0)
+				images_non_uni = np.append(images_non_uni, images[labels==5][::subs], axis=0)
+				images_non_uni = np.append(images_non_uni, images[labels==8][::subs], axis=0)
+				labels_non_uni = np.append(labels_non_uni, labels[labels==3][::subs])
+				labels_non_uni = np.append(labels_non_uni, labels[labels==5][::subs])
+				labels_non_uni = np.append(labels_non_uni, labels[labels==8][::subs])
+
+				images = np.copy(images_non_uni)
+				labels = np.copy(labels_non_uni)
 
 			if normalize_im: images = normalize(images, A)
 
