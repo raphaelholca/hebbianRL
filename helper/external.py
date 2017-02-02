@@ -91,6 +91,13 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
 			if digit_params['even_dataset']:
 				images, labels = even_labels(images, labels, digit_params['classes'])
+			if 'class_reduce' in digit_params and digit_params['class_reduce'] is not None:
+				mask_subsamp = np.zeros(len(labels), dtype=bool)
+				mask_subsamp[::10] = True ##subsampling by factor of 10
+				mask = np.logical_or(labels != digit_params['class_reduce'], mask_subsamp)
+				images = images[mask]
+				labels = labels[mask]
+
 			if normalize_im: images = normalize(images, A)
 
 			if load_test:

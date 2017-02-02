@@ -381,7 +381,7 @@ class Network:
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
 			if 'labels_rndm' in locals() and not self.save_light: self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
-			if not self.save_light or self.ach_release: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
+			if not self.save_light or self.ach_release and self.n_epi_perc>0: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
