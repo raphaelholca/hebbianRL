@@ -12,7 +12,7 @@ train_kmeans = False
 grid_search = False
 
 n_runs = 3
-n_epi = 100 #(x20)
+n_epi = 50 #(x20)
 seed =  974
 
 np.random.seed(seed) 
@@ -56,7 +56,7 @@ if train_mlp:
 			print "run %d" % r
 			#SGD
 			X_train, y_train, X_test, y_test = shuffle_data(X, y)
-			mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='sgd', alpha=0, batch_size=50, learning_rate='constant', max_iter=10, tol=0, learning_rate_init=5e-3, momentum=0, early_stopping=False, warm_start=True, shuffle=True, random_state=seed+r, verbose=True)
+			mlp = MLPClassifier(hidden_layer_sizes=(10000,), activation='relu', algorithm='sgd', alpha=0, batch_size=50, learning_rate='constant', max_iter=10, tol=0, learning_rate_init=5e-3, momentum=0, early_stopping=False, warm_start=True, shuffle=True, random_state=seed+r, verbose=True)
 			#Adam
 			# mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=10, shuffle=True, random_state=seed+r, tol=-100, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08, warm_start=True)
 			for e in range(n_epi):
