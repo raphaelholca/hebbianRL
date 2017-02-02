@@ -10,6 +10,7 @@ import helper.external as ex
 import helper.grating as gr
 import helper.bayesian_decoder as bc
 import helper.assess_network as an
+import warnings
 import time
 import pickle
 import scipy.special
@@ -518,10 +519,14 @@ class Network:
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
 		if not self.save_light: self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
-		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
 		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
-			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
-		self._stim_perf_weights = (np.arange(saved_net.ach_avg, dtype=float)+1)[::-1]
+			warnings.warn('loaded stim_perf_saved not the same size as current network\'s; empty initialization', UserWarning)
+			self._stim_perf = np.ones(self._saved_perf_size)*np.nan
+			min_size = np.min([saved_net.stim_perf_saved.shape[-1], self._saved_perf_size[-1]])
+			self._stim_perf[:, :min_size] = np.copy(saved_net.stim_perf_saved[run_to_load, :, :min_size])
+		else:
+			self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		self._stim_perf_weights = (np.arange(self.ach_avg, dtype=float)+1)[::-1]
 		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 		f_net.close()
 

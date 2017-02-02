@@ -43,7 +43,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= True, 
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'subs_data_2_ACh',
+							name 				= 'subs_data_3_ACh',
 							dopa_release 		= False, 
 							ach_release			= True, 
 							n_runs 				= 1,
@@ -61,7 +61,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							shuffle_datasets	= False, ##
 							n_hid_neurons		= 49,
 							weight_init 		= 'input',
-							init_file			= 'subs_data_2_Hebb',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'subs_data_3_Hebb',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -89,7 +89,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'even_dataset'		: True,
-																						'class_reduce'		: 2 ##<-- None
+																						'class_reduce'		: 3 ##<-- None
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
