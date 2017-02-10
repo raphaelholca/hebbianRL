@@ -26,7 +26,7 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'dMid' 				: 0.01,
 					'dNeut' 			: -0.25,
 					'dLow' 				: -1.0,
-					'dopa_func' 		: 'linear_discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
+					'dopa_func' 		: 'discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -38,35 +38,35 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_3' 			: 0.0,
 					'ach_4' 			: 0.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
-					'ach_avg' 			: 20, ##<------
+					'ach_avg' 			: 20,
 					'ach_stim' 			: False,
-					'ach_uncertainty' 	: False,
+					'ach_uncertainty' 	: True,
 					'ach_BvSB' 			: False,
-					'ach_approx_class' 	: False,
+					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_lin_discr_dHigh_5',
-					'dopa_release' 		: True, 
-					'ach_release'		: False, 
-					'n_runs' 			: 3,
+					'name' 				: 'pypet_ACh_non_uni_3',
+					'dopa_release' 		: False, 
+					'ach_release'		: True, 
+					'n_runs' 			: 1,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 15,
+					'n_epi_perc'		: 80,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
-					'shuffle_datasets'	: True,
-					'n_hid_neurons'		: 49, #15,#49, ##<-----------
+					'shuffle_datasets'	: False,
+					'n_hid_neurons'		: 25, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3',
+					'init_file'			: 'Hebb_non_uni',
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
-					'noise_xplr_hid'	: 0.3, ##<-------
+					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
 					'exploration'		: True,
 					'compare_output' 	: True,
@@ -83,7 +83,7 @@ parameter_dict = {	'dHigh' 			: 4.0,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [-40.0, -20.0, -10.0, -5.0 +0.0, +2.0, +5.0, +10.0, +20.0, +40.0],
+					# 'dHigh'			: [-40.0, -20.0, -10.0, -5.0 +0.0, +2.0, +5.0, +10.0, +20.0, +40.0],
 					# 'dHigh'			: [3.00, 3.25, 3.50, 3.75, 4.00, 4.25, 4.50, 4.75, 5.00],
 					# 'dNeut'			: [-0.10, -0.25, -0.50, -0.75, -1.00],
  
@@ -95,8 +95,8 @@ explore_dict = {
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
-					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
-					# 'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
+					'ach_1'			: [20.0, 30.0, 35.0, 40.0, 45.0, 50.0],
+					'ach_2'		 	: [10.0],
 				}
 
 """ load and pre-process images """
@@ -105,9 +105,11 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
-																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
+																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'even_dataset'		: True
+																						'even_dataset'		: True,
+																						'class_reduce'		: True ##<-- None
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
@@ -139,7 +141,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 3,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 

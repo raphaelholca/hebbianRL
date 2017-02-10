@@ -10,6 +10,7 @@ import helper.external as ex
 import helper.grating as gr
 import helper.bayesian_decoder as bc
 import helper.assess_network as an
+import warnings
 import time
 import pickle
 import scipy.special
@@ -69,7 +70,7 @@ class Network:
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				shuffle_datasets (bool, optional): whether to shuffle train and test datasets to create new split of the data for each individual run. Default: True
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
-				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file). Default: 'input' 
+				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file), 'naive' (load naive from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
 				lim_weights (bool, optional): whether to artificially limit the value of weights. Used during parameter exploration. Default: False
 				log_weights (str, optional): transfer function of the weights; possible values: 'lin', 'log', 'linlog'. Default: 'log'
@@ -193,13 +194,14 @@ class Network:
 		self.stim_perf_saved = np.ones((self.n_runs, self._saved_perf_size[0], self._saved_perf_size[1]))*np.nan
 		self.stim_perf_labels_saved = np.ones((self.n_runs, self.n_images))*np.nan if not self.save_light else np.zeros(1)
 		self.ach_tracker = np.ones((self.n_images, self.n_epi_tot))*np.nan if not self.save_light else np.zeros(self.n_images)
-		self.dopa_tracker = np.array([])
+		# self.dopa_tracker = np.array([])
 		# self.RP_tracker = np.array([])
-		self.RPE_tracker = np.array([])
+		# self.RPE_tracker = np.array([])
 		# self.decision_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.decision_tracker_explore = np.zeros((self.n_epi_perc, self.n_images), dtype=int) ###
 		# self.posterior_tracker_greedy = np.zeros((self.n_epi_perc, self.n_images, self.n_classes)) ###
 		# self.posterior_tracker_explore = np.ones((self.n_epi_perc, self.n_images, self.n_classes))*np.nan
+		# self.activ_tracker = np.zeros((0, self.n_hid_neurons))
 
 		if self.verbose: 
 			print 'seed: ' + str(self.seed) + '\n'
@@ -209,7 +211,7 @@ class Network:
 		for r in range(self.n_runs):
 			self._r = r
 			if self.verbose: print '\nrun: %d' %r
-
+			
 			np.random.seed(self.seed+r)
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
@@ -257,6 +259,7 @@ class Network:
 					else:
 						images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker = ex.shuffle([images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker])
 
+
 				#add noise to gabor filter images
 				if self.protocol=='gabor':
 					np.random.shuffle(gaussian_noise)
@@ -296,20 +299,24 @@ class Network:
 
 					# self.RP_tracker = np.append(self.RP_tracker, predicted_reward_hid)
 					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-predicted_reward_hid)
-					self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
+					# self.RPE_tracker = np.append(self.RPE_tracker, reward_hid-ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'linear'))
 
 					#compute dopa signal
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
+					### pairing protocol
+					# dopa_hid[batch_labels==self._r]*=30.0
+					###
+
 					### linearise the exponential RPE->DA function
-					if self.dopa_func=='linear_discrete':
-						pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
-						dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
-						# dopa_hid[dopa_disc== 4.00] =  4.00 #dHigh
-						# dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
-						# dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
-						dopa_hid[dopa_disc==-1.00] = -1.00 #dLow
+					# if self.dopa_func=='linear_discrete':
+					# 	pred_rew_disc = ex.reward_prediction(explorative, self.compare_output, self.classes, self.out_neurons_greedy, self.out_neurons_explore, 'discrete')
+					# 	dopa_disc = ex.compute_dopa(pred_rew_disc, reward_hid, {'dHigh': 4.0, 'dMid':0.01, 'dNeut':-0.25, 'dLow':-1.0}, 'discrete')
+					# 	# dopa_hid[dopa_disc== 4.00] =  4.00 #dHigh
+					# 	# dopa_hid[dopa_disc== 0.01] =  0.01 #dMid
+					# 	# dopa_hid[dopa_disc==-0.25] = -0.25 #dNeut
+					# 	dopa_hid[dopa_disc==-1.00] = -1.00 #dLow
 					###
 
 					### to have DA only for a specific class
@@ -318,7 +325,7 @@ class Network:
 					# set_trace()
 					###
 
-					self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
+					# self.dopa_tracker = np.append(self.dopa_tracker, dopa_hid)
 
 					#compute ACh signal
 					if self.ach_uncertainty:
@@ -342,8 +349,7 @@ class Network:
 					else: 
 						lr_hid = self.lr_hid
 						lr_out = self.lr_out
-
-					#update weights
+			
 					self.hid_W = self._learning_step(batch_images, self.hid_neurons_explore, self.hid_W, lr=lr_hid, dopa=dopa_hid, ach=ach_hid)
 					if self._train_class_layer:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
@@ -356,6 +362,8 @@ class Network:
 
 					#track ACh release
 					if self.ach_release and not self.save_light: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
+
+					# self.activ_tracker = np.append(self.activ_tracker, self.hid_neurons_greedy, axis=0)
 
 				#assess performance
 				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
@@ -381,7 +389,7 @@ class Network:
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
 			if 'labels_rndm' in locals() and not self.save_light: self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
-			if not self.save_light or self.ach_release: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
+			if not self.save_light or self.ach_release and self.shuffle_datasets: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
@@ -403,7 +411,6 @@ class Network:
 			returns:
 				(dict): confusion matrix and performance of the network for all runs
 		"""
-
 		#add noise to gabor filter images
 		if self.protocol=='gabor':
 			if self.images_params['noise_pixel']>0.0:
@@ -444,7 +451,8 @@ class Network:
 				hidNeurons = ex.softmax(hidNeurons, t=self.t_hid)
 
 				out_W_normed = out_W/np.sum(out_W, 1)[:,np.newaxis]
-				actNeurons = np.dot(hidNeurons, out_W_normed)
+				actNeurons = np.einsum('ij,jk', hidNeurons, out_W_normed)
+				# actNeurons = np.dot(hidNeurons, out_W_normed)
 				classIdx = np.argmax(actNeurons, 1)
 				classResults = self.classes[classIdx]
 			elif self.classifier=='bayesian':
@@ -489,6 +497,8 @@ class Network:
 			self._init_weights_random()
 		elif self.weight_init == 'input' and images is not None:
 			self._init_weights_input(images)
+		elif self.weight_init == 'naive':
+			self._init_weights_file()
 		else:
 			raise ValueError ('wrong weitgh initialization method: %s' % self.weight_init)
 
@@ -501,8 +511,12 @@ class Network:
 
 		#randomly choose weights from one of the saved runs
 		run_to_load = self._r % saved_net.n_runs 
-		saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
-		saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
+		if self.weight_init=='naive':
+			saved_hid_W = saved_net.hid_W_naive[run_to_load, :, :] # saved_net.hid_W_trained[run_to_load, :, :]
+			saved_out_W = saved_net.out_W_naive[run_to_load, :, :] # saved_net.out_W_trained[run_to_load, :, :]
+		else:
+			saved_hid_W = saved_net.hid_W_trained[run_to_load, :, :]
+			saved_out_W = saved_net.out_W_trained[run_to_load, :, :]
 
 		if (self.n_inp_neurons, self.n_hid_neurons) != np.shape(saved_hid_W):
 			raise ValueError, "Hidden weights loaded from file are not of the same shape as those of the current network"
@@ -511,11 +525,15 @@ class Network:
 
 		self.hid_W = np.copy(saved_hid_W)
 		self.out_W = np.copy(saved_out_W)
-		self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
-		self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		if not self.save_light: self._idx_shuffle = np.copy(saved_net._idx_shuffle_saved[run_to_load, :]).astype(int)
 		if saved_net.stim_perf_saved[run_to_load, :, :].shape != self._saved_perf_size:
-			raise ValueError('loaded stim_perf_saved not the same size as current network\'s')
-		self._stim_perf_weights = (np.arange(saved_net.ach_avg, dtype=float)+1)[::-1]
+			warnings.warn('loaded stim_perf_saved not the same size as current network\'s; empty initialization', UserWarning)
+			self._stim_perf = np.ones(self._saved_perf_size)*np.nan
+			min_size = np.min([saved_net.stim_perf_saved.shape[-1], self._saved_perf_size[-1]])
+			self._stim_perf[:, :min_size] = np.copy(saved_net.stim_perf_saved[run_to_load, :, :min_size])
+		else:
+			self._stim_perf = np.copy(saved_net.stim_perf_saved[run_to_load, :, :])
+		self._stim_perf_weights = (np.arange(self.ach_avg, dtype=float)+1)[::-1]
 		self._stim_perf_avg = ex.weighted_sum(self._stim_perf, self._stim_perf_weights)
 		f_net.close()
 
@@ -809,7 +827,8 @@ class Network:
 
 		if numba:
 			postNeurons_lr = ex.disinhibition(post_neurons, lr, dopa, ach, np.zeros_like(post_neurons))
-			dot = np.dot(pre_neurons.T, postNeurons_lr)
+			dot = np.einsum('ij,jk', pre_neurons.T, postNeurons_lr)
+			# dot = np.dot(pre_neurons.T, postNeurons_lr)
 			dW = ex.regularization(dot, postNeurons_lr, W, np.zeros(postNeurons_lr.shape[1]))
 		else:
 			postNeurons_lr = post_neurons * (lr * dopa[:,np.newaxis] * ach[:,np.newaxis]) #adds the effect of dopamine and acetylcholine to the learning rate  
@@ -894,8 +913,8 @@ class Network:
 		if self.test_each_epi and self._train_class_layer: ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_train, labels_train)
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
-		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode
-			log_likelihood = self._assess_loglikelihood(images_train[::100,:], labels_train[::100])
+		if self.test_each_epi and True: ## remove bool flag to measure likelihood at each episode
+			log_likelihood = self._assess_loglikelihood(images_train[::1,:], labels_train[::1]) ##<--
 			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
 			self.log_likelihood_prog[self._r, self._e] = log_likelihood
 		if self.classifier=='neural_dopa' or self.classifier=='neural_prob' or self._e>=self.n_epi_crit + self.n_epi_fine:
