@@ -913,7 +913,7 @@ class Network:
 		if self.test_each_epi and self._train_class_layer: ##remove neural_prob... 
 			correct_out_W = self._check_out_W(images_train, labels_train)
 			print_perf += 'correct out weights: %d/%d ; ' %(correct_out_W, self.n_hid_neurons)
-		if self.test_each_epi and True: ## remove bool flag to measure likelihood at each episode
+		if self.test_each_epi and False: ## remove bool flag to measure likelihood at each episode
 			log_likelihood = self._assess_loglikelihood(images_train[::1,:], labels_train[::1]) ##<--
 			print_perf += 'log-likelihood: %.2f ; ' %(log_likelihood)
 			self.log_likelihood_prog[self._r, self._e] = log_likelihood
