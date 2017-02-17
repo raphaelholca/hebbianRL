@@ -26,7 +26,7 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'dMid' 				: 0.01,
 					'dNeut' 			: -0.25,
 					'dLow' 				: -1.0,
-					'dopa_func' 		: 'linear_discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
+					'dopa_func' 		: 'discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
 					'dHigh_out'			: 2.0,#0.5,#
@@ -44,13 +44,13 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_non_uni',
+					'name' 				: 'pypet_ACh_non_uni_3',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 1,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 90,
+					'n_epi_perc'		: 80,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
@@ -95,7 +95,7 @@ explore_dict = {
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
-					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0],
+					'ach_1'			: [20.0, 30.0, 35.0, 40.0, 45.0, 50.0],
 					'ach_2'		 	: [10.0],
 				}
 
@@ -141,7 +141,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 10,
+						ncores 			= 3,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 

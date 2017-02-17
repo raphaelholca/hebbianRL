@@ -111,6 +111,24 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				images = np.copy(images_non_uni)
 				labels = np.copy(labels_non_uni)
 
+			### duplicate an image
+			# idx = 11700
+			# n_copy = 1753*5 #175 1753 1753*5
+			# # import matplotlib.pyplot as plt
+			# # # for i in range(20):
+			# # plt.figure()
+			# # plt.imshow(np.reshape(images[idx], (28,28)), interpolation='nearest', cmap='Greys')
+			# # plt.show(block=False)
+			# images_long = np.zeros((images.shape[0]+n_copy, images.shape[1]))
+			# images_long[:images.shape[0],:] = images
+			# images_long[images.shape[0]:,:] = images[idx]
+			# labels_long = np.zeros(labels.shape[0]+n_copy, dtype=int)
+			# labels_long[:labels.shape[0]] = labels
+			# labels_long[labels.shape[0]:] = labels[idx]
+			# images=np.copy(images_long)
+			# labels=np.copy(labels_long)
+			###
+
 			if normalize_im: images = normalize(images, A)
 
 			if load_test:
@@ -493,14 +511,17 @@ def propagate_layerwise(X, W, SM=True, t=1., log_weights='log'):
 	"""
 
 	if log_weights=='lin':
-		activ = np.dot(X, W)
+		# activ = np.dot(X, W)
+		activ = np.einsum('ij,jk', X, W)
 	elif log_weights=='log' or log_weights:
-		activ = np.dot(X, np.log(W))
+		# activ = np.dot(X, np.log(W))
+		activ = np.einsum('ij,jk', X, np.log(W))
 	elif log_weights=='linlog':
 		mask_W = W>1.
 		_W = np.copy(W)							#W<1
 		_W[mask_W] = np.log(W[mask_W]) + 1. 	#W>1
-		activ = np.dot(X, _W)
+		# activ = np.dot(X, _W)
+		activ = np.einsum('ij,jk', X, _W)
 	if SM: activ = softmax(activ, t=t)
 	return activ
 
