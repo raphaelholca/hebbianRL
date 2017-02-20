@@ -98,9 +98,9 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				labels_non_uni = np.empty(0, dtype=int)
 				for _ in range(overs):
 					images_non_uni = np.append(images_non_uni, images[labels==0], axis=0)
-					images_non_uni = np.append(images_non_uni, images[labels==1], axis=0)
+					images_non_uni = np.append(images_non_uni, images[labels==2], axis=0)
 					labels_non_uni = np.append(labels_non_uni, labels[labels==0])
-					labels_non_uni = np.append(labels_non_uni, labels[labels==1])
+					labels_non_uni = np.append(labels_non_uni, labels[labels==2])
 				images_non_uni = np.append(images_non_uni, images[labels==3][::subs], axis=0)
 				images_non_uni = np.append(images_non_uni, images[labels==5][::subs], axis=0)
 				images_non_uni = np.append(images_non_uni, images[labels==8][::subs], axis=0)

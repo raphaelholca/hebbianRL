@@ -11,8 +11,8 @@ train_svm = False
 train_kmeans = False
 grid_search = False
 
-n_runs = 3
-n_epi = 50 #(x20)
+n_runs = 5
+n_epi = 1 #50 #(x20)
 seed =  974
 
 np.random.seed(seed) 
@@ -55,13 +55,17 @@ if train_mlp:
 		for r in range(n_runs):
 			print "run %d" % r
 			#SGD
-			X_train, y_train, X_test, y_test = shuffle_data(X, y)
-			mlp = MLPClassifier(hidden_layer_sizes=(10000,), activation='relu', algorithm='sgd', alpha=0, batch_size=50, learning_rate='constant', max_iter=10, tol=0, learning_rate_init=5e-3, momentum=0, early_stopping=False, warm_start=True, shuffle=True, random_state=seed+r, verbose=True)
+			# X_train, y_train, X_test, y_test = shuffle_data(X, y)
+			# mlp = MLPClassifier(hidden_layer_sizes=(10000,), activation='relu', algorithm='sgd', alpha=0, batch_size=50, learning_rate='constant', max_iter=10, tol=0, learning_rate_init=5e-3, momentum=0, early_stopping=False, warm_start=True, shuffle=True, random_state=seed+r, verbose=True)
+			
 			#Adam
 			# mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=10, shuffle=True, random_state=seed+r, tol=-100, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08, warm_start=True)
 			for e in range(n_epi):
 				#best
 				# mlp = MLPClassifier(hidden_layer_sizes=(25,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08)
+				
+				mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='sgd', alpha=1e-06, batch_size='auto', learning_rate='adaptive', max_iter=200, tol=1e-4, learning_rate_init=0.1, momentum=0.9, early_stopping=False, nesterovs_momentum=True, warm_start=False, shuffle=True, random_state=seed+r, verbose=True)
+
 				#overfit
 				# mlp = MLPClassifier(hidden_layer_sizes=(1000,), activation='relu', algorithm='sgd', alpha=0, batch_size=50, learning_rate='constant', max_iter=1000, tol=1e-4, learning_rate_init=1e-3, momentum=0, early_stopping=False, shuffle=True, random_state=None, verbose=True)
 				# mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='l-bfgs', alpha=1e-6, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True)
