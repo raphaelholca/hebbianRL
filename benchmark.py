@@ -11,7 +11,7 @@ train_svm = False
 train_kmeans = False
 grid_search = False
 
-n_runs = 5
+n_runs = 10
 n_epi = 1 #50 #(x20)
 seed =  974
 
