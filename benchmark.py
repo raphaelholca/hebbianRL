@@ -2,16 +2,14 @@ import numpy as np
 from sklearn.datasets import fetch_mldata
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
-from sklearn.cluster import KMeans
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import RadiusNeighborsClassifier
 from sklearn.model_selection import GridSearchCV
 
+method = 'rnn' #'mlp', 'svm', 'knn', 'rnn'
+grid_search = True
 
-train_mlp = True
-train_svm = False
-train_kmeans = False
-grid_search = False
-
-n_runs = 5
+n_runs = 10
 n_epi = 1 #50 #(x20)
 seed =  974
 
@@ -33,7 +31,7 @@ X_train, y_train, X_test, y_test = shuffle_data(X, y)
 
 """ train MLP """
 
-if train_mlp:
+if method == 'mlp':
 	if grid_search:
 		pass
 		mlp = MLPClassifier(hidden_layer_sizes=(300,), activation='relu', algorithm='adam', alpha=1e-6, batch_size='auto', learning_rate_init=1e-3, max_iter=100, shuffle=True, random_state=None, tol=1e-4, verbose=True, beta_1=0.8, beta_2=0.9, epsilon=1e-08)
@@ -79,7 +77,7 @@ if train_mlp:
 		print "\nall runs finished; mean score: %.3f +/- %.3f" %(np.mean(test_scores_mlp[:,-1]), np.std(test_scores_mlp[:,-1]))
 
 """ train SVM """
-if train_svm:
+if method == 'svm':
 	if grid_search:
 		pass
 		svm = SVC(C=10.0, kernel='rbf', gamma=0.01, tol=1e-3, verbose=True, random_state=None)
@@ -100,15 +98,38 @@ if train_svm:
 			print "run %d finished, score %.3f" %(r, svm_score)
 		print "\nall runs finished; mean score: %.3f +/- %.3f" %(np.mean(all_scores_svm), np.std(all_scores_svm))
 
-""" train K-means """
+""" train K-NN """
 
-if train_kmeans:
-	pass
-	# kmeans = KMeans(n_clusters=300, max_iter=300, n_init=10, init='k-means++', precompute_distances=False, tol=1e-4, n_jobs=1, random_state=None, verbose=2)
-	# kmeans.fit(X_train, y_train)
-	# kmeans_score = kmeans.score(X_test, y_test)	
+if method == 'knn':
+	if grid_search:
+		knn = KNeighborsClassifier(n_neighbors=5, weights='uniform')
+		params_gs = {'n_neighbors': [5,10,20,50,100,200], 'weights': ['uniform', 'distance']}
+		gs = GridSearchCV(knn, params_gs, n_jobs=12, verbose=2, refit=False)
+		gs.fit(X_train, y_train)
 
+		###results
+		# [mean: 0.96867, std: 0.00105, params: {'n_neighbors': 5, 'weights': 'uniform'},
+		#  mean: 0.96983, std: 0.00103, params: {'n_neighbors': 5, 'weights': 'distance'},
+		#  mean: 0.96445, std: 0.00109, params: {'n_neighbors': 10, 'weights': 'uniform'},
+		#  mean: 0.96688, std: 0.00135, params: {'n_neighbors': 10, 'weights': 'distance'},
+		#  mean: 0.95835, std: 0.00107, params: {'n_neighbors': 20, 'weights': 'uniform'},
+		#  mean: 0.95990, std: 0.00138, params: {'n_neighbors': 20, 'weights': 'distance'},
+		#  mean: 0.94523, std: 0.00044, params: {'n_neighbors': 50, 'weights': 'uniform'},
+		#  mean: 0.94672, std: 0.00027, params: {'n_neighbors': 50, 'weights': 'distance'},
+		#  mean: 0.93248, std: 0.00118, params: {'n_neighbors': 100, 'weights': 'uniform'},
+		#  mean: 0.93417, std: 0.00109, params: {'n_neighbors': 100, 'weights': 'distance'},
+		#  mean: 0.91512, std: 0.00160, params: {'n_neighbors': 200, 'weights': 'uniform'},
+		#  mean: 0.91738, std: 0.00156, params: {'n_neighbors': 200, 'weights': 'distance'}]
+		###
+		
+""" train r-NN """ 
 
+if method == 'rnn':
+	if grid_search:
+		rnn = RadiusNeighborsClassifier(radius=1.0, weights='uniform')
+		params_gs = {'radius': [0.5, 1.0, 2.0, 10.0, 30.0, 100.0], 'weights': ['uniform', 'distance']}
+		gs = GridSearchCV(rnn, params_gs, n_jobs=12, verbose=2, refit=False)
+		gs.fit(X_train, y_train)
 
 
 

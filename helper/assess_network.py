@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.neighbors import KNeighborsClassifier
 from scipy.spatial import KDTree
 import pickle
 from pdb import set_trace
@@ -125,6 +126,9 @@ def hist(net, images, labels, n_bins=10, verbose=None):
 	if net.RF_classifier=='svm':
 		#parameters: SVC(C=2.8, cache_size=200, class_weight=None, coef0=0.0, degree=3, gamma=0.0073, kernel='rbf', max_iter=-1, probability=True, random_state=None, shrinking=True, tol=0.001, verbose=True)
 		svm_mnist = pickle.load(open('helper/svm_mnist', 'r'))
+	elif net.RF_classifier=='knn':
+		knn = KNeighborsClassifier(n_neighbors=100, weights='distance')
+		knn.fit(images, labels)
 
 	for r in range(n_runs):
 		if verbose: print 'run: ' + str(r+1)
@@ -144,7 +148,11 @@ def hist(net, images, labels, n_bins=10, verbose=None):
 			if W_naive is not None: 
 				classif_naive = svm_mnist.predict(W_naive[r].T)
 				RFproba_naive[int(r), np.arange(n_neurons), classif_naive] = 1.0
-				
+		elif net.RF_classifier=='knn':
+			RFproba[int(r), np.arange(n_neurons), :] = knn.predict_proba(W[r].T)
+			if W_naive is not None:
+				RFproba_naive[int(r), np.arange(n_neurons), :] = knn.predict_proba(W_naive[r].T)
+
 		RFclass[r,:], _ = np.histogram(np.argmax(RFproba[r],1), bins=n_bins, range=(-0.5,9.5))
 		for c in range(n_bins):
 			RFselec[r,c] = np.mean(np.max(RFproba[r],1)[np.argmax(RFproba[r],1)==c])

@@ -92,44 +92,9 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			if digit_params['even_dataset']:
 				images, labels = even_labels(images, labels, digit_params['classes'])
 			if 'class_reduce' in digit_params and digit_params['class_reduce']:
-				subs=20
-				overs=3
-				images_non_uni = np.empty((0, images.shape[1]))
-				labels_non_uni = np.empty(0, dtype=int)
-				for _ in range(overs):
-					images_non_uni = np.append(images_non_uni, images[labels==0], axis=0)
-					images_non_uni = np.append(images_non_uni, images[labels==2], axis=0)
-					labels_non_uni = np.append(labels_non_uni, labels[labels==0])
-					labels_non_uni = np.append(labels_non_uni, labels[labels==2])
-				images_non_uni = np.append(images_non_uni, images[labels==3][::subs], axis=0)
-				images_non_uni = np.append(images_non_uni, images[labels==5][::subs], axis=0)
-				images_non_uni = np.append(images_non_uni, images[labels==8][::subs], axis=0)
-				labels_non_uni = np.append(labels_non_uni, labels[labels==3][::subs])
-				labels_non_uni = np.append(labels_non_uni, labels[labels==5][::subs])
-				labels_non_uni = np.append(labels_non_uni, labels[labels==8][::subs])
-
-				images = np.copy(images_non_uni)
-				labels = np.copy(labels_non_uni)
-
-			### duplicate an image
-			# idx = 11700
-			# n_copy = 1753*5 #175 1753 1753*5
-			# # import matplotlib.pyplot as plt
-			# # # for i in range(20):
-			# # plt.figure()
-			# # plt.imshow(np.reshape(images[idx], (28,28)), interpolation='nearest', cmap='Greys')
-			# # plt.show(block=False)
-			# images_long = np.zeros((images.shape[0]+n_copy, images.shape[1]))
-			# images_long[:images.shape[0],:] = images
-			# images_long[images.shape[0]:,:] = images[idx]
-			# labels_long = np.zeros(labels.shape[0]+n_copy, dtype=int)
-			# labels_long[:labels.shape[0]] = labels
-			# labels_long[labels.shape[0]:] = labels[idx]
-			# images=np.copy(images_long)
-			# labels=np.copy(labels_long)
-			###
-
-			if normalize_im: images = normalize(images, A)
+				images, labels = non_uniform_image_distrib(images, labels)
+			if normalize_im: 
+				images = normalize(images, A)
 
 			if load_test:
 				if verbose: print 'loading test images...'
@@ -138,7 +103,10 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			
 				if digit_params['even_dataset']:
 					images_test, labels_test = even_labels(images_test, labels_test, digit_params['classes'])
-				if normalize_im: images_test = normalize(images_test, A)
+				# if 'class_reduce' in digit_params and digit_params['class_reduce']:
+				# 	images, labels = non_uniform_image_distrib(images, labels)
+				if normalize_im: 
+					images_test = normalize(images_test, A)
 			else:
 				images_test = None
 				labels_test = None
@@ -205,6 +173,20 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 		images_params = toy_data_params
 
 	return {'train':images, 'test':images_test, 'task':images_task}, {'train':labels, 'test':labels_test, 'task':labels_task}, {'train':orientations, 'test':orientations_test, 'task':orientations_task}, images_params
+
+def non_uniform_image_distrib(images, labels, subs=20, overs=3):
+	images_non_uni = np.empty((0, images.shape[1]))
+	labels_non_uni = np.empty(0, dtype=int)
+	
+	for _ in range(overs):
+		for c in [0,1,2,3,4]:
+			images_non_uni = np.append(images_non_uni, images[labels==c], axis=0)
+			labels_non_uni = np.append(labels_non_uni, labels[labels==c])
+	for c in [5,6,7,8,9]:
+		images_non_uni = np.append(images_non_uni, images[labels==c][::subs], axis=0)
+		labels_non_uni = np.append(labels_non_uni, labels[labels==c][::subs])
+
+	return images_non_uni, labels_non_uni
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
     """ Import the MNIST data set """

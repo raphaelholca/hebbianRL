@@ -44,13 +44,13 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_non_uni_3',
+					'name' 				: 'pypet_ACh_test_non_uni_all',
 					'dopa_release' 		: False, 
 					'ach_release'		: True, 
 					'n_runs' 			: 1,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 80,
+					'n_epi_perc'		: 120,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
@@ -60,9 +60,9 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: False,
-					'n_hid_neurons'		: 25, #15,#49, ##<-----------
+					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'Hebb_non_uni',
+					'init_file'			: 'non_uni_all_Hebb',
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -95,7 +95,7 @@ explore_dict = {
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
-					'ach_1'			: [20.0, 30.0, 35.0, 40.0, 45.0, 50.0],
+					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0],
 					'ach_2'		 	: [10.0],
 				}
 
@@ -105,8 +105,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																	verbose 		= parameter_dict['verbose'],
 																	digit_params 	= {	'dataset_train'		: 'train',
 																						# 'classes' 			: np.array([ 1, 4, 9 ], dtype=int),
-																						'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
-																						# 'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
+																						# 'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
+																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'even_dataset'		: True,
 																						'class_reduce'		: True ##<-- None
@@ -141,7 +141,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 3,
+						ncores 			= 10,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
