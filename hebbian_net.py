@@ -25,7 +25,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='knn', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, d_noLabel, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, labels_subs=1, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='knn', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -52,6 +52,7 @@ class Network:
 				ach_uncertainty (bool, optional): whether to use uncertainty (True) or performance (False) as a measure of task difficulty. Default: True
 				ach_BvSB (bool, optional): whether to compare best vs second-best posterior for uncertainty extimate (True) or simply best posterior (False). Default: False
 				ach_approx_class (bool, optional): whether to approximate the class of the stimulus using net output (True) or use true class label (False). Default: False
+				labels_subs (int, optional): subsampling factor to reduce the number of training labels used to learn the weight matrix B. Default: 1
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -92,7 +93,7 @@ class Network:
 				pypet_name (str, optional): name of the directory in which data is saved when doing pypet exploration. Default: ''
 		"""
 		
-		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow}
+		self.dopa_values 		= {'dHigh': dHigh, 'dMid':dMid, 'dNeut':dNeut, 'dLow':dLow, 'd_noLabel':d_noLabel}
 		self.dopa_func 			= dopa_func
 		self.dopa_out_same 		= dopa_out_same
 		self.train_out_dopa		= train_out_dopa
@@ -103,6 +104,7 @@ class Network:
 		self.ach_uncertainty 	= ach_uncertainty
 		self.ach_BvSB 			= ach_BvSB
 		self.ach_approx_class 	= ach_approx_class
+		self.labels_subs 		= labels_subs
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -171,7 +173,7 @@ class Network:
 
 		self.images_params = images_params
 		self.n_images = images_train.shape[0]
-		self.classes = np.sort(np.unique(labels_train))
+		self.classes = np.copy(images_params['classes'])
 		self.n_classes = len(self.classes)
 		self.n_out_neurons = len(self.classes)
 		self.n_inp_neurons = np.size(images_train,1)
@@ -215,7 +217,7 @@ class Network:
 			np.random.seed(self.seed+r)
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
-			if self.protocol=='digit' and self.shuffle_datasets: #shuffle train and test datasets for each independent run
+			if self.protocol=='digit' and self.shuffle_datasets and self.images_params['labels_subs']==1: #shuffle train and test datasets for each independent run
 				images_train, images_test, labels_train, labels_test, idx_train, idx_test = ex.shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
 			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
@@ -355,7 +357,7 @@ class Network:
 						self.out_W = self._learning_step(self.hid_neurons_greedy, self.out_neurons_explore_out, self.out_W, lr=lr_out, dopa=dopa_out)
 					#update weights of probabilistic neural classifier
 					if self.classifier=='neural_prob' and self._b%100==0:
-						self.out_W = self._learn_out_proba(images_rndm, labels_rndm)
+						self.out_W = self._learn_out_proba(images_train, labels_train)
 
 					#keep track of training performance
 					correct += np.sum(greedy==batch_labels)

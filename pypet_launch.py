@@ -26,6 +26,7 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'dMid' 				: 0.01,
 					'dNeut' 			: -0.25,
 					'dLow' 				: -1.0,
+					'd_noLabel'			: 0.0,
 					'dopa_func' 		: 'discrete', #'exponential', #'discrete', 'linear' 'linear_discrete'
 					'dopa_out_same'		: True,
 					'train_out_dopa'	: False,
@@ -44,25 +45,25 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: True,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_test_non_uni_all',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 1,
+					'name' 				: 'pypet_DA_labels_subsample_10',
+					'dopa_release' 		: True, 
+					'ach_release'		: False, 
+					'n_runs' 			: 3,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 120,
+					'n_epi_perc'		: 30,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: False,
 					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'non_uni_all_Hebb',
+					'init_file'			: 'digit_pretrain_class_3run_lr_5e-3',
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -95,8 +96,10 @@ explore_dict = {
 					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
 					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
 
-					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0],
-					'ach_2'		 	: [10.0],
+					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0],
+					# 'ach_2'		 	: [10.0],
+
+					'd_noLabel'		: [-0.1, -0.01, 0.0, +0.01, +0.1, +0.5, +1.0]
 				}
 
 """ load and pre-process images """
@@ -109,7 +112,8 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'even_dataset'		: True,
-																						'class_reduce'		: True ##<-- None
+																						'class_reduce'		: False, ##<-- None
+																						'labels_subs'		: 10
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,

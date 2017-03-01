@@ -59,7 +59,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			digit_params={	'dataset_train'	: 'train',
 							'classes' 		: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 							'dataset_path' 	: '/Users/raphaelholca/Documents/data-sets/MNIST',
-							'even_dataset'	: True
+							'even_dataset'	: True,
+							'labels_subs'	: 1
 							}
 
 		if verbose: print 'loading train images...'
@@ -95,6 +96,8 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 				images, labels = non_uniform_image_distrib(images, labels)
 			if normalize_im: 
 				images = normalize(images, A)
+			if digit_params['labels_subs']!=1:
+				labels = subsample_labels(digit_params['labels_subs'], digit_params['classes'], labels)
 
 			if load_test:
 				if verbose: print 'loading test images...'
@@ -179,14 +182,31 @@ def non_uniform_image_distrib(images, labels, subs=20, overs=3):
 	labels_non_uni = np.empty(0, dtype=int)
 	
 	for _ in range(overs):
-		for c in [0,1,2,3,4]:
+		# for c in [0,1,2,3,4]:
+		for c in [0,2]:
 			images_non_uni = np.append(images_non_uni, images[labels==c], axis=0)
 			labels_non_uni = np.append(labels_non_uni, labels[labels==c])
-	for c in [5,6,7,8,9]:
+	# for c in [5,6,7,8,9]:
+	for c in [3,5,8]:
 		images_non_uni = np.append(images_non_uni, images[labels==c][::subs], axis=0)
 		labels_non_uni = np.append(labels_non_uni, labels[labels==c][::subs])
 
 	return images_non_uni, labels_non_uni
+
+def subsample_labels(labels_subs, classes, labels):
+	"""subsamples the labels to compute the matrix B with just a fraction of available labels; the subsampling is done such that the same number of labels is used for all classes"""
+
+	n_labels_per_class = len(labels[::labels_subs])/len(classes)
+	all_idx = np.arange(len(labels), dtype=int)
+	subsample_idx = np.array([], dtype=int)
+	
+	for c in classes:
+		subsample_idx = np.append(subsample_idx, all_idx[labels==c][:n_labels_per_class])
+	
+	labels_ss = np.ones_like(labels)*-1
+	labels_ss[subsample_idx] = labels[subsample_idx]
+	
+	return labels_ss
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
     """ Import the MNIST data set """
@@ -376,7 +396,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'save_light', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'labels_subs', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'save_light', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')
@@ -548,6 +568,7 @@ def reward_delivery(labels, actions):
 	if actions is not None:
 		reward = np.zeros(len(labels), dtype=int)
 		reward[labels==actions] = 1
+		reward[labels==-1] = -1
 	else:
 		reward = None
 
@@ -817,6 +838,8 @@ def dopa_discrete(predicted_reward, reward, dopa_values):
 	dopa[np.logical_and(predicted_reward==1, reward==1)] = dopa_values['dMid']		#correct reward prediction
 	dopa[np.logical_and(predicted_reward==0, reward==0)] = dopa_values['dNeut']		#correct no reward prediction
 	dopa[np.logical_and(predicted_reward==1, reward==0)] = dopa_values['dLow']		#incorrect reward prediction
+
+	dopa[reward==-1] = dopa_values['d_noLabel'] 									#no label provided
 
 	return dopa
 	# return np.zeros(len(reward)) ##
