@@ -21,7 +21,7 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
+net = hebbian_net.Network(	dHigh 				= 10.0,#4.0, #6.0,#2.0,#4.0,
 							dMid 				= 0.01,#0.01, #-0.4,#1.1,#0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
@@ -34,7 +34,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							dNeut_out			= -0.3,
 							dLow_out			= -0.5,
 							ach_1 				= 16.0, ##<-- 35, 16
-							ach_2 				= 9.0, ##<-- 9, 10
+							ach_2 				= 9.0, ##<-- 10, 9
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset', 'labels', 'labels_reverse'
@@ -44,25 +44,25 @@ net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							ach_BvSB 			= False,
 							ach_approx_class 	= True,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'labels_subs_1_DA_reinforce',
-							dopa_release 		= True,
-							ach_release			= False, 
-							n_runs 				= 3,
-							n_epi_crit			= 30,
+							name 				= 'pairing_2',
+							dopa_release 		= False,
+							ach_release			= True, 
+							n_runs 				= 1,
+							n_epi_crit			= 10,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 30,
+							n_epi_perc			= 0,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
-							t_out				= 0.1,
+							t_out				= 1.0,
 							A					= 1.0e3,
-							lr_hid				= 3e-3, #5e-4,#5e-3, ##<---------
+							lr_hid				= 5e-3, #5e-4,#5e-3, ##<---------
 							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
-							shuffle_datasets	= False, ##
+							shuffle_datasets	= False, ## <-------
 							n_hid_neurons		= 49, ##<--
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_3run_lr_5e-3',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= 'digit_pretrain_class_20run_300epi',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -74,6 +74,7 @@ net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							pdf_method 			= 'fit',
 							classifier			= 'neural_prob',
 							RF_classifier 		= 'svm',
+							pairing_class 		= 0,	
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
@@ -93,7 +94,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
 																						'even_dataset'		: True,
 																						'class_reduce'		: False, ##<-- False
-																						'labels_subs'		: 1
+																						'labels_subs'		: 1 ##<-- 1
 																						},
 																	gabor_params 	= {	'n_train' 			: 10000,
 																						'n_test' 			: 10000,
@@ -114,7 +115,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 
 net.train(images_dict, labels_dict, images_params)
 
-# CM_all, perf_all = net.test(images_dict['test'], labels_dict['test'])
+CM_all, perf_all = net.test(images_dict['test'], labels_dict['test'])
 
 ex.save_net(net)
 

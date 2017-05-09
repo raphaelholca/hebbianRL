@@ -90,6 +90,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			labels_test = labels_all[idx_split:]
 		else:
 			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
+			# images_train, images_test, labels_train, labels_test, idx_train, idx_test = shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
 			if digit_params['even_dataset']:
 				images, labels = even_labels(images, labels, digit_params['classes'])
 			if 'class_reduce' in digit_params and digit_params['class_reduce']:
@@ -97,7 +98,7 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			if normalize_im: 
 				images = normalize(images, A)
 			if digit_params['labels_subs']!=1:
-				labels = subsample_labels(digit_params['labels_subs'], digit_params['classes'], labels)
+				images, labels = subsample_labels(digit_params['labels_subs'], digit_params['classes'], images, labels)
 
 			if load_test:
 				if verbose: print 'loading test images...'
@@ -193,8 +194,10 @@ def non_uniform_image_distrib(images, labels, subs=20, overs=3):
 
 	return images_non_uni, labels_non_uni
 
-def subsample_labels(labels_subs, classes, labels):
-	"""subsamples the labels to compute the matrix B with just a fraction of available labels; the subsampling is done such that the same number of labels is used for all classes"""
+def subsample_labels(labels_subs, classes, images, labels):
+	"""subsamples the labels; the subsampling is done such that the same number of labels is used for all classes"""
+
+	images, labels = shuffle([images, labels])
 
 	n_labels_per_class = len(labels[::labels_subs])/len(classes)
 	all_idx = np.arange(len(labels), dtype=int)
@@ -206,7 +209,7 @@ def subsample_labels(labels_subs, classes, labels):
 	labels_ss = np.ones_like(labels)*-1
 	labels_ss[subsample_idx] = labels[subsample_idx]
 	
-	return labels_ss
+	return images, labels_ss
 
 def read_images_from_mnist(classes, dataset = "train", path = '/Users/raphaelholca/Documents/data-sets/MNIST'):
     """ Import the MNIST data set """
@@ -396,7 +399,7 @@ def print_params(param_dict, save_file, runtime=None):
 	""" print parameters """
 	tab_length = 25
 
-	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'labels_subs', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'save_light', 'seed', 'images_params']
+	params_to_print = ['dHigh', 'dMid', 'dNeut', 'dLow', 'dopa_values', 'dopa_func', 'dopa_out_same', 'train_out_dopa', 'dopa_values_out', 'dHigh_out', 'dMid_out', 'dNeut_out', 'dLow_out', 'ach_values', 'ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_func', 'ach_avg', 'ach_stim', 'ach_uncertainty', 'ach_BvSB', 'ach_approx_class', 'protocol', 'name', 'dopa_release', 'ach_release', 'n_runs', 'n_epi_crit', 'n_epi_fine', 'n_epi_perc', 'n_epi_post', 't_hid', 't_out', 'A','lr_hid', 'lr_out', 'batch_size', 'block_feedback', 'shuffle_datasets', 'n_hid_neurons', 'weight_init', 'init_file', 'lim_weights', 'log_weights', 'epsilon_xplr', 'noise_xplr_hid', 'noise_xplr_out', 'exploration', 'compare_output', 'noise_activ', 'pdf_method', 'classifier', 'RF_classifier','test_each_epi', 'early_stop', 'verbose', 'save_light', 'seed', 'images_params']
 
 	
 	param_file = open(save_file, 'w')

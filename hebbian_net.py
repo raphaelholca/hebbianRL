@@ -25,7 +25,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, d_noLabel, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, labels_subs=1, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='knn', test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, d_noLabel, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', pairing_class=None, test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -52,7 +52,6 @@ class Network:
 				ach_uncertainty (bool, optional): whether to use uncertainty (True) or performance (False) as a measure of task difficulty. Default: True
 				ach_BvSB (bool, optional): whether to compare best vs second-best posterior for uncertainty extimate (True) or simply best posterior (False). Default: False
 				ach_approx_class (bool, optional): whether to approximate the class of the stimulus using net output (True) or use true class label (False). Default: False
-				labels_subs (int, optional): subsampling factor to reduce the number of training labels used to learn the weight matrix B. Default: 1
 				protocol (str, optional): training protocol. Possible values: 'digit' (MNIST classification), 'gabor' (orientation discrimination). Default: 'digit'
 				name (str, optional): name of the folder where to save results. Default: 'net'
 				dopa_release (bool, optional): whether DA is release during perceptual learning period
@@ -83,7 +82,8 @@ class Network:
 				compare_output (bool, optional): whether to compare the value of greedy and taken action to determine if the trial is exploratory. Default: False
 				pdf_method (str, optional): method used to approximate the pdf; valid: 'fit', 'subsample', 'full'. Default: 'fit'
 				classifier (str, optional): which classifier to use for performance assessment. Possible values are: 'neural_prob', 'neural_dopa', 'bayesian'. Default: 'neural_prob'
-				RF_classifier (str, optional): which classifier to use to classifier RFs. Possible values are: 'data', 'svm', 'knn'. Default: 'knn'
+				RF_classifier (str, optional): which classifier to use to classifier RFs. Possible values are: 'data', 'svm', 'knn'. Default: 'svm'
+				pairing_class (int, optional): which class to pair with modulator release. None is no pairing. Pairing strength is from dHigh. Default: None
 				test_each_epi (bool, optional): whether to test the network's performance at each episode with test data. Default: False
 				early_stop (bool, optional): whether to stop training when performance saturates. Default: True
 				verbose	(bool, optional): whether to create text output. Default: True
@@ -104,7 +104,6 @@ class Network:
 		self.ach_uncertainty 	= ach_uncertainty
 		self.ach_BvSB 			= ach_BvSB
 		self.ach_approx_class 	= ach_approx_class
-		self.labels_subs 		= labels_subs
 		self.protocol			= protocol
 		self.name 				= name
 		self.dopa_release 		= dopa_release
@@ -136,6 +135,7 @@ class Network:
 		self.pdf_method 		= pdf_method
 		self.classifier			= classifier
 		self.RF_classifier 		= RF_classifier
+		self.pairing_class 		= pairing_class
 		self.test_each_epi		= test_each_epi
 		self.early_stop 		= early_stop
 		self.verbose 			= verbose
@@ -307,9 +307,10 @@ class Network:
 					dopa_hid, dopa_out = self._dopa_release_func(predicted_reward_hid, predicted_reward_out, reward_hid, reward_out)
 					if not self.dopa_release: dopa_hid = np.ones(len(batch_labels))
 
-					### pairing protocol
-					# dopa_hid[batch_labels==self._r]*=30.0
-					###
+					# pairing protocol
+					if self.pairing_class is not None:
+						dopa_hid = np.ones_like(dopa_hid)
+						dopa_hid[batch_labels==self.pairing_class]*=self.dopa_values['dHigh']
 
 					### linearise the exponential RPE->DA function
 					# if self.dopa_func=='linear_discrete':
@@ -360,15 +361,15 @@ class Network:
 						self.out_W = self._learn_out_proba(images_train, labels_train)
 
 					#keep track of training performance
-					correct += np.sum(greedy==batch_labels)
-
+					correct += np.sum(greedy[batch_labels!=-1]==batch_labels[batch_labels!=-1])
+					
 					#track ACh release
 					if self.ach_release and not self.save_light: self.ach_tracker[b*self.batch_size:(b+1)*self.batch_size, self._e] = ach_hid
 
 					# self.activ_tracker = np.append(self.activ_tracker, self.hid_neurons_greedy, axis=0)
 
 				#assess performance
-				self._assess_perf_progress(correct/self.n_images, images_train, labels_train, images_test, labels_test)
+				self._assess_perf_progress(correct/np.sum(labels_train!=-1), images_train, labels_train, images_test, labels_test)
 
 				#update tracking of performance for ach release
 				if self.ach_approx_class:
@@ -391,7 +392,7 @@ class Network:
 			self.out_W_trained[r,:,:] = np.copy(self.out_W)
 			self.stim_perf_saved[r,:,:] = np.copy(self._stim_perf)
 			if 'labels_rndm' in locals() and not self.save_light: self.stim_perf_labels_saved[r,:] = np.copy(labels_rndm)
-			if not self.save_light or self.ach_release and self.shuffle_datasets: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
+			if (not self.save_light or self.ach_release) and self.shuffle_datasets: self._idx_shuffle_saved[r,:] = np.concatenate((idx_train, idx_test))
 			self.test(images_test, labels_test, end_of_run=True)
 			if not self.pypet: ex.save_net(self)
 
