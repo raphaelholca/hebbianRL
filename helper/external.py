@@ -90,7 +90,6 @@ def load_images(protocol, A, verbose=True, digit_params={}, gabor_params={}, toy
 			labels_test = labels_all[idx_split:]
 		else:
 			images, labels = read_images_from_mnist(classes=digit_params['classes'], dataset=digit_params['dataset_train'], path=digit_params['dataset_path'])
-			# images_train, images_test, labels_train, labels_test, idx_train, idx_test = shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
 			if digit_params['even_dataset']:
 				images, labels = even_labels(images, labels, digit_params['classes'])
 			if 'class_reduce' in digit_params and digit_params['class_reduce']:
@@ -342,6 +341,27 @@ def shuffle(arrays):
 			shuffled_arrays.append(a[rnd_idx,:])
 
 	return shuffled_arrays
+
+def cross_validate_split(images_dict, labels_dict, n_runs, r):
+	"""
+	Splits the training dataset into training and validation sets
+	"""
+
+	images, labels = images_dict['train'], labels_dict['train']
+	if r==0:
+		images, labels = shuffle([images, labels])
+
+	mask_test = np.zeros(len(labels), dtype=bool)
+	n_stim_split = len(labels)/n_runs
+	mask_test[r*n_stim_split:(r+1)*n_stim_split] = True
+	
+	labels_test = labels[mask_test]
+	images_test = images[mask_test,:]
+	
+	labels_train = labels[~mask_test]
+	images_train = images[~mask_test,:]
+
+	return images_train, images_test, labels_train, labels_test
 
 def generate_gabors(orientations, target_ori, im_size, noise_pixel=0., phase=0.25, freq=5.):
 	"""

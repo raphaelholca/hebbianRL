@@ -21,48 +21,49 @@ ex = reload(ex)
 an = reload(an)
 
 """ create Hebbian neural network """
-net = hebbian_net.Network(	dHigh 				= 10.0,#4.0, #6.0,#2.0,#4.0,
+net = hebbian_net.Network(	dHigh 				= 4.0,#4.0, #6.0,#2.0,#4.0,
 							dMid 				= 0.01,#0.01, #-0.4,#1.1,#0.01,
 							dNeut 				= -0.25, 
 							dLow 				= -1.0,
 							d_noLabel			= 0.0,
 							dopa_func 			= 'discrete', #'exponential', #'discrete', 'linear', 'linear_discrete'
-							dopa_out_same 		= True,
+							dopa_out_same 		= False,
 							train_out_dopa 		= False,
 							dHigh_out			= 0.0,
 							dMid_out			= 0.2,
 							dNeut_out			= -0.3,
 							dLow_out			= -0.5,
-							ach_1 				= 16.0, ##<-- 35, 16
-							ach_2 				= 9.0, ##<-- 10, 9
+							ach_1 				= 20.0, ##<-- 35, 16
+							ach_2 				= 20.0, ##<-- 10, 9
 							ach_3 				= 0.0,
 							ach_4 				= 0.0,
 							ach_func 			= 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset', 'labels', 'labels_reverse'
 							ach_avg 			= 20, ##
 							ach_stim 			= False,
-							ach_uncertainty 	= True,
+							ach_uncertainty 	= False,
 							ach_BvSB 			= False,
-							ach_approx_class 	= True,
+							ach_approx_class 	= False,
 							protocol			= 'digit', #'toy_data', 'gabor', 'digit'
-							name 				= 'pairing_2',
-							dopa_release 		= False,
-							ach_release			= True, 
+							name 				= 'DA_long_300_cross_val_9',
+							dopa_release 		= True,
+							ach_release			= False, 
 							n_runs 				= 1,
-							n_epi_crit			= 10,
+							n_epi_crit			= 300,
 							n_epi_fine 			= 0,
-							n_epi_perc			= 0,
+							n_epi_perc			= 700,
 							n_epi_post 			= 0,
 							t_hid				= 1.0,
-							t_out				= 1.0,
+							t_out				= 0.1,
 							A					= 1.0e3,
-							lr_hid				= 5e-3, #5e-4,#5e-3, ##<---------
+							lr_hid				= 1e-3, #5e-4,#5e-3, ##<---------
 							lr_out				= 5e-7,
 							batch_size 			= 50,
 							block_feedback 		= False,
 							shuffle_datasets	= False, ## <-------
-							n_hid_neurons		= 49, ##<--
+							cross_validate 		= False,
+							n_hid_neurons		= 300, ##<--
 							weight_init 		= 'input',
-							init_file			= 'digit_pretrain_class_20run_300epi',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
+							init_file			= '',#'digit_pretrain_class_3run_lr_5e-3_achAvg_1', #'digit_pretrain_class_3run_lr_5e-3_noAchAvg' #'digit_pretrain_class_20run_300epi', #'digit_pretrain_class_3run_lr_5e-3',
 							lim_weights			= True,
 							log_weights	 		= 'log',
 							epsilon_xplr 		= 1.0,
@@ -74,12 +75,12 @@ net = hebbian_net.Network(	dHigh 				= 10.0,#4.0, #6.0,#2.0,#4.0,
 							pdf_method 			= 'fit',
 							classifier			= 'neural_prob',
 							RF_classifier 		= 'svm',
-							pairing_class 		= 0,	
+							pairing_class 		= None,	
 							test_each_epi		= True,
 							early_stop 			= False,
 							verbose				= True,
 							save_light 			= True,
-							seed 				= 973 #np.random.randint(1000)
+							seed 				= 979 #np.random.randint(1000)
 							)
 
 """ load and pre-process training and testing images """
@@ -92,7 +93,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 0, 2, 3, 5, 8 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'even_dataset'		: True,
+																						'even_dataset'		: False,
 																						'class_reduce'		: False, ##<-- False
 																						'labels_subs'		: 1 ##<-- 1
 																						},

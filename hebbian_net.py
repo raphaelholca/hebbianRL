@@ -25,7 +25,7 @@ an = reload(an)
 class Network:
 	""" Hebbian neural network with dopamine-inspired learning """
 
-	def __init__(self, dHigh, dMid, dNeut, dLow, d_noLabel, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', pairing_class=None, test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
+	def __init__(self, dHigh, dMid, dNeut, dLow, d_noLabel, dopa_func='discrete', dopa_out_same=True, train_out_dopa=False, dHigh_out=0.0, dMid_out=0.2, dNeut_out=-0.3, dLow_out=-0.5, ach_1=1.0, ach_2=0.0, ach_3=0.0, ach_4=0.0, ach_func='sigmoidal', ach_avg=20, ach_stim=False, ach_uncertainty=True, ach_BvSB=False, ach_approx_class=False, protocol='digit', name='net', dopa_release=True, ach_release=False, n_runs=1, n_epi_crit=20, n_epi_fine=0, n_epi_perc=20, n_epi_post=0, t_hid=1.0, t_out=1.0, A=940., lr_hid=5e-3, lr_out=5e-7, batch_size=50, block_feedback=False, shuffle_datasets=True, cross_validate=False, n_hid_neurons=49, weight_init='input', init_file=None, lim_weights=False, log_weights='log', epsilon_xplr=0.5, noise_xplr_hid=0.2, noise_xplr_out=2e4, noise_activ=0.2, exploration=True, compare_output=False, pdf_method='fit', classifier='neural_prob', RF_classifier='svm', pairing_class=None, test_each_epi=False, early_stop=True, verbose=True, save_light=True, seed=None, pypet=False, pypet_name=''):
 
 		"""
 		Sets network parameters 
@@ -69,6 +69,7 @@ class Network:
 				batch_size (int, optional): mini-batch size. Default: 20
 				block_feedback (bool, optional): whether to use block feedback (dopa averaged over a batch) or trial feedback (individual dopa for each stimulus). Default: False
 				shuffle_datasets (bool, optional): whether to shuffle train and test datasets to create new split of the data for each individual run. Default: True
+				cross_validate (bool, optional): whether to separate the training set into subsets to perform cross-validation (for parameter search). Default: False
 				n_hid_neurons (int, optional): number of hidden neurons. Default: 49
 				weight_init (str, optional): method for initializing weights: 'random', 'input' (based on input statistic), 'file' (load from file), 'naive' (load naive from file). Default: 'input' 
 				init_file (str, optional): folder in output directory from which to load network from for weight initialization; use '' or None for random initialization; use 'NO_INIT' to not initialize weights. Default: None
@@ -120,7 +121,8 @@ class Network:
 		self.lr_out				= lr_out
 		self.batch_size 		= batch_size
 		self.block_feedback 	= block_feedback
-		self.shuffle_datasets 	= shuffle_datasets	
+		self.shuffle_datasets 	= shuffle_datasets
+		self.cross_validate		= cross_validate	
 		self.n_hid_neurons 		= n_hid_neurons
 		self.weight_init 		= weight_init
 		self.init_file			= init_file
@@ -213,12 +215,15 @@ class Network:
 		for r in range(self.n_runs):
 			self._r = r
 			if self.verbose: print '\nrun: %d' %r
-			
 			np.random.seed(self.seed+r)
 			self._init_weights(images_train)
 			self._W_in_since_update = np.copy(self.hid_W)
 			if self.protocol=='digit' and self.shuffle_datasets and self.images_params['labels_subs']==1: #shuffle train and test datasets for each independent run
 				images_train, images_test, labels_train, labels_test, idx_train, idx_test = ex.shuffle_datasets(images_dict, labels_dict, self._idx_shuffle)
+			elif self.cross_validate:
+				images_train, images_test, labels_train, labels_test = ex.cross_validate_split(images_dict, labels_dict, self.n_runs, self._r)
+				self.n_images = images_train.shape[0]
+				self._n_batches = int(np.ceil(float(self.n_images)/self.batch_size))
 			elif self.protocol=='gabor':
 				if r != 0: #reload new training gabor filter
 					images_dict_new, labels_dict_new, _, _ = ex.load_images(self.protocol, self.A, self.verbose, gabor_params=self.images_params)
@@ -260,7 +265,6 @@ class Network:
 						images_rndm, labels_rndm, self.ach_tracker = ex.shuffle([images_rndm, labels_rndm, self.ach_tracker])
 					else:
 						images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker = ex.shuffle([images_rndm, labels_rndm, self._stim_perf, idx_train, self.ach_tracker])
-
 
 				#add noise to gabor filter images
 				if self.protocol=='gabor':

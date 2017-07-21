@@ -41,29 +41,30 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'ach_stim' 			: False,
-					'ach_uncertainty' 	: True,
+					'ach_uncertainty' 	: False,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_ACh_netsize_200',
-					'dopa_release' 		: False, 
-					'ach_release'		: True, 
-					'n_runs' 			: 3,
+					'name' 				: 'pypet_DA_cross_val',
+					'dopa_release' 		: True, 
+					'ach_release'		: False, 
+					'n_runs' 			: 5,
 					'n_epi_crit'		: 0,	
 					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 60,
+					'n_epi_perc'		: 100,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
 					'A' 				: 1.0e3,
-					'lr_hid'			: 5e-4, #5e-4, #5e-3, ##<---------
+					'lr_hid'			: 5e-3, #5e-4, #5e-3, ##<---------
 					'lr_out'			: 5e-7,
 					'batch_size' 		: 50,
 					'block_feedback'	: False,
 					'shuffle_datasets'	: False,
-					'n_hid_neurons'		: 200, #15,#49, ##<-----------
+					'cross_validate'	: True,
+					'n_hid_neurons'		: 49, #15,#49, ##<-----------
 					'weight_init' 		: 'input',
-					'init_file'			: 'netsize_200_ACh_full',
+					'init_file'			: 'digit_pretrain_cross_val',
 					'lim_weights'		: True,
 					'log_weights' 		: 'log',
 					'epsilon_xplr'		: 1.0,
@@ -79,25 +80,18 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'early_stop'		: False,
 					'verbose'			: False,
 					'save_light' 		: True,
-					'seed' 				: 990#np.random.randint(1000)
+					'seed' 				: 973#np.random.randint(1000)
 					}
 
 """ explored parameters """
 explore_dict = {	
-					# 'dHigh'			: [-40.0, -20.0, -10.0, -5.0 +0.0, +2.0, +5.0, +10.0, +20.0, +40.0],
-					# 'dHigh'			: [3.00, 3.25, 3.50, 3.75, 4.00, 4.25, 4.50, 4.75, 5.00],
-					# 'dNeut'			: [-0.10, -0.25, -0.50, -0.75, -1.00],
- 
-					# 'dMid'			: [-0.01, +0.00, +0.01],
-					# 'dLow'			: [-1.00, -2.00, -3.00]
-					# 'dLow'			: [-2.00, -1.00, -0.50, +0.00, +0.50, +1.00, +2.00, +3.00, +4.00]
-					# 'dLow'			: [-3.00, -2.00, -1.50, -1.25, -1.00, -0.75, -0.50, -0.00]
+					'dHigh'			: [+0.00, +4.00, +8.00, +12.0],
+					'dMid'			: [-0.01, +0.00, +0.01, +0.10],
+					'dNeut'			: [-0.00, -0.10, -0.25, -0.75],
+					'dLow'			: [-1.00, -2.00, -3.00, -4.00]
 
-					# 'dHigh'			: [+0.50, +1.00, +1.50, +2.00, +2.50, +3.00],
-					# 'dMid'			: [+0.80, +0.90, +1.00, +1.10, +1.20, +1.40, +1.60]
-
-					'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
-					'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
+					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
+					# 'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
 
 					# 'd_noLabel'		: [-0.1, -0.01, 0.0, +0.01, +0.1, +0.5, +1.0]
 				}
@@ -111,7 +105,7 @@ images_dict, labels_dict, ori_dict, images_params = ex.load_images(	protocol 		=
 																						# 'classes' 			: np.array([ 0, 1, 3, 5, 8 ], dtype=int),
 																						'classes' 			: np.array([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], dtype=int),
 																						'dataset_path' 		: '/Users/raphaelholca/Documents/data-sets/MNIST',
-																						'even_dataset'		: True,
+																						'even_dataset'		: False,
 																						'class_reduce'		: False, ##<-- False
 																						'labels_subs'		: 1
 																						},
@@ -145,7 +139,7 @@ env = pypet.Environment(trajectory 		= 'explore_perf',
 						log_stdout		= False,
 						add_time 		= False,
 						multiproc 		= True,
-						ncores 			= 12,
+						ncores 			= 16,
 						filename		=  os.path.join(save_path, 'explore_perf.hdf5'))
 
 
