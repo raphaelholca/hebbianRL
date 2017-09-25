@@ -41,17 +41,17 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'ach_func' 			: 'sigmoidal', #'linear', 'exponential', 'polynomial', 'sigmoidal', 'handmade', 'preset'
 					'ach_avg' 			: 20,
 					'ach_stim' 			: False,
-					'ach_uncertainty' 	: False,
+					'ach_uncertainty' 	: True,
 					'ach_BvSB' 			: False,
 					'ach_approx_class' 	: False,
 					'protocol'			: 'digit',#'gabor',#'digit',#'toy_data'
-					'name' 				: 'pypet_DA_cross_val',
+					'name' 				: 'pypet_DA_greedy_cross_val',
 					'dopa_release' 		: True, 
 					'ach_release'		: False, 
 					'n_runs' 			: 5,
 					'n_epi_crit'		: 0,	
-					'n_epi_fine' 		: 0,			
-					'n_epi_perc'		: 100,
+					'n_epi_fine' 		: 0,
+					'n_epi_perc'		: 40,
 					'n_epi_post' 		: 0,				
 					't_hid'				: 1.0,
 					't_out'				: 0.1,
@@ -70,7 +70,7 @@ parameter_dict = {	'dHigh' 			: 4.0,
 					'epsilon_xplr'		: 1.0,
 					'noise_xplr_hid'	: 0.3,
 					'noise_xplr_out'	: 2e4,
-					'exploration'		: True,
+					'exploration'		: False,
 					'compare_output' 	: True,
 					'noise_activ'		: 0.0,
 					'pdf_method' 		: 'fit',
@@ -85,13 +85,16 @@ parameter_dict = {	'dHigh' 			: 4.0,
 
 """ explored parameters """
 explore_dict = {	
-					'dHigh'			: [+0.00, +4.00, +8.00, +12.0],
-					'dMid'			: [-0.01, +0.00, +0.01, +0.10],
-					'dNeut'			: [-0.00, -0.10, -0.25, -0.75],
-					'dLow'			: [-1.00, -2.00, -3.00, -4.00]
+					# 'dHigh'			: [+0.00, +4.00, +8.00, +12.0],
+					# 'dMid'			: [-0.01, +0.00, +0.01, +0.10],
+					# 'dNeut'			: [-0.00, -0.10, -0.25, -0.75],
+					# 'dLow'			: [-1.00, -2.00, -3.00, -4.00]
+
+					'dMid'			: [0.0, 0.1, 0.2, 0.5, 1.0],
+					'dLow'			: [-0.0, -1.0, -2.0, -3.0, -4.0]
 
 					# 'ach_1'			: [5.0, 10.0, 15.0, 20.0, 25.0],
-					# 'ach_2'		 	: [2.0, 5.0, 10.0, 20.0, 30.0],
+					# 'ach_2'		 	: [0.5, 1.0, 2.0, 5.0, 10.0],
 
 					# 'd_noLabel'		: [-0.1, -0.01, 0.0, +0.01, +0.1, +0.5, +1.0]
 				}

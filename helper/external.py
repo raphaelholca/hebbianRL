@@ -347,9 +347,7 @@ def cross_validate_split(images_dict, labels_dict, n_runs, r):
 	Splits the training dataset into training and validation sets
 	"""
 
-	images, labels = images_dict['train'], labels_dict['train']
-	if r==0:
-		images, labels = shuffle([images, labels])
+	images, labels = shuffle([images_dict['train'], labels_dict['train']])
 
 	mask_test = np.zeros(len(labels), dtype=bool)
 	n_stim_split = len(labels)/n_runs
